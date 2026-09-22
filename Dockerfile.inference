@@ -1,0 +1,36 @@
+# 1. Use a lightweight Python base image
+FROM python:3.11-slim
+
+# 2. Install system compilers and download tools
+RUN apt-get update && apt-get install -y \
+    build-essential \
+    cmake \
+    wget \
+    && rm -rf /var/lib/apt/lists/*
+
+# 3. Install Python bindings for the inference server
+RUN pip install --no-cache-dir \
+    "llama-cpp-python[server]"
+
+# 4. Set the working directory
+WORKDIR /app
+
+# 5. Download the verified Q5 MedGemma text model via direct URL
+RUN wget -O /app/medgemma-4b-it-Q5_K_M.gguf \
+    https://huggingface.co/second-state/medgemma-4b-it-GGUF/resolve/main/medgemma-4b-it-Q5_K_M.gguf
+
+# 6. Download the multimodal vision projector via direct URL
+RUN wget -O /app/mmproj-f16.gguf \
+    https://huggingface.co/second-state/medgemma-4b-it-GGUF/resolve/main/medgemma-4b-it-mmproj-f16.gguf
+
+# 7. Expose the server port
+EXPOSE 8080
+
+# 8. Start the llama.cpp server with multimodal support
+CMD ["python", "-m", "llama_cpp.server", \
+     "--model", "/app/medgemma-4b-it-Q5_K_M.gguf", \
+     "--clip_model", "/app/mmproj-f16.gguf", \
+     "--host", "0.0.0.0", \
+     "--port", "8080", \
+     "--n_ctx", "4096", \
+     "--chat_format", "gemma"]
