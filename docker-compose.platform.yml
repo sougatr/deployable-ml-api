@@ -1,0 +1,84 @@
+version: "3.8"
+
+services:
+  # ===========================================================================
+  # 1. PRIMARY MULTI-TENANT DATABASE (PostgreSQL 16 with pgcrypto & fuzzystrmatch)
+  # ===========================================================================
+  postgres:
+    image: postgres:16-alpine
+    container_name: health_platform_postgres
+    restart: always
+    environment:
+      POSTGRES_USER: health_admin
+      POSTGRES_PASSWORD: health_secure_password
+      POSTGRES_DB: health_operating_platform
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./health_platform/db/migrations:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U health_admin -d health_operating_platform"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # ===========================================================================
+  # 2. FAST IN-MEMORY CACHE & LOCK STORE (Redis 7)
+  # ===========================================================================
+  redis:
+    image: redis:7.2-alpine
+    container_name: health_platform_redis
+    restart: always
+    ports:
+      - "6379:6379"
+    volumes:
+      - redisdata:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  # ===========================================================================
+  # 3. HIGH-THROUGHPUT EVENT STREAMING BROKER (Redpanda Kafka Compatible)
+  # ===========================================================================
+  redpanda:
+    image: docker.redpanda.com/redpandadata/redpanda:v23.3.10
+    container_name: health_platform_event_broker
+    restart: always
+    command:
+      - redpanda start
+      - --smp 1
+      - --memory 512M
+      - --overprovisioned
+      - --kafka-addr PLAINTEXT://0.0.0.0:29092,OUTSIDE://0.0.0.0:9092
+      - --advertise-kafka-addr PLAINTEXT://redpanda:29092,OUTSIDE://localhost:9092
+    ports:
+      - "9092:9092"
+      - "9644:9644" # Admin API
+
+  # ===========================================================================
+  # 4. DIGITAL HEALTH OPERATING PLATFORM CORE API (FastAPI)
+  # ===========================================================================
+  platform-core:
+    build:
+      context: .
+      dockerfile: Dockerfile.platform
+    container_name: health_platform_core
+    restart: always
+    environment:
+      DATABASE_URL: postgresql://health_admin:health_secure_password@postgres:5432/health_operating_platform
+      REDIS_URL: redis://redis:6379/0
+      KAFKA_BOOTSTRAP_SERVERS: redpanda:29092
+    ports:
+      - "8000:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+volumes:
+  pgdata:
+  redisdata:

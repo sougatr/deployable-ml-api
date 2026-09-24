@@ -1,0 +1,441 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Digital Health & Hospital Operating Platform</title>
+  <link rel="stylesheet" href="/static/styles.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+  <!-- Header / Navigation Bar -->
+  <header class="app-header">
+    <div class="header-left">
+      <div class="logo-mark">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M22 12h-4l-3 9L9 3l-3 9H2"/>
+        </svg>
+      </div>
+      <div>
+        <h1 class="logo-title">HealthOS Core</h1>
+        <p class="logo-subtitle">Patient-Centric Hospital Operating Platform • ABDM M1/M2 Ready</p>
+      </div>
+    </div>
+    <div class="header-right">
+      <div class="status-indicator">
+        <span class="pulse-dot"></span>
+        <span class="status-text">Ledger: <strong id="header-trial-balance">₹0.00 Discrepancy</strong></span>
+      </div>
+      <div class="badge badge-abdm">ABDM Ready</div>
+    </div>
+  </header>
+
+  <!-- Sub-Header: Persona Viewport Switcher -->
+  <nav class="viewport-tabs">
+    <button class="tab-btn active" data-tab="reception">
+      <span class="tab-icon">👤</span> 1. Front Desk & Identity (MPI)
+    </button>
+    <button class="tab-btn" data-tab="clinician">
+      <span class="tab-icon">🩺</span> 2. Clinician Consultation (OPD)
+    </button>
+    <button class="tab-btn" data-tab="billing">
+      <span class="tab-icon">💳</span> 3. Financial Ledger & Cashier
+    </button>
+    <button class="tab-btn" data-tab="abdm-events">
+      <span class="tab-icon">⚡</span> 4. ABDM & Outbox Stream
+    </button>
+  </nav>
+
+  <!-- Active Patient Context Banner -->
+  <div class="patient-banner" id="active-patient-banner">
+    <div class="banner-content">
+      <div class="patient-avatar" id="banner-avatar">?</div>
+      <div class="patient-meta">
+        <div class="patient-name-row">
+          <h2 id="banner-name">No Patient Selected</h2>
+          <span class="badge badge-uhid" id="banner-uhid">UHID: Pending</span>
+          <span class="badge badge-gender" id="banner-gender-age">--</span>
+        </div>
+        <div class="patient-details-row">
+          <span>MPI: <code id="banner-mpi">None</code></span>
+          <span>Phone: <strong id="banner-phone">--</strong></span>
+          <span id="banner-abha-badge" class="badge badge-gray">ABHA: Not Linked (Optional)</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main Container -->
+  <main class="main-content">
+
+    <!-- VIEW 1: RECEPTION & REGISTRATION -->
+    <section class="viewport-panel active" id="panel-reception">
+      <div class="grid-2-col">
+        <!-- Patient Registration Card -->
+        <div class="card">
+          <div class="card-header">
+            <h3>Patient Registration & MPI Resolution</h3>
+            <span class="card-subtitle">Fellegi-Sunter Probabilistic Deduplication Active</span>
+          </div>
+          <form id="patient-reg-form" class="form">
+            <div class="form-row">
+              <div class="form-group">
+                <label>First Name *</label>
+                <input type="text" id="reg-first-name" required placeholder="e.g. Ramesh" value="Ramesh">
+              </div>
+              <div class="form-group">
+                <label>Last Name *</label>
+                <input type="text" id="reg-last-name" required placeholder="e.g. Sharma" value="Sharma">
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label>Date of Birth *</label>
+                <input type="date" id="reg-dob" required value="1982-05-14">
+              </div>
+              <div class="form-group">
+                <label>Biological Sex *</label>
+                <select id="reg-gender">
+                  <option value="MALE" selected>Male</option>
+                  <option value="FEMALE">Female</option>
+                  <option value="OTHER">Other</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label>Mobile Number (Authentication / OTP) *</label>
+                <input type="tel" id="reg-phone" required placeholder="+91 9876543210" value="+919876543210">
+              </div>
+              <div class="form-group">
+                <label>Postal PIN Code</label>
+                <input type="text" id="reg-postal" placeholder="560038" value="560038">
+              </div>
+            </div>
+
+            <div class="form-actions">
+              <button type="submit" class="btn btn-primary" id="btn-resolve-patient">
+                Resolve / Register Patient (MPI)
+              </button>
+            </div>
+          </form>
+        </div>
+
+        <!-- Optional ABHA Linking Card -->
+        <div class="card">
+          <div class="card-header">
+            <h3>ABDM Milestone 1: Link ABHA (Optional)</h3>
+            <span class="badge badge-info">100% Optional • Either Method Works</span>
+          </div>
+          <p class="card-desc">
+            The patient can choose to link an ABHA ID. It is completely optional—consultations and billing proceed without friction if skipped.
+          </p>
+
+          <div class="sub-tabs">
+            <button class="sub-tab-btn active" data-subtab="abha-method-a">Method A: Aadhaar OTP</button>
+            <button class="sub-tab-btn" data-subtab="abha-method-b">Method B: Existing ABHA + Mobile OTP</button>
+          </div>
+
+          <!-- Method A: Aadhaar OTP -->
+          <div class="sub-tab-panel active" id="subtab-abha-method-a">
+            <div class="form-group">
+              <label>12-Digit Aadhaar Number</label>
+              <input type="text" id="aadhaar-input" placeholder="9876 5432 1012" value="987654321012">
+            </div>
+            <button type="button" class="btn btn-outline" id="btn-send-aadhaar-otp">Generate Aadhaar OTP</button>
+
+            <div id="aadhaar-otp-box" class="otp-verification-box hidden">
+              <div class="alert alert-info" id="aadhaar-otp-msg">OTP sent to Aadhaar-linked mobile!</div>
+              <div class="form-group">
+                <label>Enter 6-Digit OTP</label>
+                <input type="text" id="aadhaar-otp-val" placeholder="123456" value="123456">
+                <small class="helper-text">Sandbox default test OTP: <code>123456</code></small>
+              </div>
+              <button type="button" class="btn btn-success" id="btn-verify-aadhaar-otp">Verify & Link ABHA</button>
+            </div>
+          </div>
+
+          <!-- Method B: Existing ABHA Address -->
+          <div class="sub-tab-panel" id="subtab-abha-method-b">
+            <div class="form-group">
+              <label>ABHA Address or 14-Digit Number</label>
+              <input type="text" id="abha-address-input" placeholder="user@abdm" value="ramesh.sharma@abdm">
+            </div>
+            <button type="button" class="btn btn-outline" id="btn-send-abha-otp">Send Mobile OTP</button>
+
+            <div id="abha-otp-box" class="otp-verification-box hidden">
+              <div class="alert alert-info" id="abha-otp-msg">OTP sent to registered mobile!</div>
+              <div class="form-group">
+                <label>Enter 6-Digit OTP</label>
+                <input type="text" id="abha-otp-val" placeholder="654321" value="654321">
+                <small class="helper-text">Sandbox default test OTP: <code>654321</code></small>
+              </div>
+              <button type="button" class="btn btn-success" id="btn-verify-abha-otp">Verify & Link ABHA</button>
+            </div>
+          </div>
+
+          <div id="abha-success-box" class="alert alert-success hidden">
+            <strong>ABHA Verified & Linked!</strong>
+            <div id="abha-linked-details"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- VIEW 2: CLINICIAN OPD CONSULTATION -->
+    <section class="viewport-panel" id="panel-clinician">
+      <div class="card">
+        <div class="card-header">
+          <h3>Doctor Consultation Viewport (OPD Episode of Care)</h3>
+          <span class="card-subtitle">Coded Diagnoses (ICD-10) • E-Prescriptions • Diagnostic Investigation Orders</span>
+        </div>
+
+        <div id="clinician-no-patient-warning" class="alert alert-warning">
+          Please select or register a patient from the <strong>Front Desk (MPI)</strong> tab first.
+        </div>
+
+        <div id="clinician-encounter-flow" class="hidden">
+          <div class="encounter-action-bar">
+            <span id="encounter-status-label">Encounter: Not Started</span>
+            <button class="btn btn-primary" id="btn-start-encounter">Start OPD Encounter</button>
+          </div>
+
+          <form id="consultation-form" class="form hidden">
+            <div class="form-group">
+              <label>Chief Complaints & Symptoms *</label>
+              <input type="text" id="consult-complaint" required value="Persistent morning headaches, elevated blood pressure">
+            </div>
+
+            <div class="form-group">
+              <label>Clinical Notes (SOAP Narrative) *</label>
+              <textarea id="consult-narrative" rows="3" required>Patient presents with 2-week history of fatigue and headaches. Physical examination shows SBP 138/88. Prescribed antihypertensives and ordered basic metabolic investigations.</textarea>
+            </div>
+
+            <div class="grid-2-col">
+              <!-- Diagnoses -->
+              <div class="form-section">
+                <h4>Confirmed Diagnosis (ICD-10)</h4>
+                <div class="form-group">
+                  <label>Diagnosis</label>
+                  <select id="consult-icd10">
+                    <option value="I10" data-snomed="38341003" data-name="Essential (primary) hypertension" selected>
+                      [I10] Essential (primary) hypertension
+                    </option>
+                    <option value="E11.9" data-snomed="73211009" data-name="Type 2 diabetes mellitus without complications">
+                      [E11.9] Type 2 diabetes mellitus without complications
+                    </option>
+                    <option value="J30.2" data-snomed="44482006" data-name="Other seasonal allergic rhinitis">
+                      [J30.2] Other seasonal allergic rhinitis
+                    </option>
+                  </select>
+                </div>
+              </div>
+
+              <!-- Vitals -->
+              <div class="form-section">
+                <h4>Vitals (LOINC Standard)</h4>
+                <div class="form-row">
+                  <div class="form-group">
+                    <label>Systolic BP (mm[Hg])</label>
+                    <input type="number" id="vital-sbp" value="138">
+                  </div>
+                  <div class="form-group">
+                    <label>Heart Rate (bpm)</label>
+                    <input type="number" id="vital-hr" value="78">
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="grid-2-col">
+              <!-- E-Prescription -->
+              <div class="form-section">
+                <h4>E-Prescription (Pharmacotherapy)</h4>
+                <div class="form-group">
+                  <label>Medicine</label>
+                  <select id="rx-medicine">
+                    <option value="Telma 40|Telmisartan 40mg|1-0-0|30" selected>Telma 40 (Telmisartan 40mg) - 1-0-0 (30 Days)</option>
+                    <option value="Glycomet 500|Metformin 500mg|1-0-1|60">Glycomet 500 (Metformin 500mg) - 1-0-1 (60 Days)</option>
+                    <option value="Allegra 120|Fexofenadine 120mg|0-0-1|10">Allegra 120 (Fexofenadine 120mg) - 0-0-1 (10 Days)</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label>Patient Instructions</label>
+                  <input type="text" id="rx-instructions" value="Take 1 tablet every morning after breakfast">
+                </div>
+              </div>
+
+              <!-- Diagnostic Orders -->
+              <div class="form-section">
+                <h4>Diagnostic Investigation Orders</h4>
+                <div class="form-group">
+                  <label>Order Test</label>
+                  <select id="order-test">
+                    <option value="4548-4|HbA1c Blood Test|LAB-BIO-042|BIOCHEMISTRY|650.00" selected>
+                      HbA1c Blood Panel (LOINC 4548-4) - ₹650.00
+                    </option>
+                    <option value="168731009|Standard Chest X-Ray|RAD-XRAY-001|RADIOLOGY|850.00">
+                      Standard Chest X-Ray (SNOMED 168731009) - ₹850.00
+                    </option>
+                    <option value="58410-2|Complete Blood Count|LAB-HEM-001|HEMATOLOGY|450.00">
+                      Complete Blood Count CBC (LOINC 58410-2) - ₹450.00
+                    </option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label>Doctor Consultation Fee (₹)</label>
+                  <input type="number" id="consult-fee" value="500.00">
+                </div>
+              </div>
+            </div>
+
+            <div class="form-actions">
+              <button type="submit" class="btn btn-success" id="btn-complete-consult">
+                Apply Digital Signature & Finalize Consultation
+              </button>
+            </div>
+          </form>
+
+          <div id="consult-success-summary" class="alert alert-success hidden">
+            <h4>Consultation Signed & Finalized!</h4>
+            <div id="consult-result-details"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- VIEW 3: FINANCIAL LEDGER & CASHIER -->
+    <section class="viewport-panel" id="panel-billing">
+      <div class="grid-2-col">
+        <!-- Live Itemized Bill -->
+        <div class="card">
+          <div class="card-header">
+            <h3>Encounter Charges & Payer Split</h3>
+            <span class="badge badge-success" id="billing-trial-badge">Ledger: BALANCED</span>
+          </div>
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Service / Tariff</th>
+                <th>Clinical Origin</th>
+                <th>Gross</th>
+                <th>Patient Share</th>
+                <th>Insurer</th>
+              </tr>
+            </thead>
+            <tbody id="billing-charges-tbody">
+              <tr>
+                <td colspan="5" class="empty-state">No charges captured for current encounter yet.</td>
+              </tr>
+            </tbody>
+          </table>
+
+          <div class="billing-totals">
+            <div class="total-row">
+              <span>Total Gross:</span>
+              <strong id="billing-gross-total">₹0.00</strong>
+            </div>
+            <div class="total-row">
+              <span>Insurer Covered:</span>
+              <strong id="billing-insurer-total" class="text-info">₹0.00</strong>
+            </div>
+            <div class="total-row total-highlight">
+              <span>Net Patient Payable:</span>
+              <strong id="billing-net-payable" class="text-success">₹0.00</strong>
+            </div>
+          </div>
+        </div>
+
+        <!-- Cashier Settlement -->
+        <div class="card">
+          <div class="card-header">
+            <h3>Settle Payment & Issue Tax Invoice</h3>
+          </div>
+          <div class="form-group">
+            <label>Payment Mode</label>
+            <select id="pay-mode">
+              <option value="UPI" selected>UPI (Instant QR)</option>
+              <option value="CASH">Cash</option>
+              <option value="CARD">Credit/Debit Card</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Amount to Collect (₹)</label>
+            <input type="number" id="pay-amount" value="0.00">
+          </div>
+          <button type="button" class="btn btn-primary" id="btn-collect-payment">
+            Record Payment & Settle AR-PATIENT
+          </button>
+
+          <div id="payment-receipt-box" class="alert alert-success hidden">
+            <strong>Payment Cleared!</strong>
+            <p id="receipt-text"></p>
+          </div>
+
+          <div class="qr-box">
+            <div class="qr-placeholder">
+              <span>UPI QR CODE</span>
+            </div>
+            <small>UPI ID: <code>hospital.billing@icici</code></small>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- VIEW 4: ABDM & EVENT STREAM -->
+    <section class="viewport-panel" id="panel-abdm-events">
+      <div class="grid-2-col">
+        <!-- ABDM Care Contexts -->
+        <div class="card">
+          <div class="card-header">
+            <h3>ABDM Registered Care Contexts (HIP)</h3>
+            <span class="badge badge-abdm">M2 Certified</span>
+          </div>
+          <p class="card-desc">
+            Episodes of care registered with the National Health Authority (NHA) gateway for external PHR discovery.
+          </p>
+          <div id="abdm-care-contexts-list" class="timeline-list">
+            <div class="empty-state">No ABDM care contexts linked yet.</div>
+          </div>
+        </div>
+
+        <!-- Transactional Outbox Event Stream -->
+        <div class="card">
+          <div class="card-header">
+            <h3>CloudEvents Transactional Outbox Stream</h3>
+            <span class="badge badge-info">Deterministic Partitioning: mpi_id</span>
+          </div>
+          <p class="card-desc">
+            Zero dual-write guaranteed event stream staging to Kafka/Redpanda.
+          </p>
+          <div id="outbox-event-list" class="event-stream-box">
+            <div class="empty-state">No events staged in outbox.</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Duplicate Patient Confirmation Modal (MPI Engine) -->
+  <dialog id="duplicate-modal" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>High-Confidence Patient Duplicate Detected</h3>
+      </div>
+      <p>The Fellegi-Sunter matching engine identified existing records matching this patient:</p>
+      <div id="duplicate-candidates-list" class="duplicate-list"></div>
+      <div class="modal-actions">
+        <button type="button" class="btn btn-secondary" id="btn-use-existing-dup">Select Existing Record</button>
+        <button type="button" class="btn btn-outline" id="btn-force-create-dup">Create Distinct Record Anyway</button>
+      </div>
+    </div>
+  </dialog>
+
+  <script src="/static/app.js"></script>
+</body>
+</html>
