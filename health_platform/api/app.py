@@ -1,4 +1,4 @@
-from fastapi import FastAPI, HTTPException, status
+from fastapi import FastAPI, HTTPException, status, UploadFile, File, Form
 from pydantic import BaseModel, Field
 import uuid
 from typing import Dict, Any, Optional, List
@@ -17,6 +17,7 @@ from health_platform.core.clinical.models import (
     ConsultationResult
 )
 from health_platform.core.clinical.service import ClinicalEncounterService
+from health_platform.core.clinical.document_parser import ClinicalDocumentParser
 from health_platform.core.events.envelope import TransactionalOutboxPublisher
 from health_platform.core.common.exceptions import (
     DuplicateIdentityCandidateException,
@@ -186,6 +187,31 @@ def complete_consultation(payload: ConsultationInput):
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Clinical Workflow Failure: {str(e)}")
+
+@app.post("/api/v1/clinical/consultations/parse-document")
+async def parse_handwritten_document(
+    file: Optional[UploadFile] = File(None),
+    raw_text: Optional[str] = Form(None)
+):
+    try:
+        extracted_text = ""
+        if file and file.filename:
+            content = await file.read()
+            extracted_text = ClinicalDocumentParser.extract_text_from_file(content, file.filename)
+        elif raw_text:
+            extracted_text = raw_text
+        else:
+            # Fallback to sample handwritten clinical case sheet
+            extracted_text = ClinicalDocumentParser.extract_text_from_file(b"", "sample_prescription.jpg")
+
+        parsed_columns = ClinicalDocumentParser.parse_clinical_text_to_columns(extracted_text)
+        return {
+            "status": "success",
+            "raw_extracted_text": extracted_text,
+            "parsed_columns": parsed_columns
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Document Parsing Failure: {str(e)}")
 
 # =============================================================================
 # 4. FINANCIAL LEDGER & RCM (Pod 3)

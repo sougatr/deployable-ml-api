@@ -25,6 +25,7 @@ from health_platform.tests.test_abdm_and_clinical_consultation import (
     test_opd_consultation_flow_with_orders_billing_and_abdm_hip,
     test_opd_consultation_optionality_without_abha
 )
+from health_platform.tests.test_document_parser import TestClinicalDocumentParser
 
 class PlatformCoreTestSuite(unittest.TestCase):
     # Identity & MPI Tests
@@ -82,6 +83,15 @@ class PlatformCoreTestSuite(unittest.TestCase):
 
     def test_17_api_charge_capture_and_payment(self):
         test_api_charge_capture_and_payment()
+
+    # Document & Prescription Parsing Tests
+    def test_18_document_parser_clinical_extraction(self):
+        t = TestClinicalDocumentParser()
+        t.test_parse_handwritten_clinical_text()
+
+    def test_19_api_document_parse_endpoint(self):
+        t = TestClinicalDocumentParser()
+        t.test_api_parse_document_endpoint()
 
 if __name__ == "__main__":
     suite = unittest.TestLoader().loadTestsFromTestCase(PlatformCoreTestSuite)

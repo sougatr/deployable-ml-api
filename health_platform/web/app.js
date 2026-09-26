@@ -273,11 +273,116 @@ function initClinicianConsultation() {
       currentEncounterId = data.encounter_id;
       document.getElementById("encounter-status-label").textContent = `Encounter: IN_PROGRESS (#${currentEncounterId.slice(0, 8)})`;
       btnStart.classList.add("hidden");
+      document.getElementById("prescription-upload-card").classList.remove("hidden");
       document.getElementById("consultation-form").classList.remove("hidden");
     } catch (e) {
       alert("Error starting encounter: " + e.message);
     }
   });
+
+  // Upload and parse handwritten document
+  const btnUploadParse = document.getElementById("btn-upload-parse");
+  const btnLoadSample = document.getElementById("btn-load-sample-prescription");
+  const fileInput = document.getElementById("prescription-file-input");
+  const statusBox = document.getElementById("parser-status-box");
+  const statusMsg = document.getElementById("parser-status-msg");
+
+  async function triggerParsing(formData) {
+    statusBox.classList.remove("hidden");
+    statusBox.className = "alert alert-info";
+    statusMsg.innerHTML = "<strong>AI Vision & NLP Ingestion Active:</strong> Extracting handwritten text, normalizing clinical shorthand, and mapping to ICD-10, LOINC, and E-Prescription columns...";
+
+    try {
+      const res = await fetch("/api/v1/clinical/consultations/parse-document", {
+        method: "POST",
+        body: formData
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.detail);
+
+      const parsed = data.parsed_columns;
+
+      // 1. Auto-Populate Chief Complaint & Narrative
+      if (parsed.chief_complaint) {
+        document.getElementById("consult-complaint").value = parsed.chief_complaint;
+      }
+      if (parsed.clinical_narrative) {
+        document.getElementById("consult-narrative").value = parsed.clinical_narrative;
+      }
+
+      // 2. Auto-Populate Vitals
+      if (parsed.vitals && parsed.vitals.length > 0) {
+        for (const v of parsed.vitals) {
+          if (v.code_loinc === "8480-6") {
+            document.getElementById("vital-sbp").value = v.value;
+          } else if (v.code_loinc === "8867-4") {
+            document.getElementById("vital-hr").value = v.value;
+          }
+        }
+      }
+
+      // 3. Auto-Populate Diagnoses
+      if (parsed.diagnoses && parsed.diagnoses.length > 0) {
+        const topCode = parsed.diagnoses[0].code_icd10;
+        const select = document.getElementById("consult-icd10");
+        for (let i = 0; i < select.options.length; i++) {
+          if (select.options[i].value === topCode) {
+            select.selectedIndex = i;
+            break;
+          }
+        }
+      }
+
+      // 4. Auto-Populate Prescriptions
+      if (parsed.prescriptions && parsed.prescriptions.length > 0) {
+        const p = parsed.prescriptions[0];
+        document.getElementById("rx-instructions").value = p.instructions || "Take as instructed";
+        const rxSelect = document.getElementById("rx-medicine");
+        for (let i = 0; i < rxSelect.options.length; i++) {
+          if (rxSelect.options[i].value.toLowerCase().includes(p.brand_name.toLowerCase())) {
+            rxSelect.selectedIndex = i;
+            break;
+          }
+        }
+      }
+
+      // 5. Auto-Populate Diagnostic Orders
+      if (parsed.orders && parsed.orders.length > 0) {
+        const o = parsed.orders[0];
+        const orderSelect = document.getElementById("order-test");
+        for (let i = 0; i < orderSelect.options.length; i++) {
+          if (orderSelect.options[i].value.includes(o.code_loinc_or_snomed)) {
+            orderSelect.selectedIndex = i;
+            break;
+          }
+        }
+      }
+
+      statusBox.className = "alert alert-success";
+      statusMsg.innerHTML = "<strong>Success:</strong> Handwritten Prescription / Case Sheet successfully parsed! All clinical entities have been auto-populated into the requisite columns below for your clinical review.";
+    } catch (err) {
+      statusBox.className = "alert alert-warning";
+      statusMsg.innerHTML = `<strong>Parsing Error:</strong> ${err.message}`;
+    }
+  }
+
+  if (btnUploadParse) {
+    btnUploadParse.addEventListener("click", () => {
+      if (!fileInput.files || fileInput.files.length === 0) {
+        return alert("Please select a prescription image or PDF file to upload.");
+      }
+      const formData = new FormData();
+      formData.append("file", fileInput.files[0]);
+      triggerParsing(formData);
+    });
+  }
+
+  if (btnLoadSample) {
+    btnLoadSample.addEventListener("click", () => {
+      const formData = new FormData();
+      triggerParsing(formData);
+    });
+  }
 
   const form = document.getElementById("consultation-form");
   form.addEventListener("submit", async (e) => {

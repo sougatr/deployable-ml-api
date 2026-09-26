@@ -204,8 +204,35 @@
             <button class="btn btn-primary" id="btn-start-encounter">Start OPD Encounter</button>
           </div>
 
+          <!-- Handwritten Prescription & Case Sheet Upload/Parser Card -->
+          <div id="prescription-upload-card" class="card card-ai-parser hidden" style="background: linear-gradient(135deg, #f0fdf4, #ecfdf5); border: 1px solid #a7f3d0; margin-top: 1rem;">
+            <div class="card-header" style="border-bottom: 1px solid #a7f3d0; padding-bottom: 0.5rem;">
+              <div>
+                <h4 style="color: #065f46; display: flex; align-items: center; gap: 0.5rem; font-size: 0.9375rem;">
+                  <span>📝</span> Handwritten Prescription & Case Sheet Parser (Assistive AI)
+                </h4>
+                <span class="card-subtitle" style="color: #047857;">Upload a photo or PDF of a handwritten case sheet / prescription. It will be parsed into the requisite columns below for review.</span>
+              </div>
+              <span class="badge badge-success">Vision OCR & NLP Active</span>
+            </div>
+
+            <div class="parser-controls" style="display: flex; gap: 0.75rem; align-items: center; flex-wrap: wrap; padding-top: 0.25rem;">
+              <input type="file" id="prescription-file-input" accept="image/*,.pdf" style="font-size: 0.8125rem;">
+              <button type="button" class="btn btn-outline" id="btn-upload-parse" style="border-color: #059669; color: #065f46; font-weight: 600;">
+                <span>📤</span> Upload & Parse to Columns
+              </button>
+              <button type="button" class="btn btn-secondary" id="btn-load-sample-prescription" style="font-size: 0.8125rem;">
+                <span>📄</span> Load Sample Case Sheet (Demo)
+              </button>
+            </div>
+
+            <div id="parser-status-box" class="alert alert-info hidden" style="margin-top: 0.5rem;">
+              <div id="parser-status-msg">Extracting handwritten text and mapping to ICD-10, LOINC, and E-Prescriptions...</div>
+            </div>
+          </div>
+
           <form id="consultation-form" class="form hidden">
-            <div class="form-group">
+            <div class="form-group" style="margin-top: 0.75rem;">
               <label>Chief Complaints & Symptoms *</label>
               <input type="text" id="consult-complaint" required value="Persistent morning headaches, elevated blood pressure">
             </div>
