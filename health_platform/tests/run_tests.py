@@ -26,6 +26,7 @@ from health_platform.tests.test_abdm_and_clinical_consultation import (
     test_opd_consultation_optionality_without_abha
 )
 from health_platform.tests.test_document_parser import TestClinicalDocumentParser
+from health_platform.tests.test_ipd_workflows import TestIPDWorkflows
 
 class PlatformCoreTestSuite(unittest.TestCase):
     # Identity & MPI Tests
@@ -104,6 +105,28 @@ class PlatformCoreTestSuite(unittest.TestCase):
     def test_22_document_parser_orthopaedic_prescription(self):
         t = TestClinicalDocumentParser()
         t.test_parse_orthopaedic_prescription()
+
+    # Inpatient (IPD) & Bed Management Workflow Tests
+    def test_23_ipd_bed_matrix_and_admissions(self):
+        t = TestIPDWorkflows()
+        t.setUp()
+        t.test_01_bed_matrix_initialization()
+        t.test_02_patient_admission_and_bed_occupancy()
+
+    def test_24_ipd_nursing_and_doctor_rounds(self):
+        t = TestIPDWorkflows()
+        t.setUp()
+        t.test_03_nurse_charting_and_doctor_rounds()
+
+    def test_25_ipd_discharge_and_room_charge_accrual(self):
+        t = TestIPDWorkflows()
+        t.setUp()
+        t.test_04_patient_discharge_and_room_charge_accrual()
+
+    def test_26_ipd_api_endpoints(self):
+        t = TestIPDWorkflows()
+        t.setUp()
+        t.test_05_api_ipd_endpoints()
 
 if __name__ == "__main__":
     suite = unittest.TestLoader().loadTestsFromTestCase(PlatformCoreTestSuite)

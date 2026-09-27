@@ -31,6 +31,19 @@ app = FastAPI(
     description="Implements the frozen architectural foundation: 'One Patient. One Identity. One Longitudinal Health Record. One Clinical-Financial Journey. Open to Every Healthcare Network.'"
 )
 
+from health_platform.core.ipd.models import (
+    Bed,
+    IPDAdmissionInput,
+    IPDAdmission,
+    NurseChartEntryInput,
+    NurseChartEntry,
+    DoctorRoundInput,
+    DoctorRound,
+    DischargeInput,
+    DischargeSummary
+)
+from health_platform.core.ipd.service import IPDService
+
 # Core Domain Service Singletons
 identity_service = PatientIdentityService()
 financial_ledger_service = FinancialLedgerService()
@@ -40,6 +53,11 @@ clinical_service = ClinicalEncounterService(
     identity_service=identity_service,
     financial_service=financial_ledger_service,
     abdm_bridge=abdm_gateway,
+    outbox=outbox_publisher
+)
+ipd_service = IPDService(
+    identity_service=identity_service,
+    financial_service=financial_ledger_service,
     outbox=outbox_publisher
 )
 
@@ -277,3 +295,62 @@ def record_payment(payload: PaymentRecordRequest):
         "entry_type": journal.entry_type,
         "trial_balance_discrepancy": financial_ledger_service.get_trial_balance_discrepancy()
     }
+
+# =============================================================================
+# 5. INPATIENT (IPD) & BED MANAGEMENT ENDPOINTS (Pod 5)
+# =============================================================================
+@app.get("/api/v1/ipd/beds", response_model=List[Bed])
+def get_hospital_bed_matrix():
+    return ipd_service.get_bed_matrix()
+
+@app.post("/api/v1/ipd/admit", response_model=IPDAdmission)
+def admit_patient_to_bed(payload: IPDAdmissionInput):
+    try:
+        return ipd_service.admit_patient(payload)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Inpatient Admission Error: {str(e)}")
+
+@app.get("/api/v1/ipd/admissions/active", response_model=List[IPDAdmission])
+def get_active_inpatients():
+    return ipd_service.get_active_admissions()
+
+@app.get("/api/v1/ipd/admissions/{admission_id}", response_model=IPDAdmission)
+def get_inpatient_admission(admission_id: uuid.UUID):
+    adm = ipd_service.get_admission(admission_id)
+    if not adm:
+        raise HTTPException(status_code=404, detail="Inpatient admission record not found.")
+    return adm
+
+@app.post("/api/v1/ipd/nursing/charts", response_model=NurseChartEntry)
+def record_nurse_charting(payload: NurseChartEntryInput):
+    try:
+        return ipd_service.record_nurse_charting(payload)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+@app.get("/api/v1/ipd/admissions/{admission_id}/charts", response_model=List[NurseChartEntry])
+def get_nurse_charts(admission_id: uuid.UUID):
+    return ipd_service.get_nurse_charts(admission_id)
+
+@app.post("/api/v1/ipd/doctor/rounds", response_model=DoctorRound)
+def record_doctor_round(payload: DoctorRoundInput):
+    try:
+        return ipd_service.record_doctor_round(payload)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+@app.get("/api/v1/ipd/admissions/{admission_id}/rounds", response_model=List[DoctorRound])
+def get_doctor_rounds(admission_id: uuid.UUID):
+    return ipd_service.get_doctor_rounds(admission_id)
+
+@app.post("/api/v1/ipd/discharge", response_model=DischargeSummary)
+def discharge_patient(payload: DischargeInput):
+    try:
+        return ipd_service.discharge_patient(payload)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Clinical Discharge & Billing Failure: {str(e)}")
+

@@ -40,11 +40,14 @@
     <button class="tab-btn" data-tab="clinician">
       <span class="tab-icon">🩺</span> 2. Clinician Consultation (OPD)
     </button>
+    <button class="tab-btn" data-tab="ipd">
+      <span class="tab-icon">🛏️</span> 3. Inpatient (IPD) & Bed Hub
+    </button>
     <button class="tab-btn" data-tab="billing">
-      <span class="tab-icon">💳</span> 3. Financial Ledger & Cashier
+      <span class="tab-icon">💳</span> 4. Financial Ledger & Cashier
     </button>
     <button class="tab-btn" data-tab="abdm-events">
-      <span class="tab-icon">⚡</span> 4. ABDM & Outbox Stream
+      <span class="tab-icon">⚡</span> 5. ABDM & Outbox Stream
     </button>
   </nav>
 
@@ -445,7 +448,241 @@
       </div>
     </section>
 
-    <!-- VIEW 3: FINANCIAL LEDGER & CASHIER -->
+    <!-- VIEW 3: INPATIENT (IPD) & BED HUB -->
+    <section class="viewport-panel" id="panel-ipd">
+      <!-- Bed Occupancy KPI Strip -->
+      <div class="kpi-strip">
+        <div class="kpi-card">
+          <div class="kpi-icon">🛏️</div>
+          <div class="kpi-content">
+            <span class="kpi-label">Total Beds</span>
+            <span class="kpi-value" id="ipd-kpi-total">8</span>
+          </div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-icon success">🟢</div>
+          <div class="kpi-content">
+            <span class="kpi-label">Available Beds</span>
+            <span class="kpi-value" id="ipd-kpi-available">8</span>
+          </div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-icon warning">🟡</div>
+          <div class="kpi-content">
+            <span class="kpi-label">Occupied Beds</span>
+            <span class="kpi-value" id="ipd-kpi-occupied">0</span>
+          </div>
+        </div>
+        <div class="kpi-card action-card">
+          <button type="button" class="btn btn-primary" id="btn-quick-admit-active">
+            ➕ Admit Active Patient to IPD
+          </button>
+        </div>
+      </div>
+
+      <!-- Main Layout: Bed Matrix (Left) & Bedside Care Hub (Right) -->
+      <div class="ipd-grid-layout">
+        <!-- Bed Matrix Section -->
+        <div class="card ipd-matrix-card">
+          <div class="card-header">
+            <div>
+              <h3>Ward & Bed Matrix</h3>
+              <span class="card-subtitle">Real-time Bed Occupancy & Tariff Tracking</span>
+            </div>
+            <div class="matrix-filter-buttons">
+              <button type="button" class="filter-btn active" data-ward="ALL">All (8)</button>
+              <button type="button" class="filter-btn" data-ward="ICU">ICU (2)</button>
+              <button type="button" class="filter-btn" data-ward="DELUXE">Deluxe (2)</button>
+              <button type="button" class="filter-btn" data-ward="SEMI_PRIVATE">Semi-Private (2)</button>
+              <button type="button" class="filter-btn" data-ward="GENERAL">General (2)</button>
+            </div>
+          </div>
+          <div class="bed-matrix-grid" id="bed-matrix-container">
+            <div class="empty-state">Loading bed matrix...</div>
+          </div>
+        </div>
+
+        <!-- Bedside Inpatient Care Hub (Nurse Charting, Doctor Rounds, Discharge) -->
+        <div class="card ipd-bedside-card" id="ipd-bedside-panel">
+          <div id="ipd-bedside-unselected" class="bedside-placeholder">
+            <div class="placeholder-icon">🛏️</div>
+            <h4>Select an Occupied Bed or Admit a Patient</h4>
+            <p>Click on any bed card in the matrix to inspect patient bedside charts, record nursing shift vitals, log doctor progress rounds, and generate clinical discharge with automatic room charge posting.</p>
+          </div>
+
+          <div id="ipd-bedside-content" class="hidden">
+            <div class="card-header ipd-bedside-header">
+              <div>
+                <span class="badge badge-uhid" id="ipd-bedside-ward-bed">Ward: ICU | Bed: ICU-01</span>
+                <h3 id="ipd-bedside-patient-name" style="margin-top:0.25rem;">Patient Name</h3>
+                <span class="card-subtitle" id="ipd-bedside-meta">IPD Adm #ADM-1001 • Dr. Anup Khatri</span>
+              </div>
+              <div class="bedside-tariff-badge">
+                <span class="tariff-label">Room Tariff</span>
+                <span class="tariff-amount" id="ipd-bedside-rate">₹7,500/day</span>
+                <span class="tariff-sub" id="ipd-bedside-stay-days">1 Day (₹7,500 Accrued)</span>
+              </div>
+            </div>
+
+            <!-- Inpatient Tabs: Nurse Charting, Doctor Rounds, Discharge -->
+            <div class="ipd-tabs">
+              <button type="button" class="ipd-tab-btn active" data-ipdtab="nurse">
+                👩‍⚕️ Nurse Charting & MAR
+              </button>
+              <button type="button" class="ipd-tab-btn" data-ipdtab="rounds">
+                👨‍⚕️ Doctor Daily Rounds
+              </button>
+              <button type="button" class="ipd-tab-btn" data-ipdtab="discharge">
+                📋 Discharge & Ledger Accrual
+              </button>
+            </div>
+
+            <!-- Tab 1: Nurse Charting -->
+            <div class="ipd-tab-content active" id="ipd-tab-nurse">
+              <form id="ipd-nurse-chart-form" class="form ipd-form">
+                <div class="vitals-row">
+                  <div class="form-group">
+                    <label>BP (Sys / Dia)</label>
+                    <div class="bp-input-pair">
+                      <input type="number" id="nurse-bp-sys" placeholder="120" value="120" required>
+                      <span>/</span>
+                      <input type="number" id="nurse-bp-dia" placeholder="80" value="80" required>
+                    </div>
+                  </div>
+                  <div class="form-group">
+                    <label>Pulse (BPM)</label>
+                    <input type="number" id="nurse-hr" placeholder="76" value="76" required>
+                  </div>
+                  <div class="form-group">
+                    <label>Temp (°F)</label>
+                    <input type="number" step="0.1" id="nurse-temp" placeholder="98.4" value="98.4" required>
+                  </div>
+                  <div class="form-group">
+                    <label>SpO2 (%)</label>
+                    <input type="number" id="nurse-spo2" placeholder="99" value="99" required>
+                  </div>
+                  <div class="form-group">
+                    <label>Resp (/min)</label>
+                    <input type="number" id="nurse-rr" placeholder="16" value="16" required>
+                  </div>
+                </div>
+                <div class="form-group">
+                  <label>Nursing Observations & MAR Administered</label>
+                  <textarea id="nurse-notes" rows="2" placeholder="e.g. Patient afebrile, surgical dressing intact, IV fluid running @ 75ml/hr."></textarea>
+                </div>
+                <div class="form-actions" style="margin-top:0.5rem;">
+                  <button type="submit" class="btn btn-primary btn-sm">
+                    💾 Record Shift Vitals & Notes
+                  </button>
+                </div>
+              </form>
+
+              <div class="timeline-header" style="margin-top:1.25rem;">
+                <h4>Nurse Vitals Chart History</h4>
+              </div>
+              <div id="nurse-charts-timeline" class="ipd-timeline"></div>
+            </div>
+
+            <!-- Tab 2: Doctor Inpatient Rounds -->
+            <div class="ipd-tab-content" id="ipd-tab-rounds">
+              <form id="ipd-doctor-round-form" class="form ipd-form">
+                <div class="form-row">
+                  <div class="form-group">
+                    <label>Rounding Consultant</label>
+                    <input type="text" id="round-doctor-name" value="Dr. Anup Khatri (Consultant Orthopaedic Surgeon)" required>
+                  </div>
+                </div>
+                <div class="form-group">
+                  <label>Clinical Assessment</label>
+                  <input type="text" id="round-assessment" value="Post-op right knee meniscus root repair: surgical wound clean, no neurovascular deficit." required>
+                </div>
+                <div class="form-group">
+                  <label>Treatment Plan Adjustments</label>
+                  <input type="text" id="round-plan" value="Static quad exercises. Step down to oral analgesics. Plan discharge tomorrow.">
+                </div>
+                <div class="form-group">
+                  <label>Detailed Clinical Round Notes</label>
+                  <textarea id="round-notes" rows="2">Patient comfortable, vitals stable, passive ROM 0-45 deg tolerated well.</textarea>
+                </div>
+                <div class="form-actions" style="margin-top:0.5rem;">
+                  <button type="submit" class="btn btn-primary btn-sm">
+                    📝 Record Inpatient Round Note
+                  </button>
+                </div>
+              </form>
+
+              <div class="timeline-header" style="margin-top:1.25rem;">
+                <h4>Doctor Daily Rounds History</h4>
+              </div>
+              <div id="doctor-rounds-timeline" class="ipd-timeline"></div>
+            </div>
+
+            <!-- Tab 3: Clinical Discharge & Bed Release -->
+            <div class="ipd-tab-content" id="ipd-tab-discharge">
+              <div class="discharge-financial-alert">
+                <div class="alert-icon">⚖️</div>
+                <div class="alert-body">
+                  <strong>Clinical-Financial Invariant: Zero Trial Balance Discrepancy</strong>
+                  <p>Discharging releases this bed to <code>AVAILABLE</code> and automatically posts room stay charges (Days stayed × Daily tariff) as an originating <code>BedStay</code> clinical resource to the Financial Ledger.</p>
+                </div>
+              </div>
+
+              <form id="ipd-discharge-form" class="form ipd-form">
+                <div class="form-group">
+                  <label>Condition at Discharge *</label>
+                  <input type="text" id="discharge-condition" value="Stable, pain controlled, mobilizing non-weight bearing with walker." required>
+                </div>
+                <div class="form-group">
+                  <label>Brief Hospital Course & Summary *</label>
+                  <textarea id="discharge-course" rows="2" required>Patient admitted for right knee meniscus root repair. Surgery completed successfully under spinal anaesthesia. Post-operative period uneventful, wound healing well.</textarea>
+                </div>
+                <div class="form-row">
+                  <div class="form-group">
+                    <label>Final Diagnosis ICD-10 Code *</label>
+                    <input type="text" id="discharge-icd10" value="M23.30" required>
+                  </div>
+                  <div class="form-group">
+                    <label>Diagnosis Description *</label>
+                    <input type="text" id="discharge-icd-display" value="Tear of medial meniscus of knee (Status Post Root Repair)" required>
+                  </div>
+                </div>
+                <div class="form-group">
+                  <label>Discharge Medications *</label>
+                  <input type="text" id="discharge-meds" value="Tab Ezorb Forte 0-1-0 x 90 days; Tab Pan 40 1-0-0 x 10 days" required>
+                </div>
+                <div class="form-group">
+                  <label>Follow-up Instructions & Physiotherapy *</label>
+                  <input type="text" id="discharge-advice" value="Non-weight bearing (NWB) x 10 days, knee brace locked in extension, OPD review in 2 weeks." required>
+                </div>
+                <div class="form-group">
+                  <label>Signing Doctor Signature *</label>
+                  <input type="text" id="discharge-doctor" value="Dr. Anup Khatri (MMC-2006010368)" required>
+                </div>
+
+                <div class="form-actions" style="margin-top:1rem;">
+                  <button type="submit" class="btn btn-danger" id="btn-submit-discharge">
+                    🏥 Finalize Clinical Discharge & Post Room Tariff to Ledger
+                  </button>
+                </div>
+              </form>
+
+              <div id="ipd-discharge-summary-card" class="discharge-summary-card hidden">
+                <div class="summary-badge">DISCHARGED & CHARGES POSTED</div>
+                <h4>Official Inpatient Discharge Summary</h4>
+                <div id="ipd-discharge-details" class="summary-details"></div>
+                <div class="summary-actions" style="margin-top:1rem;">
+                  <button type="button" class="btn btn-success" id="btn-ipd-goto-billing">
+                    💳 Proceed to Cashier Desk to Settle Inpatient Bill
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- VIEW 4: FINANCIAL LEDGER & CASHIER -->
     <section class="viewport-panel" id="panel-billing">
       <div class="grid-2-col">
         <!-- Live Itemized Bill -->
@@ -570,6 +807,58 @@
         <button type="button" class="btn btn-secondary" id="btn-use-existing-dup">Select Existing Record</button>
         <button type="button" class="btn btn-outline" id="btn-force-create-dup">Create Distinct Record Anyway</button>
       </div>
+    </div>
+  </dialog>
+
+  <!-- Admission Modal for Bed Hub -->
+  <dialog id="ipd-admission-modal" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>Inpatient Admission (IPD)</h3>
+        <button type="button" class="modal-close-btn" id="btn-close-admit-modal">&times;</button>
+      </div>
+      <form id="ipd-admission-form" class="form">
+        <div class="modal-patient-preview">
+          <span class="patient-label">Admitting Patient:</span>
+          <strong id="admit-modal-patient-name">Select Patient</strong>
+          <span class="badge badge-uhid" id="admit-modal-uhid">UHID: --</span>
+        </div>
+
+        <div class="form-group" style="margin-top:0.75rem;">
+          <label>Select Target Bed & Ward *</label>
+          <select id="admit-select-bed" required>
+            <!-- Available beds populated here -->
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label>Admitting Consultant *</label>
+          <input type="text" id="admit-doctor-name" value="Dr. Anup Khatri (Consultant Orthopaedic Surgeon)" required>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label>Admitting Diagnosis ICD-10 *</label>
+            <input type="text" id="admit-icd10" value="M23.30" required>
+          </div>
+          <div class="form-group">
+            <label>Diagnosis Name *</label>
+            <input type="text" id="admit-icd-display" value="Tear of medial meniscus of knee" required>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>Admission Reason / Indication *</label>
+          <input type="text" id="admit-reason" value="Right medial meniscus root repair surgery and post-op rehabilitation" required>
+        </div>
+
+        <div class="modal-actions" style="margin-top:1.25rem;">
+          <button type="button" class="btn btn-secondary" id="btn-cancel-admit">Cancel</button>
+          <button type="submit" class="btn btn-primary" id="btn-confirm-admit">
+            Confirm Inpatient Admission & Generate Wristband
+          </button>
+        </div>
+      </form>
     </div>
   </dialog>
 

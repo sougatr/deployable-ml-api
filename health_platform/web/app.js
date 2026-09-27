@@ -4,6 +4,10 @@ let currentEncounterId = null;
 let currentAadhaarTxnId = null;
 let currentAbhaTxnId = null;
 let pendingDuplicatePayload = null;
+let currentAdmissionId = null;
+let currentBeds = [];
+let selectedBedId = null;
+let currentWardFilter = "ALL";
 
 // DOM Elements
 document.addEventListener("DOMContentLoaded", () => {
@@ -13,6 +17,7 @@ document.addEventListener("DOMContentLoaded", () => {
   initDobPicker();
   initAbhaLinking();
   initClinicianConsultation();
+  initIPDModule();
   initBillingAndPayment();
   fetchHealthStatus();
 });
@@ -29,7 +34,9 @@ function initTabNavigation() {
         panel.classList.remove("active");
       });
       document.getElementById(`panel-${target}`).classList.add("active");
-      if (target === "abdm-events" && currentPatient) {
+      if (target === "ipd") {
+        fetchBedMatrix();
+      } else if (target === "abdm-events" && currentPatient) {
         refreshAbdmAndOutbox();
       }
     });
@@ -883,4 +890,476 @@ async function fetchHealthStatus() {
     const data = await res.json();
     document.getElementById("header-trial-balance").textContent = `₹${data.trial_balance_discrepancy.toFixed(2)} Discrepancy`;
   } catch (e) {}
+}
+
+// ==========================================================================
+// 6. INPATIENT (IPD) & BED MANAGEMENT MODULE
+// ==========================================================================
+function initIPDModule() {
+  // Ward filter button event listeners
+  const filterBtns = document.querySelectorAll(".filter-btn");
+  filterBtns.forEach(btn => {
+    btn.addEventListener("click", () => {
+      filterBtns.forEach(b => b.classList.remove("active"));
+      btn.classList.add("active");
+      currentWardFilter = btn.dataset.ward;
+      renderBedMatrix();
+    });
+  });
+
+  // IPD bedside subtab listeners
+  const ipdTabs = document.querySelectorAll(".ipd-tab-btn");
+  ipdTabs.forEach(tab => {
+    tab.addEventListener("click", () => {
+      ipdTabs.forEach(t => t.classList.remove("active"));
+      tab.classList.add("active");
+      const target = tab.dataset.ipdtab;
+      document.querySelectorAll(".ipd-tab-content").forEach(c => c.classList.remove("active"));
+      document.getElementById(`ipd-tab-${target}`).classList.add("active");
+    });
+  });
+
+  // Quick Admit Active Patient Button
+  document.getElementById("btn-quick-admit-active").addEventListener("click", () => {
+    openAdmissionModal();
+  });
+
+  // Admission Modal close/cancel
+  document.getElementById("btn-close-admit-modal").addEventListener("click", () => {
+    document.getElementById("ipd-admission-modal").close();
+  });
+  document.getElementById("btn-cancel-admit").addEventListener("click", () => {
+    document.getElementById("ipd-admission-modal").close();
+  });
+
+  // Confirm Admission form submit
+  document.getElementById("ipd-admission-form").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    if (!currentPatient) {
+      alert("Please register or select an active patient from the Front Desk first.");
+      return;
+    }
+    const bedId = document.getElementById("admit-select-bed").value;
+    const doc = document.getElementById("admit-doctor-name").value;
+    const icd10 = document.getElementById("admit-icd10").value;
+    const icdDisplay = document.getElementById("admit-icd-display").value;
+    const reason = document.getElementById("admit-reason").value;
+
+    try {
+      const res = await fetch("/api/v1/ipd/admit", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          mpi_id: currentPatient.mpi_id,
+          bed_id: bedId,
+          admitting_doctor_name: doc,
+          admitting_diagnosis_icd10: icd10,
+          admitting_diagnosis_display: icdDisplay,
+          admission_reason: reason
+        })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.detail || "Admission failed");
+
+      document.getElementById("ipd-admission-modal").close();
+      await fetchBedMatrix();
+      selectedBedId = bedId;
+      await loadBedsideView(data.admission_id);
+    } catch (err) {
+      alert("Admission Error: " + err.message);
+    }
+  });
+
+  // Nurse Charting form submit
+  document.getElementById("ipd-nurse-chart-form").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    if (!currentAdmissionId) return alert("No active inpatient admission selected.");
+
+    const sys = parseFloat(document.getElementById("nurse-bp-sys").value);
+    const dia = parseFloat(document.getElementById("nurse-bp-dia").value);
+    const hr = parseFloat(document.getElementById("nurse-hr").value);
+    const temp = parseFloat(document.getElementById("nurse-temp").value);
+    const spo2 = parseFloat(document.getElementById("nurse-spo2").value);
+    const rr = parseFloat(document.getElementById("nurse-rr").value);
+    const notes = document.getElementById("nurse-notes").value;
+
+    try {
+      const res = await fetch("/api/v1/ipd/nursing/charts", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          admission_id: currentAdmissionId,
+          systolic_bp: sys,
+          diastolic_bp: dia,
+          heart_rate: hr,
+          temperature: temp,
+          spo2: spo2,
+          respiratory_rate: rr,
+          nursing_notes: notes
+        })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.detail || "Failed to log vitals");
+
+      document.getElementById("nurse-notes").value = "";
+      await loadNurseCharts(currentAdmissionId);
+    } catch (err) {
+      alert("Nurse Charting Error: " + err.message);
+    }
+  });
+
+  // Doctor Round form submit
+  document.getElementById("ipd-doctor-round-form").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    if (!currentAdmissionId) return alert("No active inpatient admission selected.");
+
+    const doc = document.getElementById("round-doctor-name").value;
+    const assess = document.getElementById("round-assessment").value;
+    const plan = document.getElementById("round-plan").value;
+    const notes = document.getElementById("round-notes").value;
+
+    try {
+      const res = await fetch("/api/v1/ipd/doctor/rounds", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          admission_id: currentAdmissionId,
+          doctor_name: doc,
+          clinical_assessment: assess,
+          plan_adjustments: plan,
+          round_notes: notes
+        })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.detail || "Failed to log round notes");
+
+      await loadDoctorRounds(currentAdmissionId);
+    } catch (err) {
+      alert("Doctor Round Error: " + err.message);
+    }
+  });
+
+  // Discharge form submit
+  document.getElementById("ipd-discharge-form").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    if (!currentAdmissionId) return alert("No active inpatient admission selected.");
+
+    const condition = document.getElementById("discharge-condition").value;
+    const course = document.getElementById("discharge-course").value;
+    const icd10 = document.getElementById("discharge-icd10").value;
+    const icdDisplay = document.getElementById("discharge-icd-display").value;
+    const meds = document.getElementById("discharge-meds").value;
+    const advice = document.getElementById("discharge-advice").value;
+    const docSig = document.getElementById("discharge-doctor").value;
+
+    try {
+      const res = await fetch("/api/v1/ipd/discharge", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          admission_id: currentAdmissionId,
+          condition_at_discharge: condition,
+          hospital_course: course,
+          final_diagnosis_icd10: icd10,
+          final_diagnosis_display: icdDisplay,
+          discharge_medications: meds,
+          follow_up_advice: advice,
+          doctor_signature: docSig
+        })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.detail || "Discharge failed");
+
+      // Set currentEncounterId to the admission encounter so Cashier billing settles it!
+      currentEncounterId = data.encounter_id;
+
+      // Render Discharge Summary Card
+      document.getElementById("ipd-discharge-form").classList.add("hidden");
+      const summaryCard = document.getElementById("ipd-discharge-summary-card");
+      summaryCard.classList.remove("hidden");
+      document.getElementById("ipd-discharge-details").innerHTML = `
+        <p><strong>Discharge ID:</strong> <code>${data.summary_id}</code></p>
+        <p><strong>Encounter ID:</strong> <code>${data.encounter_id}</code></p>
+        <p><strong>Final Diagnosis:</strong> ${data.final_diagnosis_display} (ICD-10: ${data.final_diagnosis_icd10})</p>
+        <p><strong>Length of Stay:</strong> ${data.days_stayed} Day(s)</p>
+        <p><strong>Accrued Room Tariff:</strong> ₹${data.total_room_charges.toFixed(2)} (Posted to Financial Ledger)</p>
+        <p><strong>Condition at Discharge:</strong> ${data.condition_at_discharge}</p>
+        <p><strong>Discharge Medications:</strong> ${data.discharge_medications}</p>
+        <p><strong>Follow-Up Advice:</strong> ${data.follow_up_advice}</p>
+        <p><strong>Signed by:</strong> ${data.doctor_signature} at ${data.signed_at.slice(0, 19)}</p>
+      `;
+
+      // Store summary for billing jump
+      window._lastDischargeSummary = data;
+
+      // Refresh bed matrix and ledger
+      await fetchBedMatrix();
+      await fetchHealthStatus();
+    } catch (err) {
+      alert("Discharge Error: " + err.message);
+    }
+  });
+
+  // Proceed to Cashier Desk button
+  document.getElementById("btn-ipd-goto-billing").addEventListener("click", () => {
+    const summary = window._lastDischargeSummary;
+    if (!summary) return;
+
+    // Switch to billing tab
+    document.querySelectorAll(".tab-btn").forEach(t => t.classList.remove("active"));
+    const billingTab = document.querySelector('.tab-btn[data-tab="billing"]');
+    if (billingTab) billingTab.classList.add("active");
+    document.querySelectorAll(".viewport-panel").forEach(p => p.classList.remove("active"));
+    document.getElementById("panel-billing").classList.add("active");
+
+    // Populate billing charges table with the inpatient stay
+    const gross = summary.total_room_charges;
+    const insurer = gross * 0.2;
+    const patientShare = gross * 0.8;
+
+    const tbody = document.getElementById("billing-charges-tbody");
+    tbody.innerHTML = `
+      <tr>
+        <td><strong>Inpatient Bed Accommodation (${summary.days_stayed} Day Stay)</strong><br><small>Tariff: BED-STAY-TARIFF</small></td>
+        <td><span class="badge badge-info">BedStay (${summary.released_bed})</span></td>
+        <td>₹${gross.toFixed(2)}</td>
+        <td>₹${patientShare.toFixed(2)}</td>
+        <td>₹${insurer.toFixed(2)}</td>
+      </tr>
+    `;
+
+    document.getElementById("billing-gross-total").textContent = `₹${gross.toFixed(2)}`;
+    document.getElementById("billing-insurer-total").textContent = `₹${insurer.toFixed(2)}`;
+    document.getElementById("billing-net-payable").textContent = `₹${patientShare.toFixed(2)}`;
+    document.getElementById("pay-amount").value = patientShare.toFixed(2);
+  });
+}
+
+async function fetchBedMatrix() {
+  try {
+    const res = await fetch("/api/v1/ipd/beds");
+    const data = await res.json();
+    currentBeds = data;
+
+    // Update KPI counters
+    const total = data.length;
+    const available = data.filter(b => b.status === "AVAILABLE").length;
+    const occupied = data.filter(b => b.status === "OCCUPIED").length;
+
+    document.getElementById("ipd-kpi-total").textContent = total;
+    document.getElementById("ipd-kpi-available").textContent = available;
+    document.getElementById("ipd-kpi-occupied").textContent = occupied;
+
+    renderBedMatrix();
+  } catch (err) {
+    console.error("Failed to fetch bed matrix:", err);
+  }
+}
+
+function renderBedMatrix() {
+  const container = document.getElementById("bed-matrix-container");
+  let filtered = currentBeds;
+  if (currentWardFilter !== "ALL") {
+    filtered = currentBeds.filter(b => b.ward_type === currentWardFilter);
+  }
+
+  if (filtered.length === 0) {
+    container.innerHTML = '<div class="empty-state">No beds in this category.</div>';
+    return;
+  }
+
+  container.innerHTML = filtered.map(bed => {
+    const isAvail = bed.status === "AVAILABLE";
+    const isSelected = selectedBedId === bed.bed_id;
+    return `
+      <div class="bed-card ${isAvail ? 'available' : 'occupied'} ${isSelected ? 'selected' : ''}" data-bedid="${bed.bed_id}">
+        <div class="bed-card-header">
+          <span class="bed-number-title">${bed.bed_number}</span>
+          <span class="bed-ward-pill">${bed.ward_name}</span>
+        </div>
+        <div class="bed-tariff-tag">₹${bed.daily_rate.toLocaleString("en-IN")}/day</div>
+        <div style="font-size:0.75rem; color:var(--text-muted); margin-bottom:0.5rem;">
+          ${bed.amenities.slice(0, 2).join(" • ")}
+        </div>
+        ${!isAvail ? `
+          <div class="bed-patient-info">
+            <div class="bed-patient-name">👤 ${bed.current_patient_name || 'Occupied'}</div>
+            <div style="font-size:0.7rem; color:var(--text-muted);">Adm: ${bed.current_admission_id ? bed.current_admission_id.slice(0, 8) : '--'}</div>
+          </div>
+        ` : `
+          <div style="font-size:0.75rem; color:#15803d; font-weight:600; margin-bottom:0.75rem;">
+            🟢 Bed Sanitized & Ready
+          </div>
+        `}
+        <div class="bed-actions">
+          ${isAvail ? `
+            <button type="button" class="btn btn-outline btn-sm btn-admit-here" data-bedid="${bed.bed_id}">
+              ➕ Admit Patient
+            </button>
+          ` : `
+            <button type="button" class="btn btn-primary btn-sm btn-view-bedside" data-admid="${bed.current_admission_id}" data-bedid="${bed.bed_id}">
+              🩺 Manage Bedside & MAR
+            </button>
+          `}
+        </div>
+      </div>
+    `;
+  }).join("");
+
+  // Attach card and button click listeners
+  container.querySelectorAll(".btn-admit-here").forEach(btn => {
+    btn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      openAdmissionModal(btn.dataset.bedid);
+    });
+  });
+
+  container.querySelectorAll(".btn-view-bedside").forEach(btn => {
+    btn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      selectedBedId = btn.dataset.bedid;
+      loadBedsideView(btn.dataset.admid);
+      renderBedMatrix();
+    });
+  });
+
+  container.querySelectorAll(".bed-card").forEach(card => {
+    card.addEventListener("click", () => {
+      const bId = card.dataset.bedid;
+      const b = currentBeds.find(x => x.bed_id === bId);
+      if (b && b.status === "OCCUPIED" && b.current_admission_id) {
+        selectedBedId = bId;
+        loadBedsideView(b.current_admission_id);
+        renderBedMatrix();
+      } else if (b && b.status === "AVAILABLE") {
+        openAdmissionModal(bId);
+      }
+    });
+  });
+}
+
+function openAdmissionModal(preselectedBedId = null) {
+  if (!currentPatient) {
+    alert("Please register or select an active patient from the Front Desk first.");
+    return;
+  }
+
+  document.getElementById("admit-modal-patient-name").textContent = `${currentPatient.first_name} ${currentPatient.last_name}`;
+  document.getElementById("admit-modal-uhid").textContent = `UHID: ${currentPatient.uhid}`;
+
+  const selectBed = document.getElementById("admit-select-bed");
+  const availableBeds = currentBeds.filter(b => b.status === "AVAILABLE");
+
+  if (availableBeds.length === 0) {
+    alert("No beds currently available. All beds are occupied.");
+    return;
+  }
+
+  selectBed.innerHTML = availableBeds.map(b => `
+    <option value="${b.bed_id}" ${b.bed_id === preselectedBedId ? 'selected' : ''}>
+      ${b.bed_number} (${b.ward_name}) - ₹${b.daily_rate.toLocaleString("en-IN")}/day
+    </option>
+  `).join("");
+
+  document.getElementById("ipd-admission-modal").showModal();
+}
+
+async function loadBedsideView(admissionId) {
+  if (!admissionId) return;
+  currentAdmissionId = admissionId;
+
+  try {
+    const res = await fetch(`/api/v1/ipd/admissions/${admissionId}`);
+    const adm = await res.json();
+    if (!res.ok) throw new Error(adm.detail || "Failed to load admission");
+
+    const bed = currentBeds.find(b => b.bed_id === adm.bed_id);
+    const wardName = bed ? bed.ward_name : "Inpatient Ward";
+    const bedNum = bed ? bed.bed_number : "Bed";
+    const dailyRate = bed ? bed.daily_rate : 5000.0;
+
+    // Show Bedside Content
+    document.getElementById("ipd-bedside-unselected").classList.add("hidden");
+    document.getElementById("ipd-bedside-content").classList.remove("hidden");
+
+    // Header info
+    document.getElementById("ipd-bedside-ward-bed").textContent = `Ward: ${wardName} | Bed: ${bedNum}`;
+    document.getElementById("ipd-bedside-patient-name").textContent = adm.patient_name || (currentPatient ? `${currentPatient.first_name} ${currentPatient.last_name}` : "Patient");
+    document.getElementById("ipd-bedside-meta").textContent = `IPD Adm #${adm.admission_id.slice(0, 8)} • ${adm.admitting_doctor_name} • Dx: ${adm.admitting_diagnosis_icd10}`;
+    document.getElementById("ipd-bedside-rate").textContent = `₹${dailyRate.toLocaleString("en-IN")}/day`;
+    document.getElementById("ipd-bedside-stay-days").textContent = `Admitted ${adm.admitted_at.slice(0, 10)} • Status: ${adm.status}`;
+
+    // Reset discharge form & card
+    document.getElementById("ipd-discharge-form").classList.remove("hidden");
+    document.getElementById("ipd-discharge-summary-card").classList.add("hidden");
+    document.getElementById("discharge-icd10").value = adm.admitting_diagnosis_icd10 || "M23.30";
+    document.getElementById("discharge-icd-display").value = adm.admitting_diagnosis_display || "Tear of medial meniscus of knee";
+
+    // Load Charts and Rounds
+    await loadNurseCharts(admissionId);
+    await loadDoctorRounds(admissionId);
+  } catch (err) {
+    console.error("Error loading bedside view:", err);
+  }
+}
+
+async function loadNurseCharts(admissionId) {
+  try {
+    const res = await fetch(`/api/v1/ipd/admissions/${admissionId}/charts`);
+    const charts = await res.json();
+    const container = document.getElementById("nurse-charts-timeline");
+
+    if (charts.length === 0) {
+      container.innerHTML = '<div class="empty-state">No nurse charts recorded yet.</div>';
+      return;
+    }
+
+    container.innerHTML = charts.map(c => `
+      <div class="ipd-timeline-card">
+        <div class="ipd-timeline-time">
+          <strong>${c.recorded_by}</strong>
+          <span>${c.recorded_at.slice(0, 19).replace('T', ' ')}</span>
+        </div>
+        <div class="vitals-pill-grid">
+          <span class="vitals-pill">BP: ${c.systolic_bp}/${c.diastolic_bp} mmHg</span>
+          <span class="vitals-pill">Pulse: ${c.heart_rate} bpm</span>
+          <span class="vitals-pill">Temp: ${c.temperature} °F</span>
+          <span class="vitals-pill">SpO2: ${c.spo2}%</span>
+          <span class="vitals-pill">RR: ${c.respiratory_rate} /min</span>
+        </div>
+        ${c.nursing_notes ? `<div class="timeline-note">"${c.nursing_notes}"</div>` : ''}
+      </div>
+    `).join("");
+  } catch (err) {
+    console.error("Error loading nurse charts:", err);
+  }
+}
+
+async function loadDoctorRounds(admissionId) {
+  try {
+    const res = await fetch(`/api/v1/ipd/admissions/${admissionId}/rounds`);
+    const rounds = await res.json();
+    const container = document.getElementById("doctor-rounds-timeline");
+
+    if (rounds.length === 0) {
+      container.innerHTML = '<div class="empty-state">No doctor rounds recorded yet.</div>';
+      return;
+    }
+
+    container.innerHTML = rounds.map(r => `
+      <div class="ipd-timeline-card" style="border-left-color: #059669;">
+        <div class="ipd-timeline-time">
+          <strong>${r.doctor_name}</strong>
+          <span>${r.round_time.slice(0, 19).replace('T', ' ')}</span>
+        </div>
+        <div style="font-size:0.8rem; margin-top:0.25rem;">
+          <div><strong>Assessment:</strong> ${r.clinical_assessment}</div>
+          ${r.plan_adjustments ? `<div><strong>Plan Adjustments:</strong> ${r.plan_adjustments}</div>` : ''}
+          <div class="timeline-note">"${r.round_notes}"</div>
+        </div>
+      </div>
+    `).join("");
+  } catch (err) {
+    console.error("Error loading doctor rounds:", err);
+  }
 }

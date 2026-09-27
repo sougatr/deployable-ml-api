@@ -846,3 +846,438 @@ body {
   animation: pulseHighlight 2.5s ease-out;
 }
 
+/* ==========================================================================
+   INPATIENT (IPD) & BED MANAGEMENT MODULE
+   ========================================================================== */
+
+/* KPI Strip */
+.kpi-strip {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.kpi-card {
+  background: #ffffff;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 1rem 1.25rem;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  box-shadow: var(--shadow-sm);
+}
+
+.kpi-icon {
+  font-size: 1.75rem;
+  width: 48px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg);
+  border-radius: var(--radius-sm);
+}
+
+.kpi-content {
+  display: flex;
+  flex-direction: column;
+}
+
+.kpi-label {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.kpi-value {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--text-main);
+  line-height: 1.2;
+}
+
+.kpi-card.action-card {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  padding: 0;
+}
+
+.kpi-card.action-card button {
+  width: 100%;
+  height: 100%;
+  min-height: 52px;
+  font-weight: 600;
+  font-size: 0.875rem;
+}
+
+/* IPD Layout */
+.ipd-grid-layout {
+  display: grid;
+  grid-template-columns: 1fr 1.25fr;
+  gap: 1.5rem;
+  align-items: start;
+}
+
+@media (max-width: 1024px) {
+  .ipd-grid-layout {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Ward Matrix Card & Filters */
+.matrix-filter-buttons {
+  display: flex;
+  gap: 0.35rem;
+  flex-wrap: wrap;
+}
+
+.filter-btn {
+  background: #f1f5f9;
+  border: 1px solid #cbd5e1;
+  padding: 0.25rem 0.6rem;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #475569;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.filter-btn:hover {
+  background: #e2e8f0;
+}
+
+.filter-btn.active {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: #ffffff;
+}
+
+/* Bed Grid */
+.bed-matrix-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.bed-card {
+  background: #ffffff;
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 1rem;
+  transition: all 0.2s ease;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  cursor: pointer;
+}
+
+.bed-card:hover {
+  box-shadow: var(--shadow-md);
+  transform: translateY(-2px);
+}
+
+.bed-card.available {
+  border-color: #86efac;
+  background: #f0fdf4;
+}
+
+.bed-card.occupied {
+  border-color: #fed7aa;
+  background: #fffbeb;
+}
+
+.bed-card.selected {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.25);
+}
+
+.bed-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 0.5rem;
+}
+
+.bed-number-title {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--text-main);
+}
+
+.bed-ward-pill {
+  font-size: 0.65rem;
+  font-weight: 700;
+  padding: 0.15rem 0.45rem;
+  border-radius: 4px;
+  text-transform: uppercase;
+}
+
+.bed-card.available .bed-ward-pill {
+  background: #dcfce7;
+  color: #15803d;
+}
+
+.bed-card.occupied .bed-ward-pill {
+  background: #fef3c7;
+  color: #b45309;
+}
+
+.bed-tariff-tag {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #334155;
+  margin-bottom: 0.5rem;
+}
+
+.bed-patient-info {
+  font-size: 0.8rem;
+  padding: 0.5rem;
+  background: rgba(255, 255, 255, 0.7);
+  border-radius: var(--radius-sm);
+  margin-bottom: 0.75rem;
+  border: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.bed-patient-name {
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.bed-actions {
+  margin-top: auto;
+}
+
+.bed-actions button {
+  width: 100%;
+  font-size: 0.75rem;
+  padding: 0.35rem 0.5rem;
+}
+
+/* Bedside Hub Panel */
+.bedside-placeholder {
+  text-align: center;
+  padding: 3rem 1.5rem;
+  color: var(--text-muted);
+}
+
+.placeholder-icon {
+  font-size: 3rem;
+  margin-bottom: 1rem;
+  opacity: 0.7;
+}
+
+.ipd-bedside-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 1rem;
+  margin-bottom: 1rem;
+}
+
+.bedside-tariff-badge {
+  text-align: right;
+  display: flex;
+  flex-direction: column;
+}
+
+.tariff-label {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  font-weight: 600;
+}
+
+.tariff-amount {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #047857;
+}
+
+.tariff-sub {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+/* Inpatient Tabs */
+.ipd-tabs {
+  display: flex;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 1.25rem;
+  gap: 0.5rem;
+}
+
+.ipd-tab-btn {
+  background: transparent;
+  border: none;
+  padding: 0.6rem 1rem;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  transition: all 0.15s ease;
+}
+
+.ipd-tab-btn:hover {
+  color: var(--text-main);
+}
+
+.ipd-tab-btn.active {
+  color: var(--primary);
+  border-bottom-color: var(--primary);
+}
+
+.ipd-tab-content {
+  display: none;
+}
+
+.ipd-tab-content.active {
+  display: block;
+}
+
+/* Vitals Inputs & Pair */
+.vitals-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  gap: 0.75rem;
+  background: #f8fafc;
+  padding: 0.75rem;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  margin-bottom: 0.75rem;
+}
+
+.bp-input-pair {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.bp-input-pair input {
+  width: 55px;
+  text-align: center;
+  padding: 0.4rem;
+}
+
+/* IPD Timelines */
+.ipd-timeline {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  max-height: 280px;
+  overflow-y: auto;
+  padding-right: 0.25rem;
+}
+
+.ipd-timeline-card {
+  background: #ffffff;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 0.75rem 1rem;
+  font-size: 0.8125rem;
+  border-left: 3px solid var(--primary);
+}
+
+.ipd-timeline-time {
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 0.35rem;
+}
+
+.vitals-pill-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin: 0.35rem 0;
+}
+
+.vitals-pill {
+  background: #f1f5f9;
+  padding: 0.15rem 0.45rem;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #334155;
+}
+
+.timeline-note {
+  color: #1e293b;
+  font-style: italic;
+  margin-top: 0.25rem;
+}
+
+/* Discharge Financial Alert & Summary */
+.discharge-financial-alert {
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  border-radius: var(--radius-sm);
+  padding: 0.75rem 1rem;
+  display: flex;
+  gap: 0.75rem;
+  align-items: flex-start;
+  margin-bottom: 1rem;
+}
+
+.discharge-financial-alert .alert-icon {
+  font-size: 1.25rem;
+}
+
+.discharge-financial-alert .alert-body p {
+  font-size: 0.8rem;
+  color: #1e40af;
+  margin-top: 0.25rem;
+}
+
+.discharge-summary-card {
+  background: #f0fdf4;
+  border: 1.5px solid #86efac;
+  border-radius: var(--radius-md);
+  padding: 1.25rem;
+  margin-top: 1.25rem;
+}
+
+.summary-badge {
+  display: inline-block;
+  background: #15803d;
+  color: #ffffff;
+  font-size: 0.65rem;
+  font-weight: 700;
+  padding: 0.2rem 0.5rem;
+  border-radius: 4px;
+  letter-spacing: 0.05em;
+  margin-bottom: 0.5rem;
+}
+
+.summary-details {
+  font-size: 0.85rem;
+  color: #14532d;
+  line-height: 1.6;
+  margin: 0.75rem 0;
+}
+
+.modal-patient-preview {
+  background: #f8fafc;
+  border: 1px solid var(--border);
+  padding: 0.75rem 1rem;
+  border-radius: var(--radius-sm);
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-size: 0.875rem;
+}
+
+
