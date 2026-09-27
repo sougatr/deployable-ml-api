@@ -27,6 +27,7 @@ from health_platform.tests.test_abdm_and_clinical_consultation import (
 )
 from health_platform.tests.test_document_parser import TestClinicalDocumentParser
 from health_platform.tests.test_ipd_workflows import TestIPDWorkflows
+from health_platform.tests.test_diagnostics_workflows import TestDiagnosticsWorkflows
 
 class PlatformCoreTestSuite(unittest.TestCase):
     # Identity & MPI Tests
@@ -122,11 +123,32 @@ class PlatformCoreTestSuite(unittest.TestCase):
         t = TestIPDWorkflows()
         t.setUp()
         t.test_04_patient_discharge_and_room_charge_accrual()
-
     def test_26_ipd_api_endpoints(self):
         t = TestIPDWorkflows()
         t.setUp()
         t.test_05_api_ipd_endpoints()
+
+    # Diagnostic Laboratory & Radiology (LIS/RIS) Tests
+    def test_27_diagnostics_catalog_and_coding(self):
+        t = TestDiagnosticsWorkflows()
+        t.setUp()
+        t.test_01_catalog_standard_coding()
+
+    def test_28_diagnostics_lab_workflow_and_flags(self):
+        t = TestDiagnosticsWorkflows()
+        t.setUp()
+        t.test_02_lab_order_specimen_collection_and_flags()
+        t.test_03_critical_value_alert_flagging()
+
+    def test_29_diagnostics_radiology_workflow(self):
+        t = TestDiagnosticsWorkflows()
+        t.setUp()
+        t.test_04_radiology_mri_reporting_workflow()
+
+    def test_30_diagnostics_api_endpoints(self):
+        t = TestDiagnosticsWorkflows()
+        t.setUp()
+        t.test_05_api_diagnostics_endpoints()
 
 if __name__ == "__main__":
     suite = unittest.TestLoader().loadTestsFromTestCase(PlatformCoreTestSuite)

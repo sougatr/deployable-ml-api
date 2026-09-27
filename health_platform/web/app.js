@@ -8,6 +8,10 @@ let currentAdmissionId = null;
 let currentBeds = [];
 let selectedBedId = null;
 let currentWardFilter = "ALL";
+let currentDiagOrders = [];
+let currentDiagCatalog = [];
+let selectedDiagOrderId = null;
+let currentDiagFilter = "ALL";
 
 // DOM Elements
 document.addEventListener("DOMContentLoaded", () => {
@@ -18,6 +22,7 @@ document.addEventListener("DOMContentLoaded", () => {
   initAbhaLinking();
   initClinicianConsultation();
   initIPDModule();
+  initDiagnosticsModule();
   initBillingAndPayment();
   fetchHealthStatus();
 });
@@ -36,6 +41,9 @@ function initTabNavigation() {
       document.getElementById(`panel-${target}`).classList.add("active");
       if (target === "ipd") {
         fetchBedMatrix();
+      } else if (target === "diagnostics") {
+        fetchDiagnosticsCatalog();
+        fetchDiagnosticsWorklist();
       } else if (target === "abdm-events" && currentPatient) {
         refreshAbdmAndOutbox();
       }
@@ -1363,3 +1371,468 @@ async function loadDoctorRounds(admissionId) {
     console.error("Error loading doctor rounds:", err);
   }
 }
+
+// ==========================================================================
+// 7. DIAGNOSTIC LABORATORY & RADIOLOGY (LIS/RIS) MODULE
+// ==========================================================================
+function initDiagnosticsModule() {
+  // Filter buttons
+  const filterBtns = document.querySelectorAll(".filter-btn[data-diagfilter]");
+  filterBtns.forEach(btn => {
+    btn.addEventListener("click", () => {
+      filterBtns.forEach(b => b.classList.remove("active"));
+      btn.classList.add("active");
+      currentDiagFilter = btn.dataset.diagfilter;
+      renderDiagnosticsWorklist();
+    });
+  });
+
+  // Quick Order button
+  document.getElementById("btn-quick-diag-order").addEventListener("click", () => {
+    openDiagnosticOrderModal();
+  });
+
+  // Modal close/cancel
+  document.getElementById("btn-close-diag-modal").addEventListener("click", () => {
+    document.getElementById("diag-order-modal").close();
+  });
+  document.getElementById("btn-cancel-diag-order").addEventListener("click", () => {
+    document.getElementById("diag-order-modal").close();
+  });
+
+  // Confirm Diagnostic Order form submit
+  document.getElementById("diag-order-form").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    if (!currentPatient) {
+      alert("Please register or select an active patient from the Front Desk first.");
+      return;
+    }
+
+    const itemCode = document.getElementById("diag-select-test").value;
+    const docName = document.getElementById("diag-order-doctor").value;
+    const history = document.getElementById("diag-order-history").value;
+    const isStat = document.getElementById("diag-order-stat").value === "true";
+    const fasting = document.getElementById("diag-order-fasting").value;
+
+    const encId = currentEncounterId || "00000000-0000-0000-0000-" + Date.now().toString().slice(-12);
+
+    try {
+      const res = await fetch("/api/v1/diagnostics/orders", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          mpi_id: currentPatient.mpi_id,
+          encounter_id: encId,
+          item_code: itemCode,
+          ordering_doctor_name: docName,
+          clinical_history: history,
+          fasting_status: fasting,
+          is_stat: isStat
+        })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.detail || "Order placement failed");
+
+      document.getElementById("diag-order-modal").close();
+      await fetchDiagnosticsWorklist();
+      selectedDiagOrderId = data.order_id;
+      loadDiagnosticWorkstation(data.order_id);
+      await fetchHealthStatus();
+    } catch (err) {
+      alert("Diagnostic Order Error: " + err.message);
+    }
+  });
+
+  // Specimen Collection button
+  document.getElementById("btn-execute-collect").addEventListener("click", async () => {
+    if (!selectedDiagOrderId) return;
+    const phleb = document.getElementById("ws-phleb-name").value;
+
+    try {
+      const res = await fetch("/api/v1/diagnostics/specimens/collect", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          order_id: selectedDiagOrderId,
+          phlebotomist_name: phleb
+        })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.detail || "Specimen collection failed");
+
+      await fetchDiagnosticsWorklist();
+      loadDiagnosticWorkstation(selectedDiagOrderId);
+    } catch (err) {
+      alert("Collection Error: " + err.message);
+    }
+  });
+
+  // Lab Results form submit
+  document.getElementById("ws-lab-result-form").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    if (!selectedDiagOrderId) return;
+
+    const paramInputs = document.querySelectorAll(".ws-param-input");
+    const results = {};
+    paramInputs.forEach(input => {
+      results[input.dataset.paramcode] = parseFloat(input.value);
+    });
+
+    try {
+      const res = await fetch("/api/v1/diagnostics/results/lab", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          order_id: selectedDiagOrderId,
+          parameter_results: results
+        })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.detail || "Result entry failed");
+
+      await fetchDiagnosticsWorklist();
+      loadDiagnosticWorkstation(selectedDiagOrderId);
+    } catch (err) {
+      alert("Lab Result Error: " + err.message);
+    }
+  });
+
+  // Radiology Results form submit
+  document.getElementById("ws-rad-result-form").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    if (!selectedDiagOrderId) return;
+
+    const doc = document.getElementById("ws-rad-doctor").value;
+    const tech = document.getElementById("ws-rad-technique").value;
+    const findings = document.getElementById("ws-rad-findings").value;
+    const imp = document.getElementById("ws-rad-impression").value;
+
+    try {
+      const res = await fetch("/api/v1/diagnostics/results/radiology", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          order_id: selectedDiagOrderId,
+          radiologist_name: doc,
+          technique: tech,
+          findings: findings,
+          impression: imp,
+          clinical_indication: "Diagnostic Imaging Evaluation"
+        })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.detail || "Radiology report entry failed");
+
+      await fetchDiagnosticsWorklist();
+      loadDiagnosticWorkstation(selectedDiagOrderId);
+    } catch (err) {
+      alert("Radiology Report Error: " + err.message);
+    }
+  });
+
+  // Verification form submit
+  document.getElementById("ws-verify-form").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    if (!selectedDiagOrderId) return;
+
+    const vName = document.getElementById("ws-verifier-name").value;
+    const vQual = document.getElementById("ws-verifier-qual").value;
+    const vReg = document.getElementById("ws-verifier-reg").value;
+    const vNotes = document.getElementById("ws-verifier-notes").value;
+
+    try {
+      const res = await fetch("/api/v1/diagnostics/reports/verify", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          order_id: selectedDiagOrderId,
+          verifier_name: vName,
+          verifier_qualification: vQual,
+          verifier_registration_no: vReg,
+          clinical_comments: vNotes
+        })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.detail || "Verification failed");
+
+      await fetchDiagnosticsWorklist();
+      loadDiagnosticWorkstation(selectedDiagOrderId);
+    } catch (err) {
+      alert("Verification Error: " + err.message);
+    }
+  });
+}
+
+async function fetchDiagnosticsCatalog() {
+  try {
+    const res = await fetch("/api/v1/diagnostics/catalog");
+    const data = await res.json();
+    currentDiagCatalog = data;
+
+    const select = document.getElementById("diag-select-test");
+    if (!select) return;
+
+    select.innerHTML = data.map(item => `
+      <option value="${item.item_code}">
+        [${item.category === 'LABORATORY' ? 'LAB' : 'RAD'}] ${item.item_name} (${item.standard_coding_system.includes('loinc') ? 'LOINC' : 'SNOMED'}: ${item.standard_code}) - ₹${item.base_tariff.toFixed(2)}
+      </option>
+    `).join("");
+  } catch (err) {
+    console.error("Failed to fetch diagnostics catalog:", err);
+  }
+}
+
+async function fetchDiagnosticsWorklist() {
+  try {
+    const res = await fetch("/api/v1/diagnostics/worklist");
+    const data = await res.json();
+    currentDiagOrders = data;
+
+    // KPI Counters
+    const total = data.length;
+    const pending = data.filter(o => o.status === "ORDERED").length;
+    const processing = data.filter(o => o.status === "SAMPLE_COLLECTED" || o.status === "RESULTED").length;
+    const verified = data.filter(o => o.status === "VERIFIED").length;
+
+    document.getElementById("diag-kpi-total").textContent = total;
+    document.getElementById("diag-kpi-pending").textContent = pending;
+    document.getElementById("diag-kpi-processing").textContent = processing;
+    document.getElementById("diag-kpi-verified").textContent = verified;
+
+    renderDiagnosticsWorklist();
+  } catch (err) {
+    console.error("Failed to fetch diagnostics worklist:", err);
+  }
+}
+
+function renderDiagnosticsWorklist() {
+  const container = document.getElementById("diag-worklist-container");
+  let filtered = currentDiagOrders;
+
+  if (currentDiagFilter !== "ALL") {
+    filtered = currentDiagOrders.filter(o => o.category === currentDiagFilter);
+  }
+
+  if (filtered.length === 0) {
+    container.innerHTML = '<div class="empty-state">No diagnostic orders in queue.</div>';
+    return;
+  }
+
+  container.innerHTML = filtered.map(order => {
+    const isSelected = selectedDiagOrderId === order.order_id;
+    return `
+      <div class="diag-worklist-card ${isSelected ? 'selected' : ''}" data-orderid="${order.order_id}">
+        <div class="diag-card-header">
+          <div>
+            <div class="diag-card-title">${order.item_name}</div>
+            <div style="font-size:0.75rem; color:var(--text-muted); margin-top:0.15rem;">
+              Ref: ${order.ordering_doctor_name} • Tariff: ₹${order.tariff_amount.toFixed(2)}
+            </div>
+          </div>
+          <span class="diag-status-pill diag-status-${order.status}">${order.status.replace('_', ' ')}</span>
+        </div>
+        <div style="display:flex; justify-content:space-between; align-items:center; font-size:0.75rem;">
+          <span class="diag-specimen-badge">${order.specimen_type}</span>
+          <span>${order.accession_number ? `<strong>${order.accession_number}</strong>` : (order.sample_barcode ? `<code>${order.sample_barcode}</code>` : 'Pending Sample')}</span>
+        </div>
+      </div>
+    `;
+  }).join("");
+
+  // Attach card click handlers
+  container.querySelectorAll(".diag-worklist-card").forEach(card => {
+    card.addEventListener("click", () => {
+      const oId = card.dataset.orderid;
+      selectedDiagOrderId = oId;
+      renderDiagnosticsWorklist();
+      loadDiagnosticWorkstation(oId);
+    });
+  });
+}
+
+function openDiagnosticOrderModal() {
+  if (!currentPatient) {
+    alert("Please register or select an active patient from the Front Desk first.");
+    return;
+  }
+
+  document.getElementById("diag-modal-patient-name").textContent = `${currentPatient.first_name} ${currentPatient.last_name}`;
+  document.getElementById("diag-modal-uhid").textContent = `UHID: ${currentPatient.uhid}`;
+  document.getElementById("diag-order-modal").showModal();
+}
+
+function loadDiagnosticWorkstation(orderId) {
+  const order = currentDiagOrders.find(o => o.order_id === orderId);
+  if (!order) return;
+
+  // Unhide content
+  document.getElementById("diag-workstation-unselected").classList.add("hidden");
+  document.getElementById("diag-workstation-content").classList.remove("hidden");
+
+  // Header
+  document.getElementById("ws-category-badge").textContent = `${order.category} • ${order.modality}`;
+  document.getElementById("ws-test-name").textContent = order.item_name;
+  document.getElementById("ws-patient-meta").textContent = `Patient MPI: ${order.mpi_id.slice(0, 8)} • Ref: ${order.ordering_doctor_name} • Indication: ${order.clinical_history}`;
+  document.getElementById("ws-tariff-amount").textContent = `₹${order.tariff_amount.toFixed(2)}`;
+  document.getElementById("ws-coding-info").textContent = `${order.standard_coding_system.includes('loinc') ? 'LOINC' : 'SNOMED'}: ${order.standard_code}`;
+
+  // Update Workflow Stage Bar
+  const stages = ["ordered", "collected", "resulted", "verified"];
+  const statusMap = {
+    "ORDERED": 0,
+    "SAMPLE_COLLECTED": 1,
+    "RESULTED": 2,
+    "VERIFIED": 3
+  };
+  const activeIdx = statusMap[order.status] ?? 0;
+
+  stages.forEach((st, idx) => {
+    const el = document.getElementById(`stage-${st}`);
+    el.classList.remove("active", "done");
+    if (idx < activeIdx) {
+      el.classList.add("done");
+    } else if (idx === activeIdx) {
+      el.classList.add("active");
+    }
+  });
+
+  // Hide all step panels first
+  document.querySelectorAll(".ws-step-panel").forEach(p => p.classList.add("hidden"));
+
+  // Stage 1: Ordered -> Show Collection
+  if (order.status === "ORDERED") {
+    const stepCollect = document.getElementById("ws-step-collect");
+    stepCollect.classList.remove("hidden");
+    document.getElementById("ws-req-specimen").textContent = order.specimen_type;
+  }
+  // Stage 2: Sample Collected -> Show Lab Analyzer or Radiology Form
+  else if (order.status === "SAMPLE_COLLECTED") {
+    if (order.category === "LABORATORY") {
+      const stepLab = document.getElementById("ws-step-lab-results");
+      stepLab.classList.remove("hidden");
+      document.getElementById("ws-sample-tag").textContent = `${order.sample_barcode} (${order.accession_number})`;
+
+      // Render parameter inputs
+      const catItem = currentDiagCatalog.find(c => c.item_code === order.item_code);
+      const container = document.getElementById("ws-parameter-inputs-container");
+      if (catItem && catItem.parameters.length > 0) {
+        container.innerHTML = catItem.parameters.map(p => `
+          <div class="param-input-card">
+            <div>
+              <div class="param-title">${p.parameter_name}</div>
+              <div class="param-meta">LOINC: ${p.loinc_code} • Unit: ${p.unit}</div>
+            </div>
+            <div>
+              <input type="number" step="0.01" class="ws-param-input" data-paramcode="${p.parameter_code}" 
+                     placeholder="e.g. ${(p.reference_low ? (p.reference_low + (p.reference_high - p.reference_low)*0.5).toFixed(1) : '5.0')}" 
+                     value="${(p.reference_low ? (p.reference_low + (p.reference_high - p.reference_low)*0.5).toFixed(1) : '5.0')}" required>
+            </div>
+            <div class="param-ref-range">Ref: ${p.reference_low ?? '--'} - ${p.reference_high ?? '--'} ${p.unit}</div>
+          </div>
+        `).join("");
+      }
+    } else {
+      const stepRad = document.getElementById("ws-step-rad-results");
+      stepRad.classList.remove("hidden");
+    }
+  }
+  // Stage 3: Resulted -> Show Verification
+  else if (order.status === "RESULTED") {
+    const stepVerify = document.getElementById("ws-step-verify");
+    stepVerify.classList.remove("hidden");
+
+    const prevTable = document.getElementById("ws-results-preview-table");
+    if (order.category === "LABORATORY") {
+      prevTable.innerHTML = `
+        <table class="report-table">
+          <thead>
+            <tr><th>Investigation Parameter</th><th>LOINC</th><th>Measured Value</th><th>Reference Range</th><th>Flag</th></tr>
+          </thead>
+          <tbody>
+            ${order.lab_results.map(r => `
+              <tr>
+                <td><strong>${r.parameter_name}</strong></td>
+                <td><code>${r.loinc_code}</code></td>
+                <td><strong>${r.measured_value}</strong> ${r.unit}</td>
+                <td>${r.reference_range_display}</td>
+                <td><span class="flag-badge ${r.flag}">${r.flag}</span></td>
+              </tr>
+            `).join("")}
+          </tbody>
+        </table>
+      `;
+    } else {
+      prevTable.innerHTML = `
+        <div style="background:#f8fafc; border:1px solid var(--border); padding:1rem; border-radius:var(--radius-sm); font-size:0.85rem;">
+          <div><strong>Technique:</strong> ${order.radiology_technique || '--'}</div>
+          <div style="margin-top:0.5rem;"><strong>Findings:</strong> ${order.radiology_findings || '--'}</div>
+          <div style="margin-top:0.5rem; color:#b45309;"><strong>Impression:</strong> ${order.radiology_impression || '--'}</div>
+        </div>
+      `;
+    }
+  }
+  // Stage 4: Verified -> Show Official Diagnostic Report Card
+  else if (order.status === "VERIFIED") {
+    const stepRep = document.getElementById("ws-step-report-card");
+    stepRep.classList.remove("hidden");
+
+    document.getElementById("rep-patient-name").textContent = currentPatient ? `${currentPatient.first_name} ${currentPatient.last_name}` : "Patient";
+    document.getElementById("rep-accession").textContent = order.accession_number || "ACC-2026";
+    document.getElementById("rep-uhid").textContent = currentPatient ? currentPatient.uhid : "U-2026";
+    document.getElementById("rep-specimen").textContent = order.specimen_type;
+    document.getElementById("rep-doctor").textContent = order.ordering_doctor_name;
+    document.getElementById("rep-reported-at").textContent = order.verified_at ? order.verified_at.slice(0, 19).replace('T', ' ') : new Date().toISOString().slice(0, 19);
+    document.getElementById("rep-barcode-sub").textContent = order.sample_barcode || "SMP-2026";
+    document.getElementById("rep-signer-name").textContent = order.verified_by || "Consultant Pathologist";
+    document.getElementById("rep-signer-reg").textContent = `Medical Council Reg: ${order.verifier_registration_no || 'MMC-XXXX'}`;
+
+    const bodyContainer = document.getElementById("rep-body-content");
+    if (order.category === "LABORATORY") {
+      bodyContainer.innerHTML = `
+        <table class="report-table">
+          <thead>
+            <tr>
+              <th>Test Parameter</th>
+              <th>Standard (LOINC)</th>
+              <th>Observed Result</th>
+              <th>Biological Reference Interval</th>
+              <th>Flag</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${order.lab_results.map(r => `
+              <tr>
+                <td><strong>${r.parameter_name}</strong></td>
+                <td><code>${r.loinc_code}</code></td>
+                <td><strong>${r.measured_value}</strong> ${r.unit}</td>
+                <td>${r.reference_range_display}</td>
+                <td><span class="flag-badge ${r.flag}">${r.flag}</span></td>
+              </tr>
+            `).join("")}
+          </tbody>
+        </table>
+        ${order.verifier_comments ? `<div style="font-size:0.8rem; font-style:italic; margin-top:0.5rem;">Note: ${order.verifier_comments}</div>` : ''}
+      `;
+    } else {
+      bodyContainer.innerHTML = `
+        <div style="font-size:0.85rem; line-height:1.6; margin:1rem 0;">
+          <div style="margin-bottom:0.75rem;">
+            <strong>Modality / Study:</strong> ${order.item_name} (SNOMED CT: <code>${order.standard_code}</code>)
+          </div>
+          <div style="margin-bottom:0.75rem;">
+            <strong>Technique:</strong> ${order.radiology_technique || '--'}
+          </div>
+          <div style="margin-bottom:0.75rem;">
+            <strong>Detailed Radiological Findings:</strong><br>
+            ${order.radiology_findings || '--'}
+          </div>
+          <div style="padding:0.75rem; background:#fffbeb; border-left:4px solid #d97706; border-radius:4px;">
+            <strong style="color:#b45309;">IMPRESSION:</strong><br>
+            ${order.radiology_impression || '--'}
+          </div>
+        </div>
+      `;
+    }
+  }
+}
+

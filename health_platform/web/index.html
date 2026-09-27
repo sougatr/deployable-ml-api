@@ -43,11 +43,14 @@
     <button class="tab-btn" data-tab="ipd">
       <span class="tab-icon">🛏️</span> 3. Inpatient (IPD) & Bed Hub
     </button>
+    <button class="tab-btn" data-tab="diagnostics">
+      <span class="tab-icon">🧪</span> 4. Diagnostics & LIS/RIS
+    </button>
     <button class="tab-btn" data-tab="billing">
-      <span class="tab-icon">💳</span> 4. Financial Ledger & Cashier
+      <span class="tab-icon">💳</span> 5. Financial Ledger & Cashier
     </button>
     <button class="tab-btn" data-tab="abdm-events">
-      <span class="tab-icon">⚡</span> 5. ABDM & Outbox Stream
+      <span class="tab-icon">⚡</span> 6. ABDM & Outbox Stream
     </button>
   </nav>
 
@@ -682,7 +685,259 @@
       </div>
     </section>
 
-    <!-- VIEW 4: FINANCIAL LEDGER & CASHIER -->
+    <!-- VIEW 4: DIAGNOSTICS & LIS/RIS -->
+    <section class="viewport-panel" id="panel-diagnostics">
+      <!-- Diagnostics KPI Strip -->
+      <div class="kpi-strip">
+        <div class="kpi-card">
+          <div class="kpi-icon">🔬</div>
+          <div class="kpi-content">
+            <span class="kpi-label">Active Orders</span>
+            <span class="kpi-value" id="diag-kpi-total">0</span>
+          </div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-icon warning">🩸</div>
+          <div class="kpi-content">
+            <span class="kpi-label">Pending Collection</span>
+            <span class="kpi-value" id="diag-kpi-pending">0</span>
+          </div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-icon info">🧪</div>
+          <div class="kpi-content">
+            <span class="kpi-label">In Processing / Resulted</span>
+            <span class="kpi-value" id="diag-kpi-processing">0</span>
+          </div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-icon success">📜</div>
+          <div class="kpi-content">
+            <span class="kpi-label">Verified & Published</span>
+            <span class="kpi-value" id="diag-kpi-verified">0</span>
+          </div>
+        </div>
+        <div class="kpi-card action-card">
+          <button type="button" class="btn btn-primary" id="btn-quick-diag-order">
+            ➕ Order Investigation
+          </button>
+        </div>
+      </div>
+
+      <!-- Main LIS/RIS Layout: Worklist Queue (Left) & Active Workstation / Report (Right) -->
+      <div class="ipd-grid-layout">
+        <!-- Worklist Panel -->
+        <div class="card">
+          <div class="card-header">
+            <div>
+              <h3>Diagnostics Worklist & Accession Queue</h3>
+              <span class="card-subtitle">Pathology & Radiology Order Execution</span>
+            </div>
+            <div class="matrix-filter-buttons">
+              <button type="button" class="filter-btn active" data-diagfilter="ALL">All Orders</button>
+              <button type="button" class="filter-btn" data-diagfilter="LABORATORY">Lab</button>
+              <button type="button" class="filter-btn" data-diagfilter="RADIOLOGY">Radiology</button>
+            </div>
+          </div>
+          <div id="diag-worklist-container" class="diag-worklist-list" style="margin-top:1rem;">
+            <div class="empty-state">Loading diagnostics worklist...</div>
+          </div>
+        </div>
+
+        <!-- Workstation & Live Inspector Panel -->
+        <div class="card" id="diag-workstation-card">
+          <div id="diag-workstation-unselected" class="bedside-placeholder">
+            <div class="placeholder-icon">🔬</div>
+            <h4>Select an Investigation from the Worklist</h4>
+            <p>Click on any order to collect specimen, enter analyzer measurements with automated LOINC reference range flags, or review radiology impressions and verify reports.</p>
+          </div>
+
+          <div id="diag-workstation-content" class="hidden">
+            <div class="card-header ipd-bedside-header">
+              <div>
+                <span class="badge badge-uhid" id="ws-category-badge">LABORATORY • BIOCHEMISTRY</span>
+                <h3 id="ws-test-name" style="margin-top:0.25rem;">HbA1c Glycated Hemoglobin Panel</h3>
+                <span class="card-subtitle" id="ws-patient-meta">Patient: Anindita Ray • UHID: U-2026-0001</span>
+              </div>
+              <div class="bedside-tariff-badge">
+                <span class="tariff-label">Standard Tariff</span>
+                <span class="tariff-amount" id="ws-tariff-amount">₹650.00</span>
+                <span class="tariff-sub" id="ws-coding-info">LOINC: 4548-4</span>
+              </div>
+            </div>
+
+            <!-- Workflow Stage Indicator Bar -->
+            <div class="diag-stages-bar">
+              <div class="diag-stage active" id="stage-ordered">
+                <span class="stage-num">1</span>
+                <span class="stage-title">Ordered</span>
+              </div>
+              <div class="diag-stage-connector"></div>
+              <div class="diag-stage" id="stage-collected">
+                <span class="stage-num">2</span>
+                <span class="stage-title">Sample Collected</span>
+              </div>
+              <div class="diag-stage-connector"></div>
+              <div class="diag-stage" id="stage-resulted">
+                <span class="stage-num">3</span>
+                <span class="stage-title">Resulted</span>
+              </div>
+              <div class="diag-stage-connector"></div>
+              <div class="diag-stage" id="stage-verified">
+                <span class="stage-num">4</span>
+                <span class="stage-title">Verified</span>
+              </div>
+            </div>
+
+            <!-- Stage 1 View: Collect Specimen / Start Imaging -->
+            <div id="ws-step-collect" class="ws-step-panel hidden">
+              <div class="specimen-tracking-box">
+                <h4>Phlebotomy & Specimen Collection</h4>
+                <p style="font-size:0.8rem; color:var(--text-muted); margin-bottom:0.75rem;">
+                  Required Specimen: <strong id="ws-req-specimen">Whole Blood (EDTA Purple Top)</strong>
+                </p>
+                <div class="form-group">
+                  <label>Phlebotomist / Radiographer Name</label>
+                  <input type="text" id="ws-phleb-name" value="Sunita Sharma, CPT (Lead Phlebotomist)" required>
+                </div>
+                <button type="button" class="btn btn-primary" id="btn-execute-collect">
+                  🏷️ Generate Barcode & Record Collection
+                </button>
+              </div>
+            </div>
+
+            <!-- Stage 2 View: Lab Analyzer Parameter Entry -->
+            <div id="ws-step-lab-results" class="ws-step-panel hidden">
+              <div class="card-header" style="padding:0; margin-bottom:0.75rem;">
+                <h4>Analyzer Result Entry & Reference Range Engine</h4>
+                <span class="badge badge-info" id="ws-sample-tag">SMP-BIO-2026-1001</span>
+              </div>
+              <form id="ws-lab-result-form">
+                <div id="ws-parameter-inputs-container" class="param-inputs-grid">
+                  <!-- Dynamic parameter inputs rendered here -->
+                </div>
+                <div class="form-actions" style="margin-top:1rem;">
+                  <button type="submit" class="btn btn-primary btn-sm">
+                    💾 Save Analyzer Measurements
+                  </button>
+                </div>
+              </form>
+            </div>
+
+            <!-- Stage 2b View: Radiology Report Entry -->
+            <div id="ws-step-rad-results" class="ws-step-panel hidden">
+              <form id="ws-rad-result-form" class="form ipd-form">
+                <div class="form-group">
+                  <label>Reporting Radiologist</label>
+                  <input type="text" id="ws-rad-doctor" value="Dr. Meenakshi Sundaram, DMRD, DNB (Radiodiagnosis)" required>
+                </div>
+                <div class="form-group">
+                  <label>Technique</label>
+                  <input type="text" id="ws-rad-technique" value="Multiplanar, multisequence MRI of right knee joint on 3.0 Tesla scanner." required>
+                </div>
+                <div class="form-group">
+                  <label>Imaging Findings</label>
+                  <textarea id="ws-rad-findings" rows="3" required>Full-thickness radial tear involving posterior horn and root attachment of medial meniscus. Joint effusion present. ACL, PCL, and collateral ligaments intact.</textarea>
+                </div>
+                <div class="form-group">
+                  <label>Radiological Impression</label>
+                  <input type="text" id="ws-rad-impression" value="Medial meniscus posterior root tear (Type 2). Orthopaedic arthroscopic repair recommended." required>
+                </div>
+                <div class="form-actions" style="margin-top:0.75rem;">
+                  <button type="submit" class="btn btn-primary btn-sm">
+                    💾 Record Imaging Findings & Impression
+                  </button>
+                </div>
+              </form>
+            </div>
+
+            <!-- Stage 3 View: Consultant Verification & Sign-off -->
+            <div id="ws-step-verify" class="ws-step-panel hidden">
+              <div class="card-header" style="padding:0; margin-bottom:0.75rem;">
+                <h4>Consultant Verification & Digital Signature</h4>
+                <span class="badge badge-success">Measurements Complete</span>
+              </div>
+              <div id="ws-results-preview-table" style="margin-bottom:1rem;"></div>
+              <form id="ws-verify-form" class="form ipd-form">
+                <div class="form-row">
+                  <div class="form-group">
+                    <label>Signing Consultant Name</label>
+                    <input type="text" id="ws-verifier-name" value="Dr. Rajiv Sethi" required>
+                  </div>
+                  <div class="form-group">
+                    <label>Qualification & Degree</label>
+                    <input type="text" id="ws-verifier-qual" value="MD (Pathology)" required>
+                  </div>
+                </div>
+                <div class="form-row">
+                  <div class="form-group">
+                    <label>Medical Council Reg. No</label>
+                    <input type="text" id="ws-verifier-reg" value="MMC-1998040112" required>
+                  </div>
+                  <div class="form-group">
+                    <label>Clinical Notes / Correlation</label>
+                    <input type="text" id="ws-verifier-notes" value="Results clinically correlated. Elevated values flagged.">
+                  </div>
+                </div>
+                <div class="form-actions" style="margin-top:1rem;">
+                  <button type="submit" class="btn btn-success" id="btn-submit-verification">
+                    🔏 Apply Digital Signature & Publish Diagnostic Report
+                  </button>
+                </div>
+              </form>
+            </div>
+
+            <!-- Stage 4 View: Standardized Diagnostic Report Card -->
+            <div id="ws-step-report-card" class="ws-step-panel hidden">
+              <div class="diagnostic-report-sheet" id="diagnostic-report-sheet">
+                <div class="report-header">
+                  <div class="report-brand">
+                    <h3 style="color:#0284c7; margin:0;">HEALTHOS CENTRAL DIAGNOSTIC LABORATORY & PACS</h3>
+                    <small>NABL Accredited • ISO 15189 Certified • ABDM Milestone 2 Certified HIP</small>
+                  </div>
+                  <div class="report-barcode-box" id="rep-barcode-box">
+                    <span class="barcode-font" id="rep-barcode-txt">|||||||||||||||||||||||</span>
+                    <small id="rep-barcode-sub">SMP-BIO-2026-1001</small>
+                  </div>
+                </div>
+
+                <div class="report-meta-grid">
+                  <div><strong>Patient:</strong> <span id="rep-patient-name">Anindita Ray</span></div>
+                  <div><strong>Accession No:</strong> <span id="rep-accession">ACC-2026-5001</span></div>
+                  <div><strong>UHID:</strong> <span id="rep-uhid">U-2026-0001</span></div>
+                  <div><strong>Specimen:</strong> <span id="rep-specimen">Whole Blood EDTA</span></div>
+                  <div><strong>Referred By:</strong> <span id="rep-doctor">Dr. Anup Khatri</span></div>
+                  <div><strong>Reported At:</strong> <span id="rep-reported-at">2026-09-27 18:30</span></div>
+                </div>
+
+                <div class="report-body" id="rep-body-content">
+                  <!-- Lab Table or Radiology Findings Rendered Here -->
+                </div>
+
+                <div class="report-footer">
+                  <div class="signature-block">
+                    <div class="sig-line">
+                      <span class="sig-stamp">DIGITALLY SIGNED</span>
+                      <strong id="rep-signer-name">Dr. Rajiv Sethi, MD (Pathology)</strong>
+                      <small id="rep-signer-reg">Medical Council Reg: MMC-1998040112</small>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="form-actions" style="margin-top:1rem;">
+                <button type="button" class="btn btn-outline" onclick="window.print()">
+                  🖨️ Print / Download Report PDF
+                </button>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- VIEW 5: FINANCIAL LEDGER & CASHIER -->
     <section class="viewport-panel" id="panel-billing">
       <div class="grid-2-col">
         <!-- Live Itemized Bill -->
@@ -856,6 +1111,64 @@
           <button type="button" class="btn btn-secondary" id="btn-cancel-admit">Cancel</button>
           <button type="submit" class="btn btn-primary" id="btn-confirm-admit">
             Confirm Inpatient Admission & Generate Wristband
+          </button>
+        </div>
+      </form>
+    </div>
+  </dialog>
+
+  <!-- Modal for Ordering New Diagnostic Test -->
+  <dialog id="diag-order-modal" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>Order Diagnostic Investigation</h3>
+        <button type="button" class="modal-close-btn" id="btn-close-diag-modal">&times;</button>
+      </div>
+      <form id="diag-order-form" class="form">
+        <div class="modal-patient-preview">
+          <span class="patient-label">Patient:</span>
+          <strong id="diag-modal-patient-name">Select Patient</strong>
+          <span class="badge badge-uhid" id="diag-modal-uhid">UHID: --</span>
+        </div>
+
+        <div class="form-group" style="margin-top:0.75rem;">
+          <label>Select Investigation from Standard Catalog *</label>
+          <select id="diag-select-test" required>
+            <!-- Catalog items rendered dynamically -->
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label>Ordering Physician *</label>
+          <input type="text" id="diag-order-doctor" value="Dr. Anup Khatri" required>
+        </div>
+
+        <div class="form-group">
+          <label>Clinical Indication / History</label>
+          <input type="text" id="diag-order-history" value="Pre-operative evaluation / clinical staging" required>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label>Priority</label>
+            <select id="diag-order-stat">
+              <option value="false">Routine (Standard Turnaround)</option>
+              <option value="true">STAT (Urgent Priority)</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Fasting Status</label>
+            <select id="diag-order-fasting">
+              <option value="RANDOM">Random (Non-fasting)</option>
+              <option value="FASTING_8HR">Fasting (8-10 Hours)</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="modal-actions" style="margin-top:1.25rem;">
+          <button type="button" class="btn btn-secondary" id="btn-cancel-diag-order">Cancel</button>
+          <button type="submit" class="btn btn-primary" id="btn-confirm-diag-order">
+            Confirm Order & Post Charge to Ledger
           </button>
         </div>
       </form>

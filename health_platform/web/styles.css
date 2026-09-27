@@ -1280,4 +1280,331 @@ body {
   font-size: 0.875rem;
 }
 
+/* ==========================================================================
+   DIAGNOSTIC LABORATORY & RADIOLOGY (LIS/RIS) STYLES
+   ========================================================================== */
+
+/* Worklist items */
+.diag-worklist-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  max-height: 520px;
+  overflow-y: auto;
+  padding-right: 0.25rem;
+}
+
+.diag-worklist-card {
+  background: #ffffff;
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 1rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.diag-worklist-card:hover {
+  box-shadow: var(--shadow-md);
+  border-color: #94a3b8;
+}
+
+.diag-worklist-card.selected {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.25);
+  background: #f8fafc;
+}
+
+.diag-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+}
+
+.diag-card-title {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--text-main);
+}
+
+.diag-status-pill {
+  font-size: 0.65rem;
+  font-weight: 700;
+  padding: 0.2rem 0.5rem;
+  border-radius: 9999px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.diag-status-ORDERED {
+  background: #fef3c7;
+  color: #b45309;
+}
+
+.diag-status-SAMPLE_COLLECTED {
+  background: #e0f2fe;
+  color: #0369a1;
+}
+
+.diag-status-RESULTED {
+  background: #f3e8ff;
+  color: #7e22ce;
+}
+
+.diag-status-VERIFIED {
+  background: #dcfce7;
+  color: #15803d;
+}
+
+.diag-specimen-badge {
+  font-size: 0.7rem;
+  background: #f1f5f9;
+  padding: 0.15rem 0.4rem;
+  border-radius: 4px;
+  color: #475569;
+}
+
+/* Workflow Stage Progress Bar */
+.diag-stages-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.75rem 1rem;
+  background: #f8fafc;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  margin-bottom: 1.25rem;
+}
+
+.diag-stage {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  opacity: 0.45;
+  transition: all 0.2s ease;
+}
+
+.diag-stage.active {
+  opacity: 1;
+  font-weight: 700;
+  color: var(--primary);
+}
+
+.diag-stage.done {
+  opacity: 0.85;
+  color: #15803d;
+}
+
+.stage-num {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: #cbd5e1;
+  color: #1e293b;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.7rem;
+  font-weight: 700;
+}
+
+.diag-stage.active .stage-num {
+  background: var(--primary);
+  color: #ffffff;
+}
+
+.diag-stage.done .stage-num {
+  background: #15803d;
+  color: #ffffff;
+}
+
+.stage-title {
+  font-size: 0.75rem;
+}
+
+.diag-stage-connector {
+  flex: 1;
+  height: 2px;
+  background: #e2e8f0;
+  margin: 0 0.5rem;
+}
+
+/* Parameter inputs grid */
+.param-inputs-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.param-input-card {
+  background: #f8fafc;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 0.75rem;
+  display: grid;
+  grid-template-columns: 2fr 1.2fr 1fr;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.param-title {
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.param-meta {
+  font-size: 0.7rem;
+  color: var(--text-muted);
+}
+
+.param-ref-range {
+  font-size: 0.75rem;
+  color: #475569;
+  background: #ffffff;
+  padding: 0.2rem 0.5rem;
+  border-radius: 4px;
+  border: 1px solid var(--border);
+}
+
+/* Specimen Tracking Box */
+.specimen-tracking-box {
+  background: #f0fdf4;
+  border: 1.5px solid #86efac;
+  border-radius: var(--radius-md);
+  padding: 1.25rem;
+}
+
+/* Abnormal Flags */
+.flag-badge {
+  font-size: 0.7rem;
+  font-weight: 700;
+  padding: 0.15rem 0.45rem;
+  border-radius: 4px;
+  text-transform: uppercase;
+}
+
+.flag-badge.NORMAL {
+  background: #dcfce7;
+  color: #15803d;
+}
+
+.flag-badge.HIGH, .flag-badge.LOW {
+  background: #fef3c7;
+  color: #b45309;
+}
+
+.flag-badge.CRITICAL_HIGH, .flag-badge.CRITICAL_LOW {
+  background: #fee2e2;
+  color: #dc2626;
+  font-weight: 800;
+  animation: pulse 1.5s infinite;
+}
+
+/* Official Diagnostic Report Sheet */
+.diagnostic-report-sheet {
+  background: #ffffff;
+  border: 2px solid #334155;
+  border-radius: var(--radius-sm);
+  padding: 1.5rem;
+  font-family: var(--font-family);
+  box-shadow: var(--shadow-sm);
+}
+
+.report-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 2px solid #334155;
+  padding-bottom: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.report-brand h3 {
+  font-size: 1rem;
+  letter-spacing: -0.01em;
+}
+
+.report-brand small {
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  font-weight: 600;
+}
+
+.report-barcode-box {
+  text-align: right;
+}
+
+.barcode-font {
+  font-family: monospace;
+  font-size: 1.5rem;
+  letter-spacing: 2px;
+  line-height: 1;
+  display: block;
+}
+
+.report-meta-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.4rem 1.5rem;
+  font-size: 0.8rem;
+  background: #f8fafc;
+  padding: 0.75rem 1rem;
+  border-radius: var(--radius-sm);
+  margin-bottom: 1rem;
+  border: 1px solid var(--border);
+}
+
+.report-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.825rem;
+  margin: 1rem 0;
+}
+
+.report-table th {
+  background: #f1f5f9;
+  border-bottom: 2px solid #cbd5e1;
+  padding: 0.5rem;
+  text-align: left;
+  font-weight: 700;
+  color: #1e293b;
+}
+
+.report-table td {
+  padding: 0.5rem;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.report-footer {
+  margin-top: 1.5rem;
+  border-top: 1px solid var(--border);
+  padding-top: 1rem;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.signature-block {
+  text-align: right;
+}
+
+.sig-line {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+}
+
+.sig-stamp {
+  font-size: 0.65rem;
+  font-weight: 800;
+  color: #047857;
+  background: #d1fae5;
+  border: 1px dashed #059669;
+  padding: 0.15rem 0.5rem;
+  border-radius: 3px;
+  margin-bottom: 0.25rem;
+}
+
+
 

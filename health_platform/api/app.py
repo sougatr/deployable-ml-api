@@ -43,6 +43,18 @@ from health_platform.core.ipd.models import (
     DischargeSummary
 )
 from health_platform.core.ipd.service import IPDService
+from health_platform.core.diagnostics.models import (
+    DiagnosticCategory,
+    DiagnosticModality,
+    DiagnosticCatalogItem,
+    DiagnosticOrderInput,
+    SpecimenCollectionInput,
+    LabResultEntryInput,
+    RadiologyReportEntryInput,
+    VerificationInput,
+    DiagnosticOrder
+)
+from health_platform.core.diagnostics.service import DiagnosticsService
 
 # Core Domain Service Singletons
 identity_service = PatientIdentityService()
@@ -56,6 +68,11 @@ clinical_service = ClinicalEncounterService(
     outbox=outbox_publisher
 )
 ipd_service = IPDService(
+    identity_service=identity_service,
+    financial_service=financial_ledger_service,
+    outbox=outbox_publisher
+)
+diagnostics_service = DiagnosticsService(
     identity_service=identity_service,
     financial_service=financial_ledger_service,
     outbox=outbox_publisher
@@ -353,4 +370,63 @@ def discharge_patient(payload: DischargeInput):
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Clinical Discharge & Billing Failure: {str(e)}")
+
+# =============================================================================
+# 6. DIAGNOSTIC LABORATORY & RADIOLOGY (LIS/RIS) ENDPOINTS (Pod 6)
+# =============================================================================
+@app.get("/api/v1/diagnostics/catalog", response_model=List[DiagnosticCatalogItem])
+def get_diagnostic_catalog():
+    return diagnostics_service.get_catalog()
+
+@app.get("/api/v1/diagnostics/worklist", response_model=List[DiagnosticOrder])
+def get_diagnostic_worklist(category: Optional[DiagnosticCategory] = None):
+    return diagnostics_service.get_worklist(category=category)
+
+@app.post("/api/v1/diagnostics/orders", response_model=DiagnosticOrder)
+def create_diagnostic_order(payload: DiagnosticOrderInput):
+    try:
+        return diagnostics_service.create_order(payload)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Order Placement Error: {str(e)}")
+
+@app.get("/api/v1/diagnostics/orders/{order_id}", response_model=DiagnosticOrder)
+def get_diagnostic_order(order_id: uuid.UUID):
+    order = diagnostics_service.get_order(order_id)
+    if not order:
+        raise HTTPException(status_code=404, detail="Diagnostic order not found.")
+    return order
+
+@app.get("/api/v1/diagnostics/patients/{mpi_id}", response_model=List[DiagnosticOrder])
+def get_patient_diagnostic_orders(mpi_id: uuid.UUID):
+    return diagnostics_service.get_patient_orders(mpi_id)
+
+@app.post("/api/v1/diagnostics/specimens/collect", response_model=DiagnosticOrder)
+def collect_diagnostic_specimen(payload: SpecimenCollectionInput):
+    try:
+        return diagnostics_service.collect_specimen(payload)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+@app.post("/api/v1/diagnostics/results/lab", response_model=DiagnosticOrder)
+def enter_lab_results(payload: LabResultEntryInput):
+    try:
+        return diagnostics_service.enter_lab_results(payload)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+@app.post("/api/v1/diagnostics/results/radiology", response_model=DiagnosticOrder)
+def enter_radiology_report(payload: RadiologyReportEntryInput):
+    try:
+        return diagnostics_service.enter_radiology_report(payload)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+@app.post("/api/v1/diagnostics/reports/verify", response_model=DiagnosticOrder)
+def verify_diagnostic_report(payload: VerificationInput):
+    try:
+        return diagnostics_service.verify_and_publish_report(payload)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
 
