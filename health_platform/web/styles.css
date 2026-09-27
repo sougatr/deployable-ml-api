@@ -610,3 +610,227 @@ body {
 .event-card-key {
   color: var(--text-muted);
 }
+
+/* Date of Birth Picker */
+.label-helper {
+  font-weight: normal;
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+.dob-picker-container {
+  display: flex;
+  gap: 0.375rem;
+  align-items: flex-end;
+  width: 100%;
+}
+
+.dob-select-wrap,
+.dob-age-wrap,
+.dob-cal-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.dob-select-wrap:nth-child(1) {
+  flex: 1.1;
+}
+
+.dob-select-wrap:nth-child(2) {
+  flex: 1.6;
+}
+
+.dob-select-wrap:nth-child(3) {
+  flex: 1.4;
+}
+
+.dob-age-wrap {
+  flex: 1;
+}
+
+.dob-cal-wrap {
+  flex: 0 0 auto;
+}
+
+.dob-mini-label {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  letter-spacing: 0.03em;
+}
+
+.dob-select,
+.dob-age-input {
+  width: 100%;
+  padding: 0.45rem 0.4rem;
+  font-size: 0.8125rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background-color: #ffffff;
+  color: var(--text-main);
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.dob-select:focus,
+.dob-age-input:focus,
+.dob-cal-input:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.15);
+}
+
+.dob-cal-input {
+  width: 38px;
+  height: 33px;
+  padding: 0.2rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  background-color: #ffffff;
+}
+
+/* Parsed Clinical Columns Grid */
+.parsed-columns-container {
+  background: #ffffff;
+  border: 1px solid #a7f3d0;
+  border-radius: var(--radius-md);
+  padding: 1rem;
+}
+
+.parsed-columns-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.75rem;
+}
+
+@media (max-width: 900px) {
+  .parsed-columns-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.parsed-col-card {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.parsed-col-wide {
+  grid-column: span 3;
+}
+
+@media (max-width: 900px) {
+  .parsed-col-wide {
+    grid-column: span 1;
+  }
+}
+
+.parsed-col-header {
+  background: #f1f5f9;
+  padding: 0.4rem 0.65rem;
+  border-bottom: 1px solid #e2e8f0;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.parsed-col-num {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 9999px;
+  background: #059669;
+  color: #ffffff;
+  font-size: 0.6875rem;
+  font-weight: 700;
+}
+
+.parsed-col-header h6 {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #334155;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+}
+
+.parsed-col-body {
+  padding: 0.6rem;
+  font-size: 0.8125rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.parsed-item-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.25rem 0.5rem;
+  background: #ecfdf5;
+  border: 1px solid #a7f3d0;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  color: #065f46;
+  font-weight: 500;
+}
+
+.parsed-tag-code {
+  background: #047857;
+  color: #ffffff;
+  padding: 0.1rem 0.3rem;
+  border-radius: 3px;
+  font-size: 0.6875rem;
+  font-weight: 600;
+}
+
+.parsed-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.75rem;
+}
+
+.parsed-table th {
+  background: #f1f5f9;
+  padding: 0.35rem 0.5rem;
+  text-align: left;
+  border-bottom: 1px solid #e2e8f0;
+  color: #475569;
+  font-weight: 600;
+}
+
+.parsed-table td {
+  padding: 0.35rem 0.5rem;
+  border-bottom: 1px solid #f1f5f9;
+  color: #1e293b;
+}
+
+/* Auto-Populate Pulse Highlight */
+@keyframes pulseHighlight {
+  0% {
+    background-color: #d1fae5;
+    border-color: #059669;
+    box-shadow: 0 0 0 4px rgba(5, 150, 105, 0.25);
+  }
+  50% {
+    background-color: #ecfdf5;
+    border-color: #10b981;
+    box-shadow: 0 0 0 2px rgba(5, 150, 105, 0.15);
+  }
+  100% {
+    background-color: inherit;
+    border-color: inherit;
+    box-shadow: none;
+  }
+}
+
+.highlight-updated {
+  animation: pulseHighlight 2.5s ease-out;
+}
+

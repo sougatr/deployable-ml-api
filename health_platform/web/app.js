@@ -10,6 +10,7 @@ document.addEventListener("DOMContentLoaded", () => {
   initTabNavigation();
   initSubTabs();
   initRegistrationForm();
+  initDobPicker();
   initAbhaLinking();
   initClinicianConsultation();
   initBillingAndPayment();
@@ -100,6 +101,90 @@ function initRegistrationForm() {
 
   document.getElementById("btn-use-existing-dup").addEventListener("click", () => {
     document.getElementById("duplicate-modal").close();
+  });
+}
+
+function initDobPicker() {
+  const daySelect = document.getElementById("reg-dob-day");
+  const monthSelect = document.getElementById("reg-dob-month");
+  const yearSelect = document.getElementById("reg-dob-year");
+  const ageInput = document.getElementById("reg-age");
+  const calInput = document.getElementById("reg-dob");
+
+  if (!daySelect || !yearSelect || !calInput) return;
+
+  const currentYear = new Date().getFullYear();
+
+  // Populate Days: 01 to 31
+  daySelect.innerHTML = "";
+  for (let d = 1; d <= 31; d++) {
+    const val = String(d).padStart(2, "0");
+    const opt = document.createElement("option");
+    opt.value = val;
+    opt.textContent = val;
+    daySelect.appendChild(opt);
+  }
+
+  // Populate Years: currentYear down to 1910
+  yearSelect.innerHTML = "";
+  for (let y = currentYear; y >= 1910; y--) {
+    const opt = document.createElement("option");
+    opt.value = String(y);
+    opt.textContent = String(y);
+    yearSelect.appendChild(opt);
+  }
+
+  function syncFromIso(isoString) {
+    if (!isoString || !isoString.includes("-")) return;
+    const parts = isoString.split("-");
+    if (parts.length === 3) {
+      const [y, m, d] = parts;
+      if (yearSelect.querySelector(`option[value="${y}"]`)) yearSelect.value = y;
+      if (monthSelect.querySelector(`option[value="${m}"]`)) monthSelect.value = m;
+      if (daySelect.querySelector(`option[value="${d}"]`)) daySelect.value = d;
+      const age = currentYear - parseInt(y, 10);
+      if (!isNaN(age) && age >= 0) ageInput.value = age;
+    }
+  }
+
+  function syncToIso() {
+    const y = yearSelect.value || "1982";
+    const m = monthSelect.value || "05";
+    let d = daySelect.value || "14";
+
+    // Validate max days in month
+    const maxDays = new Date(parseInt(y, 10), parseInt(m, 10), 0).getDate();
+    if (parseInt(d, 10) > maxDays) {
+      d = String(maxDays).padStart(2, "0");
+      daySelect.value = d;
+    }
+
+    const iso = `${y}-${m}-${d}`;
+    calInput.value = iso;
+    const age = currentYear - parseInt(y, 10);
+    if (!isNaN(age) && age >= 0) ageInput.value = age;
+  }
+
+  // Initialize with calInput's value
+  syncFromIso(calInput.value || "1982-05-14");
+
+  daySelect.addEventListener("change", syncToIso);
+  monthSelect.addEventListener("change", syncToIso);
+  yearSelect.addEventListener("change", syncToIso);
+
+  ageInput.addEventListener("input", () => {
+    const ageVal = parseInt(ageInput.value, 10);
+    if (!isNaN(ageVal) && ageVal >= 0 && ageVal <= 120) {
+      const computedYear = String(currentYear - ageVal);
+      if (yearSelect.querySelector(`option[value="${computedYear}"]`)) {
+        yearSelect.value = computedYear;
+        syncToIso();
+      }
+    }
+  });
+
+  calInput.addEventListener("change", () => {
+    syncFromIso(calInput.value);
   });
 }
 
@@ -286,11 +371,59 @@ function initClinicianConsultation() {
   const fileInput = document.getElementById("prescription-file-input");
   const statusBox = document.getElementById("parser-status-box");
   const statusMsg = document.getElementById("parser-status-msg");
+  const btnToggleOcr = document.getElementById("btn-toggle-ocr-preview");
+  const ocrPanel = document.getElementById("ocr-raw-text-panel");
+
+  if (btnToggleOcr && ocrPanel) {
+    btnToggleOcr.addEventListener("click", () => {
+      ocrPanel.classList.toggle("hidden");
+    });
+  }
 
   async function triggerParsing(formData) {
     statusBox.classList.remove("hidden");
     statusBox.className = "alert alert-info";
     statusMsg.innerHTML = "<strong>AI Vision & NLP Ingestion Active:</strong> Extracting handwritten text, normalizing clinical shorthand, and mapping to ICD-10, LOINC, and E-Prescription columns...";
+
+    // 0. Ensure patient & encounter are active so columns are ready for review
+    if (!currentPatient) {
+      try {
+        await resolvePatient({
+          first_name: "Ramesh",
+          last_name: "Sharma",
+          dob: document.getElementById("reg-dob")?.value || "1982-05-14",
+          gender: "MALE",
+          primary_phone: "+919876543210",
+          postal_code: "560038",
+          identifiers: []
+        }, false);
+      } catch (e) {
+        console.warn("Auto-patient notice:", e);
+      }
+    }
+
+    if (!currentEncounterId && currentPatient) {
+      try {
+        const encRes = await fetch("/api/v1/clinical/encounters/start-opd", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            mpi_id: currentPatient.mpi_id,
+            practitioner_id: "00000000-0000-0000-0000-000000000001",
+            facility_id: "00000000-0000-0000-0000-000000000002",
+            tenant_id: "00000000-0000-0000-0000-000000000003"
+          })
+        });
+        const encData = await encRes.json();
+        currentEncounterId = encData.encounter_id;
+        document.getElementById("encounter-status-label").textContent = `Encounter: IN_PROGRESS (#${currentEncounterId.slice(0, 8)})`;
+        document.getElementById("btn-start-encounter").classList.add("hidden");
+        document.getElementById("prescription-upload-card").classList.remove("hidden");
+        document.getElementById("consultation-form").classList.remove("hidden");
+      } catch (e) {
+        console.warn("Auto-start encounter notice:", e);
+      }
+    }
 
     try {
       const res = await fetch("/api/v1/clinical/consultations/parse-document", {
@@ -301,65 +434,228 @@ function initClinicianConsultation() {
       if (!res.ok) throw new Error(data.detail);
 
       const parsed = data.parsed_columns;
+      const highlightEls = [];
 
-      // 1. Auto-Populate Chief Complaint & Narrative
+      // Show Parsed Columns Dashboard & OCR Text
+      const parsedContainer = document.getElementById("parsed-columns-container");
+      if (parsedContainer) parsedContainer.classList.remove("hidden");
+
+      if (ocrPanel && data.raw_extracted_text) {
+        ocrPanel.textContent = data.raw_extracted_text;
+      }
+
+      // Calculate entity count
+      let totalEntities = 0;
+      if (parsed.chief_complaint) totalEntities++;
+      if (parsed.diagnoses) totalEntities += parsed.diagnoses.length;
+      if (parsed.vitals) totalEntities += parsed.vitals.length;
+      if (parsed.prescriptions) totalEntities += parsed.prescriptions.length;
+      if (parsed.orders) totalEntities += parsed.orders.length;
+
+      const badgeEl = document.getElementById("parsed-entity-count-badge");
+      if (badgeEl) badgeEl.textContent = `${totalEntities} Entities Parsed & Populated`;
+
+      // 1. Column 1: Chief Complaints & Symptoms
+      const colComplaints = document.getElementById("col-complaints-content");
+      if (colComplaints) {
+        colComplaints.innerHTML = `
+          <div class="parsed-item-badge">
+            <span>🩺</span>
+            <span>${parsed.chief_complaint || "Patient clinical consultation"}</span>
+          </div>
+        `;
+      }
       if (parsed.chief_complaint) {
-        document.getElementById("consult-complaint").value = parsed.chief_complaint;
+        const el = document.getElementById("consult-complaint");
+        el.value = parsed.chief_complaint;
+        highlightEls.push(el);
       }
       if (parsed.clinical_narrative) {
-        document.getElementById("consult-narrative").value = parsed.clinical_narrative;
+        const el = document.getElementById("consult-narrative");
+        el.value = parsed.clinical_narrative;
+        highlightEls.push(el);
       }
 
-      // 2. Auto-Populate Vitals
+      // 2. Column 2: Coded Diagnoses (ICD-10 & SNOMED CT)
+      const colDiag = document.getElementById("col-diagnoses-content");
+      const diagSelect = document.getElementById("consult-icd10");
+      if (colDiag) colDiag.innerHTML = "";
+
+      if (parsed.diagnoses && parsed.diagnoses.length > 0) {
+        parsed.diagnoses.forEach((d, idx) => {
+          if (colDiag) {
+            const badge = document.createElement("div");
+            badge.className = "parsed-item-badge";
+            badge.innerHTML = `<span class="parsed-tag-code">${d.code_icd10}</span> <span>${d.display}</span>`;
+            colDiag.appendChild(badge);
+          }
+
+          // Ensure option exists in select
+          let optExists = false;
+          for (let i = 0; i < diagSelect.options.length; i++) {
+            if (diagSelect.options[i].value === d.code_icd10) {
+              optExists = true;
+              if (idx === 0) diagSelect.selectedIndex = i;
+              break;
+            }
+          }
+          if (!optExists) {
+            const newOpt = document.createElement("option");
+            newOpt.value = d.code_icd10;
+            newOpt.dataset.snomed = d.code_snomed || "38341003";
+            newOpt.dataset.name = d.display;
+            newOpt.textContent = `[${d.code_icd10}] ${d.display}`;
+            diagSelect.appendChild(newOpt);
+            if (idx === 0) diagSelect.value = d.code_icd10;
+          }
+        });
+        highlightEls.push(diagSelect);
+      }
+
+      // 3. Column 3: Vitals (LOINC Standard)
+      const colVitals = document.getElementById("col-vitals-content");
+      if (colVitals) colVitals.innerHTML = "";
+
       if (parsed.vitals && parsed.vitals.length > 0) {
         for (const v of parsed.vitals) {
+          if (colVitals) {
+            const badge = document.createElement("div");
+            badge.className = "parsed-item-badge";
+            const isNorm = v.interpretation === "NORMAL";
+            badge.innerHTML = `<strong>${v.display}:</strong> ${v.value} ${v.unit} <span class="badge ${isNorm ? 'badge-success' : 'badge-warning'}" style="font-size:0.65rem; padding: 0.1rem 0.35rem;">${v.interpretation}</span>`;
+            colVitals.appendChild(badge);
+          }
+
           if (v.code_loinc === "8480-6") {
-            document.getElementById("vital-sbp").value = v.value;
+            const el = document.getElementById("vital-sbp");
+            el.value = v.value;
+            highlightEls.push(el);
           } else if (v.code_loinc === "8867-4") {
-            document.getElementById("vital-hr").value = v.value;
+            const el = document.getElementById("vital-hr");
+            el.value = v.value;
+            highlightEls.push(el);
           }
         }
       }
 
-      // 3. Auto-Populate Diagnoses
-      if (parsed.diagnoses && parsed.diagnoses.length > 0) {
-        const topCode = parsed.diagnoses[0].code_icd10;
-        const select = document.getElementById("consult-icd10");
-        for (let i = 0; i < select.options.length; i++) {
-          if (select.options[i].value === topCode) {
-            select.selectedIndex = i;
-            break;
-          }
-        }
-      }
+      // 4. Column 4: E-Prescriptions
+      const colRx = document.getElementById("col-rx-content");
+      const rxSelect = document.getElementById("rx-medicine");
+      const rxInstInput = document.getElementById("rx-instructions");
+      if (colRx) colRx.innerHTML = "";
 
-      // 4. Auto-Populate Prescriptions
       if (parsed.prescriptions && parsed.prescriptions.length > 0) {
-        const p = parsed.prescriptions[0];
-        document.getElementById("rx-instructions").value = p.instructions || "Take as instructed";
-        const rxSelect = document.getElementById("rx-medicine");
-        for (let i = 0; i < rxSelect.options.length; i++) {
-          if (rxSelect.options[i].value.toLowerCase().includes(p.brand_name.toLowerCase())) {
-            rxSelect.selectedIndex = i;
-            break;
+        let rxHtml = `<table class="parsed-table">
+          <thead>
+            <tr>
+              <th>Brand & Strength</th>
+              <th>Generic Composition</th>
+              <th>Timing</th>
+              <th>Duration</th>
+              <th>Instructions</th>
+            </tr>
+          </thead>
+          <tbody>`;
+
+        parsed.prescriptions.forEach((p, idx) => {
+          rxHtml += `
+            <tr>
+              <td><strong>${p.brand_name}</strong></td>
+              <td>${p.generic_name}</td>
+              <td><span class="badge badge-info" style="font-size:0.6875rem;">${p.timing}</span></td>
+              <td>${p.duration_days} Days</td>
+              <td>${p.instructions}</td>
+            </tr>
+          `;
+
+          const optVal = `${p.brand_name}|${p.generic_name}|${p.timing}|${p.duration_days}`;
+          let optExists = false;
+          for (let i = 0; i < rxSelect.options.length; i++) {
+            if (rxSelect.options[i].value.toLowerCase().includes(p.brand_name.toLowerCase())) {
+              optExists = true;
+              if (idx === 0) rxSelect.selectedIndex = i;
+              break;
+            }
           }
-        }
+          if (!optExists) {
+            const newOpt = document.createElement("option");
+            newOpt.value = optVal;
+            newOpt.textContent = `${p.brand_name} (${p.generic_name}) - ${p.timing} (${p.duration_days} Days)`;
+            rxSelect.appendChild(newOpt);
+            if (idx === 0) rxSelect.value = optVal;
+          }
+        });
+
+        rxHtml += `</tbody></table>`;
+        if (colRx) colRx.innerHTML = rxHtml;
+
+        rxInstInput.value = parsed.prescriptions[0].instructions || "Take as instructed";
+        highlightEls.push(rxSelect);
+        highlightEls.push(rxInstInput);
       }
 
-      // 5. Auto-Populate Diagnostic Orders
+      // 5. Column 5: Diagnostic Investigation Orders
+      const colOrders = document.getElementById("col-orders-content");
+      const orderSelect = document.getElementById("order-test");
+      if (colOrders) colOrders.innerHTML = "";
+
       if (parsed.orders && parsed.orders.length > 0) {
-        const o = parsed.orders[0];
-        const orderSelect = document.getElementById("order-test");
-        for (let i = 0; i < orderSelect.options.length; i++) {
-          if (orderSelect.options[i].value.includes(o.code_loinc_or_snomed)) {
-            orderSelect.selectedIndex = i;
-            break;
+        let orderHtml = `<table class="parsed-table">
+          <thead>
+            <tr>
+              <th>Test Name</th>
+              <th>Department</th>
+              <th>Tariff Code</th>
+              <th>Price</th>
+              <th>Priority</th>
+            </tr>
+          </thead>
+          <tbody>`;
+
+        parsed.orders.forEach((o, idx) => {
+          orderHtml += `
+            <tr>
+              <td><strong>${o.display}</strong></td>
+              <td>${o.department_code}</td>
+              <td><code>${o.tariff_code}</code></td>
+              <td>₹${o.unit_price.toFixed(2)}</td>
+              <td><span class="badge badge-info" style="font-size:0.6875rem;">${o.priority}</span></td>
+            </tr>
+          `;
+
+          const orderVal = `${o.code_loinc_or_snomed}|${o.display}|${o.tariff_code}|${o.department_code}|${o.unit_price}`;
+          let orderExists = false;
+          for (let i = 0; i < orderSelect.options.length; i++) {
+            if (orderSelect.options[i].value.includes(o.code_loinc_or_snomed)) {
+              orderExists = true;
+              if (idx === 0) orderSelect.selectedIndex = i;
+              break;
+            }
           }
-        }
+          if (!orderExists) {
+            const newOpt = document.createElement("option");
+            newOpt.value = orderVal;
+            newOpt.textContent = `${o.display} (${o.code_loinc_or_snomed}) - ₹${o.unit_price.toFixed(2)}`;
+            orderSelect.appendChild(newOpt);
+            if (idx === 0) orderSelect.value = orderVal;
+          }
+        });
+
+        orderHtml += `</tbody></table>`;
+        if (colOrders) colOrders.innerHTML = orderHtml;
+        highlightEls.push(orderSelect);
       }
+
+      // Visual pulse on updated columns
+      highlightEls.forEach(el => {
+        if (el) {
+          el.classList.add("highlight-updated");
+          setTimeout(() => el.classList.remove("highlight-updated"), 2600);
+        }
+      });
 
       statusBox.className = "alert alert-success";
-      statusMsg.innerHTML = "<strong>Success:</strong> Handwritten Prescription / Case Sheet successfully parsed! All clinical entities have been auto-populated into the requisite columns below for your clinical review.";
+      statusMsg.innerHTML = `<strong>Success:</strong> Prescription document parsed into <strong>${totalEntities} clinical entities</strong>! All requisite columns and form fields below have been populated for physician review.`;
     } catch (err) {
       statusBox.className = "alert alert-warning";
       statusMsg.innerHTML = `<strong>Parsing Error:</strong> ${err.message}`;

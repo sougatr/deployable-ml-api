@@ -93,6 +93,14 @@ class PlatformCoreTestSuite(unittest.TestCase):
         t = TestClinicalDocumentParser()
         t.test_api_parse_document_endpoint()
 
+    def test_20_document_parser_fever_and_antibiotics(self):
+        t = TestClinicalDocumentParser()
+        t.test_parse_fever_and_antibiotic_prescription()
+
+    def test_21_document_parser_image_simulation(self):
+        t = TestClinicalDocumentParser()
+        t.test_vision_ocr_simulation_for_scanned_image()
+
 if __name__ == "__main__":
     suite = unittest.TestLoader().loadTestsFromTestCase(PlatformCoreTestSuite)
     runner = unittest.TextTestRunner(verbosity=2)

@@ -92,9 +92,43 @@
             </div>
 
             <div class="form-row">
-              <div class="form-group">
-                <label>Date of Birth *</label>
-                <input type="date" id="reg-dob" required value="1982-05-14">
+              <div class="form-group dob-picker-group">
+                <label for="reg-dob-day">Date of Birth * <span class="label-helper">(Select Day, Month, Year or enter Age)</span></label>
+                <div class="dob-picker-container">
+                  <div class="dob-select-wrap">
+                    <label class="dob-mini-label" for="reg-dob-day">Day</label>
+                    <select id="reg-dob-day" class="dob-select" aria-label="Day of Birth" title="Day of Birth"></select>
+                  </div>
+                  <div class="dob-select-wrap">
+                    <label class="dob-mini-label" for="reg-dob-month">Month</label>
+                    <select id="reg-dob-month" class="dob-select" aria-label="Month of Birth" title="Month of Birth">
+                      <option value="01">01 - Jan</option>
+                      <option value="02">02 - Feb</option>
+                      <option value="03">03 - Mar</option>
+                      <option value="04">04 - Apr</option>
+                      <option value="05" selected>05 - May</option>
+                      <option value="06">06 - Jun</option>
+                      <option value="07">07 - Jul</option>
+                      <option value="08">08 - Aug</option>
+                      <option value="09">09 - Sep</option>
+                      <option value="10">10 - Oct</option>
+                      <option value="11">11 - Nov</option>
+                      <option value="12">12 - Dec</option>
+                    </select>
+                  </div>
+                  <div class="dob-select-wrap">
+                    <label class="dob-mini-label" for="reg-dob-year">Year</label>
+                    <select id="reg-dob-year" class="dob-select" aria-label="Year of Birth" title="Year of Birth"></select>
+                  </div>
+                  <div class="dob-age-wrap">
+                    <label class="dob-mini-label" for="reg-age">Age</label>
+                    <input type="number" id="reg-age" class="dob-age-input" min="0" max="120" placeholder="Age" title="Enter age to auto-set birth year">
+                  </div>
+                  <div class="dob-cal-wrap">
+                    <label class="dob-mini-label" for="reg-dob">Cal</label>
+                    <input type="date" id="reg-dob" required value="1982-05-14" class="dob-cal-input" title="Or pick date from calendar">
+                  </div>
+                </div>
               </div>
               <div class="form-group">
                 <label>Biological Sex *</label>
@@ -228,6 +262,82 @@
 
             <div id="parser-status-box" class="alert alert-info hidden" style="margin-top: 0.5rem;">
               <div id="parser-status-msg">Extracting handwritten text and mapping to ICD-10, LOINC, and E-Prescriptions...</div>
+            </div>
+
+            <!-- Parsed Clinical Columns Dashboard (Assistive AI Ingestion) -->
+            <div id="parsed-columns-container" class="parsed-columns-container hidden" style="margin-top: 0.875rem; border-top: 1px dashed #6ee7b7; padding-top: 0.875rem;">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem; flex-wrap: wrap; gap: 0.5rem;">
+                <h5 style="color: #065f46; font-size: 0.9375rem; font-weight: 700; display: flex; align-items: center; gap: 0.5rem;">
+                  <span>📋</span> Parsed Clinical Columns (Auto-Populated Requisite Fields)
+                </h5>
+                <div style="display: flex; gap: 0.5rem; align-items: center;">
+                  <span id="parsed-entity-count-badge" class="badge badge-success">0 Entities Parsed</span>
+                  <button type="button" class="btn btn-secondary btn-sm" id="btn-toggle-ocr-preview" style="font-size: 0.75rem; padding: 0.25rem 0.5rem;">
+                    👁️ View Raw Extracted Text
+                  </button>
+                </div>
+              </div>
+
+              <!-- Collapsible Raw OCR Extracted Text Box -->
+              <div id="ocr-raw-text-panel" class="hidden" style="background: #ffffff; border: 1px solid #cbd5e1; border-radius: var(--radius-sm); padding: 0.75rem; margin-bottom: 0.75rem; font-family: monospace; font-size: 0.75rem; white-space: pre-wrap; max-height: 180px; overflow-y: auto; color: #334155;"></div>
+
+              <!-- 5 Columns Display Grid -->
+              <div class="parsed-columns-grid">
+                <!-- Col 1: Chief Complaints -->
+                <div class="parsed-col-card">
+                  <div class="parsed-col-header">
+                    <span class="parsed-col-num">1</span>
+                    <h6>Chief Complaints</h6>
+                  </div>
+                  <div class="parsed-col-body" id="col-complaints-content">
+                    <div class="text-muted" style="font-size: 0.8125rem;">Awaiting parsing...</div>
+                  </div>
+                </div>
+
+                <!-- Col 2: Coded Diagnoses -->
+                <div class="parsed-col-card">
+                  <div class="parsed-col-header">
+                    <span class="parsed-col-num">2</span>
+                    <h6>Coded Diagnoses (ICD-10)</h6>
+                  </div>
+                  <div class="parsed-col-body" id="col-diagnoses-content">
+                    <div class="text-muted" style="font-size: 0.8125rem;">Awaiting parsing...</div>
+                  </div>
+                </div>
+
+                <!-- Col 3: Vitals -->
+                <div class="parsed-col-card">
+                  <div class="parsed-col-header">
+                    <span class="parsed-col-num">3</span>
+                    <h6>Vitals (LOINC Standard)</h6>
+                  </div>
+                  <div class="parsed-col-body" id="col-vitals-content">
+                    <div class="text-muted" style="font-size: 0.8125rem;">Awaiting parsing...</div>
+                  </div>
+                </div>
+
+                <!-- Col 4: E-Prescriptions -->
+                <div class="parsed-col-card parsed-col-wide">
+                  <div class="parsed-col-header">
+                    <span class="parsed-col-num">4</span>
+                    <h6>E-Prescriptions (Pharmacotherapy)</h6>
+                  </div>
+                  <div class="parsed-col-body" id="col-rx-content">
+                    <div class="text-muted" style="font-size: 0.8125rem;">Awaiting parsing...</div>
+                  </div>
+                </div>
+
+                <!-- Col 5: Diagnostic Orders -->
+                <div class="parsed-col-card parsed-col-wide">
+                  <div class="parsed-col-header">
+                    <span class="parsed-col-num">5</span>
+                    <h6>Diagnostic Investigation Orders</h6>
+                  </div>
+                  <div class="parsed-col-body" id="col-orders-content">
+                    <div class="text-muted" style="font-size: 0.8125rem;">Awaiting parsing...</div>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
 
