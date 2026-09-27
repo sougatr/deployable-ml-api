@@ -101,6 +101,10 @@ class PlatformCoreTestSuite(unittest.TestCase):
         t = TestClinicalDocumentParser()
         t.test_vision_ocr_simulation_for_scanned_image()
 
+    def test_22_document_parser_orthopaedic_prescription(self):
+        t = TestClinicalDocumentParser()
+        t.test_parse_orthopaedic_prescription()
+
 if __name__ == "__main__":
     suite = unittest.TestLoader().loadTestsFromTestCase(PlatformCoreTestSuite)
     runner = unittest.TextTestRunner(verbosity=2)

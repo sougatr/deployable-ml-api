@@ -76,18 +76,18 @@
         <!-- Patient Registration Card -->
         <div class="card">
           <div class="card-header">
-            <h3>Patient Registration & MPI Resolution</h3>
-            <span class="card-subtitle">Fellegi-Sunter Probabilistic Deduplication Active</span>
+            <h3>Patient Registration</h3>
+            <span class="card-subtitle">Master Patient Index (MPI) Deduplication Active</span>
           </div>
           <form id="patient-reg-form" class="form">
             <div class="form-row">
               <div class="form-group">
                 <label>First Name *</label>
-                <input type="text" id="reg-first-name" required placeholder="e.g. Ramesh" value="Ramesh">
+                <input type="text" id="reg-first-name" required placeholder="e.g. Anindita" value="Anindita">
               </div>
               <div class="form-group">
                 <label>Last Name *</label>
-                <input type="text" id="reg-last-name" required placeholder="e.g. Sharma" value="Sharma">
+                <input type="text" id="reg-last-name" required placeholder="e.g. Ray" value="Ray">
               </div>
             </div>
 
@@ -95,38 +95,38 @@
               <div class="form-group dob-picker-group">
                 <label for="reg-dob-day">Date of Birth * <span class="label-helper">(Select Day, Month, Year or enter Age)</span></label>
                 <div class="dob-picker-container">
-                  <div class="dob-select-wrap">
+                  <div class="dob-select-wrap dob-day-wrap">
                     <label class="dob-mini-label" for="reg-dob-day">Day</label>
                     <select id="reg-dob-day" class="dob-select" aria-label="Day of Birth" title="Day of Birth"></select>
                   </div>
-                  <div class="dob-select-wrap">
+                  <div class="dob-select-wrap dob-month-wrap">
                     <label class="dob-mini-label" for="reg-dob-month">Month</label>
                     <select id="reg-dob-month" class="dob-select" aria-label="Month of Birth" title="Month of Birth">
-                      <option value="01">01 - Jan</option>
-                      <option value="02">02 - Feb</option>
-                      <option value="03">03 - Mar</option>
-                      <option value="04">04 - Apr</option>
-                      <option value="05" selected>05 - May</option>
-                      <option value="06">06 - Jun</option>
-                      <option value="07">07 - Jul</option>
-                      <option value="08">08 - Aug</option>
-                      <option value="09">09 - Sep</option>
-                      <option value="10">10 - Oct</option>
-                      <option value="11">11 - Nov</option>
-                      <option value="12">12 - Dec</option>
+                      <option value="01">Jan (01)</option>
+                      <option value="02">Feb (02)</option>
+                      <option value="03">Mar (03)</option>
+                      <option value="04">Apr (04)</option>
+                      <option value="05">May (05)</option>
+                      <option value="06">Jun (06)</option>
+                      <option value="07" selected>Jul (07)</option>
+                      <option value="08">Aug (08)</option>
+                      <option value="09">Sep (09)</option>
+                      <option value="10">Oct (10)</option>
+                      <option value="11">Nov (11)</option>
+                      <option value="12">Dec (12)</option>
                     </select>
                   </div>
-                  <div class="dob-select-wrap">
+                  <div class="dob-select-wrap dob-year-wrap">
                     <label class="dob-mini-label" for="reg-dob-year">Year</label>
                     <select id="reg-dob-year" class="dob-select" aria-label="Year of Birth" title="Year of Birth"></select>
                   </div>
                   <div class="dob-age-wrap">
-                    <label class="dob-mini-label" for="reg-age">Age</label>
-                    <input type="number" id="reg-age" class="dob-age-input" min="0" max="120" placeholder="Age" title="Enter age to auto-set birth year">
+                    <label class="dob-mini-label" for="reg-age">Age (Yrs)</label>
+                    <input type="number" id="reg-age" class="dob-age-input" min="0" max="120" placeholder="Yrs" value="55" title="Enter age to auto-set birth year">
                   </div>
                   <div class="dob-cal-wrap">
-                    <label class="dob-mini-label" for="reg-dob">Cal</label>
-                    <input type="date" id="reg-dob" required value="1982-05-14" class="dob-cal-input" title="Or pick date from calendar">
+                    <label class="dob-mini-label" for="reg-dob">Calendar</label>
+                    <input type="date" id="reg-dob" required value="1971-07-28" class="dob-cal-input" title="Or pick date from calendar">
                   </div>
                 </div>
               </div>
@@ -153,7 +153,7 @@
 
             <div class="form-actions">
               <button type="submit" class="btn btn-primary" id="btn-resolve-patient">
-                Resolve / Register Patient (MPI)
+                Register Patient
               </button>
             </div>
           </form>

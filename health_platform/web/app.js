@@ -455,6 +455,33 @@ function initClinicianConsultation() {
       const badgeEl = document.getElementById("parsed-entity-count-badge");
       if (badgeEl) badgeEl.textContent = `${totalEntities} Entities Parsed & Populated`;
 
+      // Auto-sync patient details if detected from prescription
+      if (data.patient_info) {
+        const pInfo = data.patient_info;
+        if (currentPatient) {
+          currentPatient.first_name = pInfo.first_name;
+          currentPatient.last_name = pInfo.last_name;
+          currentPatient.gender = pInfo.gender;
+          updatePatientBanner(currentPatient);
+        }
+        const regFirst = document.getElementById("reg-first-name");
+        const regLast = document.getElementById("reg-last-name");
+        const regGender = document.getElementById("reg-gender");
+        const regAge = document.getElementById("reg-age");
+        if (regFirst) regFirst.value = pInfo.first_name;
+        if (regLast) regLast.value = pInfo.last_name;
+        if (regGender) regGender.value = pInfo.gender;
+        if (regAge && pInfo.age) {
+          regAge.value = pInfo.age;
+          const currentYear = new Date().getFullYear();
+          const computedYear = String(currentYear - pInfo.age);
+          const yearSelect = document.getElementById("reg-dob-year");
+          const calInput = document.getElementById("reg-dob");
+          if (yearSelect) yearSelect.value = computedYear;
+          if (calInput) calInput.value = `${computedYear}-07-28`;
+        }
+      }
+
       // 1. Column 1: Chief Complaints & Symptoms
       const colComplaints = document.getElementById("col-complaints-content");
       if (colComplaints) {

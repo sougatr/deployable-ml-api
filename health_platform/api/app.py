@@ -208,7 +208,8 @@ async def parse_handwritten_document(
         return {
             "status": "success",
             "raw_extracted_text": extracted_text,
-            "parsed_columns": parsed_columns
+            "parsed_columns": parsed_columns,
+            "patient_info": parsed_columns.get("patient_info")
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Document Parsing Failure: {str(e)}")

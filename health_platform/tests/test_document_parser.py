@@ -99,5 +99,33 @@ class TestClinicalDocumentParser(unittest.TestCase):
         self.assertTrue(len(parsed["prescriptions"]) >= 2)
         self.assertTrue(len(parsed["diagnoses"]) >= 1)
 
+    def test_parse_orthopaedic_prescription(self):
+        ortho_text = (
+            "Gleneagles Hospital, PAREL, MUMBAI\n"
+            "Dr ANUP KHATRI\n"
+            "Senior Consultant Orthopaedic Surgeon\n"
+            "M sAndita Ray  55. / F\n"
+            "2 wks F/u Right Medial meniscus Root repair\n"
+            "Advise: Physiotherapy -> NWB x 10 days -> PWB to FWB over 10 days\n"
+            "ROM beyond 90 degrees gradually after 2 wks\n"
+            "- Tb Ezorb forte 0-1-0 x 3 mth\n"
+            "- F/u after 2 mth."
+        )
+        parsed = ClinicalDocumentParser.parse_clinical_text_to_columns(ortho_text)
+        self.assertIn("Meniscus Root Repair", parsed["chief_complaint"])
+        icd_codes = [d["code_icd10"] for d in parsed["diagnoses"]]
+        self.assertIn("M23.30", icd_codes) # Meniscus derangement
+
+        drugs = [p["brand_name"] for p in parsed["prescriptions"]]
+        self.assertIn("Ezorb Forte", drugs)
+        self.assertEqual(parsed["prescriptions"][0]["timing"], "0-1-0")
+
+        tariffs = [o["tariff_code"] for o in parsed["orders"]]
+        self.assertIn("PT-REHAB-002", tariffs) # Physiotherapy
+
+        self.assertIsNotNone(parsed.get("patient_info"))
+        self.assertEqual(parsed["patient_info"]["first_name"], "Anindita")
+        self.assertEqual(parsed["patient_info"]["last_name"], "Ray")
+
 if __name__ == "__main__":
     unittest.main()
