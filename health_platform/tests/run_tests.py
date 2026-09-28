@@ -29,6 +29,7 @@ from health_platform.tests.test_document_parser import TestClinicalDocumentParse
 from health_platform.tests.test_ipd_workflows import TestIPDWorkflows
 from health_platform.tests.test_diagnostics_workflows import TestDiagnosticsWorkflows
 from health_platform.tests.test_pharmacy_workflows import TestPharmacyWorkflows
+from health_platform.tests.test_emergency_workflows import TestEmergencyWorkflows
 
 class PlatformCoreTestSuite(unittest.TestCase):
     # Identity & MPI Tests
@@ -173,6 +174,28 @@ class PlatformCoreTestSuite(unittest.TestCase):
         t = TestPharmacyWorkflows()
         t.setUp()
         t.test_06_api_pharmacy_endpoints()
+
+    # Emergency Department & Triage (Manchester / ESI Protocol) Tests
+    def test_35_emergency_bay_and_triage(self):
+        t = TestEmergencyWorkflows()
+        t.setUp()
+        t.test_01_er_bay_seeding()
+        t.test_02_triage_level_1_code_red()
+
+    def test_36_emergency_resuscitation_interventions(self):
+        t = TestEmergencyWorkflows()
+        t.setUp()
+        t.test_03_resuscitation_interventions_and_procedural_charges()
+
+    def test_37_emergency_to_ipd_admission_pipeline(self):
+        t = TestEmergencyWorkflows()
+        t.setUp()
+        t.test_04_er_to_ipd_admission_pipeline()
+
+    def test_38_emergency_api_endpoints(self):
+        t = TestEmergencyWorkflows()
+        t.setUp()
+        t.test_05_api_emergency_endpoints()
 
 if __name__ == "__main__":
     suite = unittest.TestLoader().loadTestsFromTestCase(PlatformCoreTestSuite)

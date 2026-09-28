@@ -14,6 +14,9 @@ let selectedDiagOrderId = null;
 let currentDiagFilter = "ALL";
 let currentPharmacyInventory = [];
 let currentPharmFilter = "ALL";
+let currentEmergencyBays = [];
+let currentEmergencyCases = [];
+let selectedEmergencyCaseId = null;
 
 // DOM Elements
 document.addEventListener("DOMContentLoaded", () => {
@@ -26,6 +29,7 @@ document.addEventListener("DOMContentLoaded", () => {
   initIPDModule();
   initDiagnosticsModule();
   initPharmacyModule();
+  initEmergencyModule();
   initBillingAndPayment();
   fetchHealthStatus();
 });
@@ -50,6 +54,10 @@ function initTabNavigation() {
       } else if (target === "pharmacy") {
         fetchPharmacyInventory();
         populatePrescriptionDispenseQueue();
+      } else if (target === "emergency") {
+        fetchEmergencyBays();
+        fetchActiveEmergencyCases();
+        populateEmergencyPatientSelect();
       } else if (target === "abdm-events" && currentPatient) {
         refreshAbdmAndOutbox();
       }
@@ -2264,4 +2272,507 @@ function recalculatePharmacyTotals() {
   document.getElementById("pharm-bill-split").textContent = `Patient: ₹${patientShare.toFixed(2)} • TPA: ₹${insurerShare.toFixed(2)}`;
 }
 
+// =============================================================================
+// EMERGENCY DEPARTMENT (ED / ER) & ESI TRIAGE MODULE
+// =============================================================================
 
+function initEmergencyModule() {
+  const formTriage = document.getElementById("form-er-triage");
+  const formIntervention = document.getElementById("form-er-intervention");
+  const formDisposition = document.getElementById("form-er-disposition");
+  const btnRefreshBays = document.getElementById("btn-refresh-er-bays");
+  const activeCasesSelect = document.getElementById("er-active-cases-select");
+  const dispTypeSelect = document.getElementById("er-disp-type");
+
+  if (btnRefreshBays) {
+    btnRefreshBays.addEventListener("click", () => {
+      fetchEmergencyBays();
+      fetchActiveEmergencyCases();
+    });
+  }
+
+  if (activeCasesSelect) {
+    activeCasesSelect.addEventListener("change", (e) => {
+      const caseId = e.target.value;
+      if (caseId) {
+        selectEmergencyCase(caseId);
+      } else {
+        selectedEmergencyCaseId = null;
+        document.getElementById("er-active-case-banner").style.display = "none";
+        document.getElementById("er-resus-console").style.display = "none";
+        document.getElementById("er-disposition-console").style.display = "none";
+        document.getElementById("er-no-case-placeholder").style.display = "block";
+      }
+    });
+  }
+
+  // Quick intervention button listeners
+  const btnDefib = document.getElementById("btn-quick-defib");
+  if (btnDefib) {
+    btnDefib.addEventListener("click", () => {
+      quickFillIntervention("DEFIBRILLATION", "Synchronized biphasic shock 200J delivered for VF/VT", "Inj Adrenaline 1mg IV push stat");
+    });
+  }
+  const btnIntub = document.getElementById("btn-quick-intub");
+  if (btnIntub) {
+    btnIntub.addEventListener("click", () => {
+      quickFillIntervention("INTUBATION", "Video laryngoscopy: ETT 7.5mm cuffed placed at 22cm, bilateral air entry confirmed", "Inj Propofol 100mg + Inj Rocuronium 50mg");
+    });
+  }
+  const btnAmiod = document.getElementById("btn-quick-amiodarone");
+  if (btnAmiod) {
+    btnAmiod.addEventListener("click", () => {
+      quickFillIntervention("EMERGENCY_MEDICATION", "Anti-arrhythmic bolus administered", "Inj Amiodarone 300mg IV over 10 mins");
+    });
+  }
+  const btnPocus = document.getElementById("btn-quick-pocus");
+  if (btnPocus) {
+    btnPocus.addEventListener("click", () => {
+      quickFillIntervention("POCUS_EFAST", "eFAST scan completed: Negative pericardial effusion, no free fluid in Morrison pouch or spleno-renal angle", "None");
+    });
+  }
+  const btnBolus = document.getElementById("btn-quick-bolus");
+  if (btnBolus) {
+    btnBolus.addEventListener("click", () => {
+      quickFillIntervention("IV_FLUID_BOLUS", "1000ml Normal Saline wide open pressure bag infusion for volume resuscitation", "Inj Noradrenaline infusion initiated");
+    });
+  }
+
+  // Triage Form Submission
+  if (formTriage) {
+    formTriage.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const patientSelect = document.getElementById("er-patient-select");
+      const mpiId = patientSelect.value || (currentPatient ? currentPatient.mpi_id : null);
+      if (!mpiId) {
+        showToast("Please select or register an emergency patient first.", "error");
+        return;
+      }
+
+      const allocatedBay = document.getElementById("er-allocated-bay").value || null;
+
+      const payload = {
+        mpi_id: mpiId,
+        chief_complaint: document.getElementById("er-chief-complaint").value.trim(),
+        triage_level: document.getElementById("er-triage-level").value,
+        gcs_score: parseInt(document.getElementById("er-gcs").value, 10),
+        systolic_bp: parseFloat(document.getElementById("er-bp-sys").value) || 120.0,
+        diastolic_bp: parseFloat(document.getElementById("er-bp-dia").value) || 80.0,
+        heart_rate: parseFloat(document.getElementById("er-hr").value) || 80.0,
+        respiratory_rate: parseFloat(document.getElementById("er-rr").value) || 18.0,
+        spo2: parseFloat(document.getElementById("er-spo2").value) || 98.0,
+        temperature: parseFloat(document.getElementById("er-temp").value) || 98.6,
+        pain_score: parseInt(document.getElementById("er-pain").value, 10) || 0,
+        mode_of_arrival: document.getElementById("er-mode-arrival").value,
+        triage_nurse_name: document.getElementById("er-triage-nurse").value.trim(),
+        allocated_bay_id: allocatedBay || null
+      };
+
+      try {
+        const res = await fetch("/api/v1/emergency/triage", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload)
+        });
+        if (!res.ok) {
+          const err = await res.json();
+          throw new Error(err.detail || "Failed to complete emergency triage.");
+        }
+        const caseRecord = await res.json();
+        showToast(`🚨 Triaged to ${caseRecord.allocated_bay_number}! Case: ${caseRecord.case_number}`, "success");
+        formTriage.reset();
+        document.getElementById("er-gcs").value = "15";
+        document.getElementById("er-bp-sys").value = "120";
+        document.getElementById("er-bp-dia").value = "80";
+        document.getElementById("er-hr").value = "82";
+        document.getElementById("er-rr").value = "18";
+        document.getElementById("er-spo2").value = "98";
+        document.getElementById("er-temp").value = "98.6";
+        document.getElementById("er-pain").value = "0";
+
+        await fetchEmergencyBays();
+        await fetchActiveEmergencyCases();
+        selectEmergencyCase(caseRecord.case_id);
+        fetchHealthStatus();
+      } catch (err) {
+        showToast(err.message, "error");
+      }
+    });
+  }
+
+  // Resuscitation Intervention Form Submission
+  if (formIntervention) {
+    formIntervention.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      if (!selectedEmergencyCaseId) {
+        showToast("No active emergency case selected.", "error");
+        return;
+      }
+
+      const payload = {
+        case_id: selectedEmergencyCaseId,
+        intervention_type: document.getElementById("er-interv-type").value.trim(),
+        details: document.getElementById("er-interv-details").value.trim(),
+        medications_given: document.getElementById("er-interv-meds").value.trim() || null,
+        clinician_name: document.getElementById("er-interv-clinician").value.trim(),
+        vitals_post: document.getElementById("er-interv-post-vitals").value.trim() || null
+      };
+
+      try {
+        const res = await fetch("/api/v1/emergency/resuscitation/interventions", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload)
+        });
+        if (!res.ok) {
+          const err = await res.json();
+          throw new Error(err.detail || "Failed to record resuscitation intervention.");
+        }
+        const interv = await res.json();
+        showToast(`⚡ Resuscitation recorded: ${interv.intervention_type} (+₹1,200.00 posted)`, "success");
+        document.getElementById("er-interv-type").value = "";
+        document.getElementById("er-interv-details").value = "";
+        document.getElementById("er-interv-meds").value = "";
+        document.getElementById("er-interv-post-vitals").value = "";
+
+        selectEmergencyCase(selectedEmergencyCaseId);
+        fetchHealthStatus();
+      } catch (err) {
+        showToast(err.message, "error");
+      }
+    });
+  }
+
+  // Disposition Decision Handler
+  if (dispTypeSelect) {
+    dispTypeSelect.addEventListener("change", (e) => {
+      const groupBed = document.getElementById("group-er-target-bed");
+      if (e.target.value === "ADMIT_TO_ICU" || e.target.value === "ADMIT_TO_IPD_WARD") {
+        groupBed.style.display = "block";
+        populateTargetBedOptions(e.target.value);
+      } else {
+        groupBed.style.display = "none";
+      }
+    });
+  }
+
+  // Disposition Form Submission
+  if (formDisposition) {
+    formDisposition.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      if (!selectedEmergencyCaseId) {
+        showToast("No active emergency case selected.", "error");
+        return;
+      }
+
+      const dispType = document.getElementById("er-disp-type").value;
+      const targetBed = document.getElementById("er-disp-target-bed").value || null;
+
+      const payload = {
+        case_id: selectedEmergencyCaseId,
+        disposition_type: dispType,
+        target_bed_id: targetBed,
+        final_er_diagnosis: document.getElementById("er-disp-diagnosis").value.trim(),
+        discharge_or_transfer_notes: document.getElementById("er-disp-notes").value.trim(),
+        attending_er_physician: document.getElementById("er-disp-physician").value.trim(),
+        physician_reg_no: document.getElementById("er-disp-reg").value.trim()
+      };
+
+      try {
+        const res = await fetch("/api/v1/emergency/disposition", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload)
+        });
+        if (!res.ok) {
+          const err = await res.json();
+          throw new Error(err.detail || "Failed to finalize disposition.");
+        }
+        const updatedCase = await res.json();
+        showToast(`🏥 ER Disposition finalized: ${updatedCase.disposition}! ER Bay released.`, "success");
+        formDisposition.reset();
+        selectedEmergencyCaseId = null;
+
+        await fetchEmergencyBays();
+        await fetchActiveEmergencyCases();
+        document.getElementById("er-active-case-banner").style.display = "none";
+        document.getElementById("er-resus-console").style.display = "none";
+        document.getElementById("er-disposition-console").style.display = "none";
+        document.getElementById("er-no-case-placeholder").style.display = "block";
+
+        fetchBedMatrix();
+        fetchHealthStatus();
+      } catch (err) {
+        showToast(err.message, "error");
+      }
+    });
+  }
+}
+
+function quickFillIntervention(type, details, meds) {
+  document.getElementById("er-interv-type").value = type;
+  document.getElementById("er-interv-details").value = details;
+  document.getElementById("er-interv-meds").value = meds;
+}
+
+async function fetchEmergencyBays() {
+  try {
+    const res = await fetch("/api/v1/emergency/bays");
+    if (!res.ok) return;
+    currentEmergencyBays = await res.json();
+    renderEmergencyBays();
+    populateBayOptions();
+  } catch (err) {
+    console.error("Error fetching ER bays:", err);
+  }
+}
+
+function renderEmergencyBays() {
+  const container = document.getElementById("er-bays-container");
+  if (!container) return;
+  container.innerHTML = "";
+
+  let availableCount = 0;
+
+  currentEmergencyBays.forEach(bay => {
+    const isAvail = bay.status === "AVAILABLE";
+    if (isAvail) availableCount++;
+
+    let cardClass = "bay-available";
+    if (!isAvail) {
+      if (bay.current_triage_level === "LEVEL_1_RED") cardClass = "bay-occupied-red";
+      else if (bay.current_triage_level === "LEVEL_2_ORANGE") cardClass = "bay-occupied-orange";
+      else if (bay.current_triage_level === "LEVEL_3_YELLOW") cardClass = "bay-occupied-yellow";
+      else cardClass = "bay-occupied-green";
+    }
+
+    const card = document.createElement("div");
+    card.className = `er-bay-card ${cardClass}`;
+    if (selectedEmergencyCaseId && bay.current_case_id === selectedEmergencyCaseId) {
+      card.classList.add("selected");
+    }
+
+    let triageBadgeHtml = "";
+    if (bay.current_triage_level) {
+      const lvl = bay.current_triage_level;
+      if (lvl === "LEVEL_1_RED") triageBadgeHtml = `<span class="triage-badge-red">🔴 Resus (L1)</span>`;
+      else if (lvl === "LEVEL_2_ORANGE") triageBadgeHtml = `<span class="triage-badge-orange">🟠 Emergent (L2)</span>`;
+      else if (lvl === "LEVEL_3_YELLOW") triageBadgeHtml = `<span class="triage-badge-yellow">🟡 Urgent (L3)</span>`;
+      else triageBadgeHtml = `<span class="triage-badge-green">🟢 Routine (L4)</span>`;
+    }
+
+    card.innerHTML = `
+      <div class="er-bay-header">
+        <span class="er-bay-number">${escapeHtml(bay.bay_number)}</span>
+        <span class="er-bay-status-badge ${isAvail ? 'badge-success' : 'badge-danger'}">
+          ${isAvail ? 'AVAILABLE' : 'OCCUPIED'}
+        </span>
+      </div>
+      <div class="er-bay-type">${bay.bay_type.replace(/_/g, ' ')}</div>
+      <div class="er-bay-patient">
+        ${isAvail ? '<span style="color:#64748b; font-weight:normal; font-size:0.75rem;">Ready for Intake</span>' : `👤 ${escapeHtml(bay.current_patient_name || 'Emergency Patient')}`}
+      </div>
+      <div style="margin-top:0.4rem; display:flex; justify-content:space-between; align-items:center;">
+        ${triageBadgeHtml}
+        ${!isAvail && bay.current_case_id ? `<button class="btn btn-secondary btn-sm" style="font-size:0.7rem; padding:0.15rem 0.4rem;">Open Case →</button>` : ''}
+      </div>
+    `;
+
+    card.addEventListener("click", () => {
+      if (bay.current_case_id) {
+        selectEmergencyCase(bay.current_case_id);
+      } else {
+        const baySelect = document.getElementById("er-allocated-bay");
+        if (baySelect) baySelect.value = bay.bay_id;
+        showToast(`Selected ${bay.bay_number} for upcoming triage intake.`, "info");
+      }
+    });
+
+    container.appendChild(card);
+  });
+
+  const kpiBays = document.getElementById("er-kpi-available-bays");
+  if (kpiBays) {
+    kpiBays.textContent = `${availableCount} / ${currentEmergencyBays.length}`;
+  }
+}
+
+function populateBayOptions() {
+  const select = document.getElementById("er-allocated-bay");
+  if (!select) return;
+  const currentVal = select.value;
+  select.innerHTML = `<option value="">Auto-Assign Best Bay</option>`;
+  currentEmergencyBays.forEach(b => {
+    if (b.status === "AVAILABLE") {
+      const opt = document.createElement("option");
+      opt.value = b.bay_id;
+      opt.textContent = `${b.bay_number} (${b.bay_type.replace(/_/g, ' ')})`;
+      select.appendChild(opt);
+    }
+  });
+  if (currentVal) select.value = currentVal;
+}
+
+async function fetchActiveEmergencyCases() {
+  try {
+    const res = await fetch("/api/v1/emergency/cases/active");
+    if (!res.ok) return;
+    currentEmergencyCases = await res.json();
+
+    const select = document.getElementById("er-active-cases-select");
+    if (!select) return;
+
+    select.innerHTML = currentEmergencyCases.length === 0
+      ? `<option value="">-- No Active Cases --</option>`
+      : `<option value="">-- Select Active ER Case (${currentEmergencyCases.length}) --</option>`;
+
+    let codeRedCount = 0;
+
+    currentEmergencyCases.forEach(c => {
+      if (c.triage_level === "LEVEL_1_RED") codeRedCount++;
+      const opt = document.createElement("option");
+      opt.value = c.case_id;
+      opt.textContent = `${c.case_number} - ${c.patient_name} (${c.allocated_bay_number})`;
+      select.appendChild(opt);
+    });
+
+    if (selectedEmergencyCaseId) {
+      select.value = selectedEmergencyCaseId;
+    }
+
+    const kpiActive = document.getElementById("er-kpi-active");
+    if (kpiActive) kpiActive.textContent = currentEmergencyCases.length;
+
+    const kpiRed = document.getElementById("er-kpi-code-red");
+    if (kpiRed) kpiRed.textContent = codeRedCount;
+  } catch (err) {
+    console.error("Error fetching active ER cases:", err);
+  }
+}
+
+async function selectEmergencyCase(caseId) {
+  selectedEmergencyCaseId = caseId;
+  const select = document.getElementById("er-active-cases-select");
+  if (select) select.value = caseId;
+
+  try {
+    const res = await fetch(`/api/v1/emergency/cases/${caseId}`);
+    if (!res.ok) return;
+    const c = await res.json();
+
+    document.getElementById("er-no-case-placeholder").style.display = "none";
+    const banner = document.getElementById("er-active-case-banner");
+    banner.style.display = "block";
+
+    document.getElementById("er-banner-patient-name").textContent = c.patient_name;
+    document.getElementById("er-banner-uhid").textContent = `UHID: ${c.patient_uhid}`;
+    document.getElementById("er-banner-case-no").textContent = c.case_number;
+    document.getElementById("er-banner-complaint").textContent = c.chief_complaint;
+    document.getElementById("er-banner-bay").textContent = c.allocated_bay_number;
+    document.getElementById("er-banner-vitals").textContent = `BP ${c.systolic_bp}/${c.diastolic_bp}, HR ${c.heart_rate}, SpO2 ${c.spo2}%, GCS ${c.gcs_score}`;
+    document.getElementById("er-banner-arrived").textContent = new Date(c.arrived_at).toLocaleTimeString();
+    document.getElementById("er-banner-charges").textContent = `₹${(c.total_er_charges || 0).toFixed(2)}`;
+
+    // Triage badge
+    const badgeContainer = document.getElementById("er-banner-triage-badge");
+    if (c.triage_level === "LEVEL_1_RED") {
+      badgeContainer.innerHTML = `<span class="triage-badge-red">🔴 Resuscitation (Level 1)</span>`;
+    } else if (c.triage_level === "LEVEL_2_ORANGE") {
+      badgeContainer.innerHTML = `<span class="triage-badge-orange">🟠 Emergent (Level 2)</span>`;
+    } else if (c.triage_level === "LEVEL_3_YELLOW") {
+      badgeContainer.innerHTML = `<span class="triage-badge-yellow">🟡 Urgent (Level 3)</span>`;
+    } else {
+      badgeContainer.innerHTML = `<span class="triage-badge-green">🟢 Less Urgent (Level 4/5)</span>`;
+    }
+
+    // Interventions timeline
+    renderInterventionsTimeline(c.interventions || []);
+
+    // Show consoles
+    document.getElementById("er-resus-console").style.display = "block";
+    document.getElementById("er-disposition-console").style.display = "block";
+
+    populateTargetBedOptions(document.getElementById("er-disp-type").value);
+    renderEmergencyBays();
+  } catch (err) {
+    console.error("Error selecting ER case:", err);
+  }
+}
+
+function renderInterventionsTimeline(interventions) {
+  const container = document.getElementById("er-interventions-timeline");
+  if (!container) return;
+  if (interventions.length === 0) {
+    container.innerHTML = `<div style="font-size:0.8rem; color:#64748b; padding:0.5rem; text-align:center;">No resuscitation interventions logged yet for this case.</div>`;
+    return;
+  }
+
+  container.innerHTML = "";
+  interventions.forEach(item => {
+    const el = document.createElement("div");
+    el.className = "er-timeline-item";
+    const timeStr = new Date(item.recorded_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+    el.innerHTML = `
+      <div class="timeline-item-header">
+        <span class="timeline-item-type">⚡ ${escapeHtml(item.intervention_type)}</span>
+        <span class="timeline-item-time">${timeStr} • ${escapeHtml(item.clinician_name)}</span>
+      </div>
+      <div>${escapeHtml(item.details)}</div>
+      ${item.medications_given ? `<div style="color:#b91c1c; font-size:0.75rem; margin-top:0.2rem;"><strong>Meds:</strong> ${escapeHtml(item.medications_given)}</div>` : ''}
+      ${item.vitals_post ? `<div style="color:#059669; font-size:0.75rem; margin-top:0.2rem;"><strong>Post-Vitals:</strong> ${escapeHtml(item.vitals_post)}</div>` : ''}
+    `;
+    container.appendChild(el);
+  });
+}
+
+function populateTargetBedOptions(dispType) {
+  const select = document.getElementById("er-disp-target-bed");
+  if (!select) return;
+  select.innerHTML = `<option value="">-- Auto-Assign Available Bed --</option>`;
+
+  if (currentBeds && currentBeds.length > 0) {
+    currentBeds.forEach(bed => {
+      if (bed.status === "AVAILABLE") {
+        if (dispType === "ADMIT_TO_ICU" && bed.ward_type === "ICU") {
+          const opt = document.createElement("option");
+          opt.value = bed.bed_id;
+          opt.textContent = `🚨 ${bed.bed_number} (${bed.ward_name}) - ₹${bed.daily_rate}/day`;
+          select.appendChild(opt);
+        } else if (dispType === "ADMIT_TO_IPD_WARD" && bed.ward_type !== "ICU") {
+          const opt = document.createElement("option");
+          opt.value = bed.bed_id;
+          opt.textContent = `🛏️ ${bed.bed_number} (${bed.ward_name}) - ₹${bed.daily_rate}/day`;
+          select.appendChild(opt);
+        }
+      }
+    });
+  }
+}
+
+function populateEmergencyPatientSelect() {
+  const select = document.getElementById("er-patient-select");
+  if (!select) return;
+  select.innerHTML = `<option value="">-- Select or Walk-in Emergency Patient --</option>`;
+
+  if (currentPatient) {
+    const opt = document.createElement("option");
+    opt.value = currentPatient.mpi_id;
+    opt.textContent = `⭐ ACTIVE: ${currentPatient.first_name} ${currentPatient.last_name} (${currentPatient.uhid})`;
+    opt.selected = true;
+    select.appendChild(opt);
+  }
+
+  fetch("/api/v1/patients/search?q=a")
+    .then(r => r.ok ? r.json() : [])
+    .then(list => {
+      list.forEach(p => {
+        if (!currentPatient || p.mpi_id !== currentPatient.mpi_id) {
+          const opt = document.createElement("option");
+          opt.value = p.mpi_id;
+          opt.textContent = `${p.first_name} ${p.last_name} (${p.uhid || p.national_id_number || 'UHID Pending'})`;
+          select.appendChild(opt);
+        }
+      });
+    })
+    .catch(() => {});
+}

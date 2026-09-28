@@ -92,6 +92,28 @@ pharmacy_service = PharmacyService(
     outbox=outbox_publisher
 )
 
+from health_platform.core.emergency.models import (
+    ESITriageLevel,
+    ERBayType,
+    ERBayStatus,
+    ERDispositionType,
+    ERCaseStatus,
+    ERBay,
+    TriageAssessmentInput,
+    ResuscitationInterventionInput,
+    ResuscitationIntervention,
+    ERDispositionInput,
+    ERCaseRecord
+)
+from health_platform.core.emergency.service import EmergencyService
+
+emergency_service = EmergencyService(
+    identity_service=identity_service,
+    financial_service=financial_ledger_service,
+    ipd_service=ipd_service,
+    outbox=outbox_publisher
+)
+
 import os
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
@@ -485,4 +507,53 @@ def get_dispense_record_by_id(dispense_id: uuid.UUID):
 @app.get("/api/v1/pharmacy/patients/{mpi_id}/dispenses", response_model=List[MedicationDispenseRecord])
 def get_patient_medication_dispenses(mpi_id: uuid.UUID):
     return pharmacy_service.get_patient_dispenses(mpi_id)
+
+# =============================================================================
+# 8. EMERGENCY DEPARTMENT & TRIAGE (ESI PROTOCOL) ENDPOINTS (Pod 8)
+# =============================================================================
+@app.get("/api/v1/emergency/bays", response_model=List[ERBay])
+def get_er_bays():
+    return emergency_service.get_er_bays()
+
+@app.get("/api/v1/emergency/cases/active", response_model=List[ERCaseRecord])
+def get_active_er_cases():
+    return emergency_service.get_active_cases()
+
+@app.get("/api/v1/emergency/cases", response_model=List[ERCaseRecord])
+def get_all_er_cases():
+    return emergency_service.get_all_cases()
+
+@app.get("/api/v1/emergency/cases/{case_id}", response_model=ERCaseRecord)
+def get_er_case_by_id(case_id: uuid.UUID):
+    rec = emergency_service.get_case(case_id)
+    if not rec:
+        raise HTTPException(status_code=404, detail="Emergency case not found.")
+    return rec
+
+@app.post("/api/v1/emergency/triage", response_model=ERCaseRecord)
+def triage_emergency_patient(payload: TriageAssessmentInput):
+    try:
+        return emergency_service.triage_patient(payload)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Triage intake error: {str(e)}")
+
+@app.post("/api/v1/emergency/resuscitation/interventions", response_model=ResuscitationIntervention)
+def record_resuscitation_intervention(payload: ResuscitationInterventionInput):
+    try:
+        return emergency_service.record_resuscitation_intervention(payload)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Resuscitation error: {str(e)}")
+
+@app.post("/api/v1/emergency/disposition", response_model=ERCaseRecord)
+def finalize_emergency_disposition(payload: ERDispositionInput):
+    try:
+        return emergency_service.finalize_er_disposition(payload)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Disposition error: {str(e)}")
 

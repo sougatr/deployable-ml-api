@@ -49,11 +49,14 @@
     <button class="tab-btn" data-tab="pharmacy">
       <span class="tab-icon">💊</span> 5. Pharmacy & Dispensing
     </button>
+    <button class="tab-btn" data-tab="emergency">
+      <span class="tab-icon">🚨</span> 6. Emergency & Triage (ER)
+    </button>
     <button class="tab-btn" data-tab="billing">
-      <span class="tab-icon">💳</span> 6. Financial Ledger & Cashier
+      <span class="tab-icon">💳</span> 7. Financial Ledger & Cashier
     </button>
     <button class="tab-btn" data-tab="abdm-events">
-      <span class="tab-icon">⚡</span> 7. ABDM & Outbox Stream
+      <span class="tab-icon">⚡</span> 8. ABDM & Outbox Stream
     </button>
   </nav>
 
@@ -1064,7 +1067,304 @@
       </div>
     </section>
 
-    <!-- VIEW 6: FINANCIAL LEDGER & CASHIER -->
+    <!-- VIEW 6: EMERGENCY DEPARTMENT & TRIAGE (MANCHESTER / ESI) -->
+    <section class="viewport-panel" id="panel-emergency">
+      <!-- ER KPI Ribbon -->
+      <div class="kpi-strip">
+        <div class="kpi-card">
+          <div class="kpi-icon" style="background:#fef2f2; color:#dc2626;">🚨</div>
+          <div class="kpi-content">
+            <span class="kpi-label">Active ER Cases</span>
+            <span class="kpi-value" id="er-kpi-active">0</span>
+          </div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-icon" style="background:#fee2e2; color:#b91c1c;">🔴</div>
+          <div class="kpi-content">
+            <span class="kpi-label">Code Red (Resus)</span>
+            <span class="kpi-value" id="er-kpi-code-red">0</span>
+          </div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-icon" style="background:#f0fdf4; color:#16a34a;">🛏️</div>
+          <div class="kpi-content">
+            <span class="kpi-label">Available ER Bays</span>
+            <span class="kpi-value" id="er-kpi-available-bays">6 / 6</span>
+          </div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-icon" style="background:#eff6ff; color:#2563eb;">🏥</div>
+          <div class="kpi-content">
+            <span class="kpi-label">Transferred to ICU/IPD</span>
+            <span class="kpi-value" id="er-kpi-transfers">0</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="grid-2-col">
+        <!-- LEFT COLUMN: Live ER Bay Matrix & Rapid Triage Intake -->
+        <div class="er-left-col">
+          <!-- Live ER Bay Matrix -->
+          <div class="card">
+            <div class="card-header">
+              <h3>Live Emergency Bay Matrix</h3>
+              <button class="btn btn-secondary btn-sm" id="btn-refresh-er-bays">🔄 Refresh Bays</button>
+            </div>
+            <div class="er-bays-grid" id="er-bays-container">
+              <!-- Dynamically populated bay cards -->
+            </div>
+          </div>
+
+          <!-- Rapid Triage Assessment Form -->
+          <div class="card" style="margin-top:1.5rem;">
+            <div class="card-header">
+              <h3>Rapid Emergency Triage Intake (ESI Protocol)</h3>
+              <span class="badge badge-warning">Manchester / ESI</span>
+            </div>
+            <form id="form-er-triage">
+              <div class="form-group">
+                <label for="er-patient-select">Emergency Patient (MPI)</label>
+                <select id="er-patient-select" class="form-control" required>
+                  <option value="">-- Select or Walk-in Emergency Patient --</option>
+                </select>
+                <small class="text-muted">Auto-populated with current active patient context if selected.</small>
+              </div>
+
+              <div class="form-group">
+                <label for="er-chief-complaint">Chief Complaint / Presenting Condition</label>
+                <input type="text" id="er-chief-complaint" class="form-control" placeholder="e.g. Acute substernal crushing chest pain, diaphoresis, dyspnea" required>
+              </div>
+
+              <div class="form-row" style="display:grid; grid-template-columns:1fr 1fr; gap:1rem;">
+                <div class="form-group">
+                  <label for="er-triage-level">ESI Triage Acuity Level</label>
+                  <select id="er-triage-level" class="form-control" required>
+                    <option value="LEVEL_1_RED" selected>Level 1 (Red) - Resuscitation (Immediate)</option>
+                    <option value="LEVEL_2_ORANGE">Level 2 (Orange) - Emergent (High Risk / Severe)</option>
+                    <option value="LEVEL_3_YELLOW">Level 3 (Yellow) - Urgent (Stable / Multiple Resources)</option>
+                    <option value="LEVEL_4_GREEN">Level 4 (Green) - Less Urgent (Single Resource)</option>
+                    <option value="LEVEL_5_BLUE">Level 5 (Blue) - Non-Urgent (Routine / Clinic)</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label for="er-mode-arrival">Mode of Arrival</label>
+                  <select id="er-mode-arrival" class="form-control">
+                    <option value="AMBULANCE_ALS">Ambulance (ALS - Advanced Life Support)</option>
+                    <option value="AMBULANCE_BLS">Ambulance (BLS - Basic Life Support)</option>
+                    <option value="WALK_IN" selected>Walk-in / Private Vehicle</option>
+                    <option value="POLICE">Police Escort / Trauma Transfer</option>
+                  </select>
+                </div>
+              </div>
+
+              <!-- Rapid Vitals Grid -->
+              <div class="er-vitals-strip">
+                <div class="vital-input-box">
+                  <label>GCS (3-15)</label>
+                  <input type="number" id="er-gcs" class="form-control" min="3" max="15" value="15" required>
+                </div>
+                <div class="vital-input-box">
+                  <label>BP (Sys/Dia)</label>
+                  <div style="display:flex; gap:0.25rem;">
+                    <input type="number" id="er-bp-sys" class="form-control" value="120" placeholder="Sys">
+                    <input type="number" id="er-bp-dia" class="form-control" value="80" placeholder="Dia">
+                  </div>
+                </div>
+                <div class="vital-input-box">
+                  <label>HR (bpm)</label>
+                  <input type="number" id="er-hr" class="form-control" value="82" required>
+                </div>
+                <div class="vital-input-box">
+                  <label>RR (/min)</label>
+                  <input type="number" id="er-rr" class="form-control" value="18" required>
+                </div>
+                <div class="vital-input-box">
+                  <label>SpO2 (%)</label>
+                  <input type="number" id="er-spo2" class="form-control" value="98" required>
+                </div>
+                <div class="vital-input-box">
+                  <label>Temp (°F)</label>
+                  <input type="number" step="0.1" id="er-temp" class="form-control" value="98.6" required>
+                </div>
+                <div class="vital-input-box">
+                  <label>Pain (0-10)</label>
+                  <input type="number" id="er-pain" class="form-control" min="0" max="10" value="0">
+                </div>
+              </div>
+
+              <div class="form-row" style="display:grid; grid-template-columns:1fr 1fr; gap:1rem; margin-top:1rem;">
+                <div class="form-group">
+                  <label for="er-allocated-bay">Assign Bay (Optional / Auto-routes)</label>
+                  <select id="er-allocated-bay" class="form-control">
+                    <option value="">Auto-Assign Best Bay</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label for="er-triage-nurse">Triage Nurse Name</label>
+                  <input type="text" id="er-triage-nurse" class="form-control" value="Sister Sunita Rao (RN, ER Triage)" required>
+                </div>
+              </div>
+
+              <div class="form-actions" style="margin-top:1.25rem;">
+                <button type="submit" class="btn btn-danger" style="width:100%; font-weight:700;">
+                  🚨 Complete Triage & Admit to Emergency Bay
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+
+        <!-- RIGHT COLUMN: Active Emergency Workstation, Resuscitation Log & Disposition -->
+        <div class="er-right-col">
+          <!-- Active Case Selector & Clinical Header -->
+          <div class="card">
+            <div class="card-header">
+              <h3>Emergency Workstation</h3>
+              <div style="display:flex; gap:0.5rem; align-items:center;">
+                <label for="er-active-cases-select" style="font-size:0.8rem; margin:0;">Active Case:</label>
+                <select id="er-active-cases-select" class="form-control" style="font-size:0.85rem; padding:0.25rem 0.5rem; width:auto;">
+                  <option value="">-- No Active Cases --</option>
+                </select>
+              </div>
+            </div>
+
+            <div id="er-active-case-banner" class="er-case-banner" style="display:none;">
+              <div class="case-banner-top">
+                <div>
+                  <h4 id="er-banner-patient-name" style="margin:0; font-size:1.15rem;">Patient Name</h4>
+                  <span id="er-banner-uhid" class="text-muted" style="font-size:0.8rem;">UHID: -</span> •
+                  <span id="er-banner-case-no" style="font-weight:600; font-size:0.8rem; color:#2563eb;">ER-2026-0000</span>
+                </div>
+                <div id="er-banner-triage-badge">
+                  <!-- Level badge -->
+                </div>
+              </div>
+              <div class="case-banner-details">
+                <div><strong>Complaint:</strong> <span id="er-banner-complaint">-</span></div>
+                <div><strong>Bay:</strong> <span id="er-banner-bay" style="font-weight:700; color:#dc2626;">-</span></div>
+                <div><strong>Vitals:</strong> <span id="er-banner-vitals">-</span></div>
+                <div><strong>Arrived:</strong> <span id="er-banner-arrived">-</span></div>
+                <div><strong>ER Charges:</strong> <span id="er-banner-charges" style="font-weight:700; color:#16a34a;">₹0.00</span></div>
+              </div>
+            </div>
+
+            <!-- Resuscitation & Code Red Intervention Console -->
+            <div id="er-resus-console" style="margin-top:1.5rem; display:none;">
+              <h4 style="display:flex; align-items:center; gap:0.5rem; color:#b91c1c; border-bottom:1px solid #fecaca; padding-bottom:0.5rem;">
+                ⚡ Code Red & Resuscitation Interventions
+              </h4>
+              <p class="text-muted" style="font-size:0.8rem;">Log real-time defibrillations, airway intubation, crash cart medications, and bedside ultrasonography (POCUS).</p>
+
+              <!-- Quick intervention buttons -->
+              <div class="er-quick-buttons">
+                <button type="button" class="btn btn-secondary btn-sm" id="btn-quick-defib">⚡ Defib 200J</button>
+                <button type="button" class="btn btn-secondary btn-sm" id="btn-quick-intub">🫁 Intubation</button>
+                <button type="button" class="btn btn-secondary btn-sm" id="btn-quick-amiodarone">💉 Amiodarone</button>
+                <button type="button" class="btn btn-secondary btn-sm" id="btn-quick-pocus">🩺 POCUS eFAST</button>
+                <button type="button" class="btn btn-secondary btn-sm" id="btn-quick-bolus">💧 1L NS Bolus</button>
+              </div>
+
+              <form id="form-er-intervention" style="margin-top:1rem;">
+                <div class="form-row" style="display:grid; grid-template-columns:1fr 1fr; gap:0.75rem;">
+                  <div class="form-group">
+                    <label for="er-interv-type">Intervention Type</label>
+                    <input type="text" id="er-interv-type" class="form-control" placeholder="e.g. DEFIBRILLATION" required>
+                  </div>
+                  <div class="form-group">
+                    <label for="er-interv-clinician">Clinician Name</label>
+                    <input type="text" id="er-interv-clinician" class="form-control" value="Dr. Vikram Seth (ED Attending)" required>
+                  </div>
+                </div>
+                <div class="form-group">
+                  <label for="er-interv-details">Intervention Details</label>
+                  <input type="text" id="er-interv-details" class="form-control" placeholder="Clinical notes on procedure performed" required>
+                </div>
+                <div class="form-row" style="display:grid; grid-template-columns:1fr 1fr; gap:0.75rem;">
+                  <div class="form-group">
+                    <label for="er-interv-meds">Medications Administered</label>
+                    <input type="text" id="er-interv-meds" class="form-control" placeholder="Drugs & dosages given">
+                  </div>
+                  <div class="form-group">
+                    <label for="er-interv-post-vitals">Post-Intervention Vitals / Response</label>
+                    <input type="text" id="er-interv-post-vitals" class="form-control" placeholder="e.g. BP 110/70, HR 88, SpO2 98%">
+                  </div>
+                </div>
+                <button type="submit" class="btn btn-danger btn-sm" style="font-weight:600;">
+                  ➕ Record Resuscitation Intervention & Post Charge
+                </button>
+              </form>
+
+              <!-- Interventions History Timeline -->
+              <div class="er-interventions-history" id="er-interventions-timeline" style="margin-top:1rem;">
+                <!-- Timeline items -->
+              </div>
+            </div>
+
+            <!-- ER Disposition & IPD Transfer Workstation -->
+            <div id="er-disposition-console" style="margin-top:2rem; border-top:1px solid var(--border); padding-top:1.5rem; display:none;">
+              <h4 style="display:flex; align-items:center; gap:0.5rem; color:#1e293b;">
+                🏥 ER Disposition & IPD Admission Pipeline
+              </h4>
+              <p class="text-muted" style="font-size:0.8rem;">Discharge stabilized patients home or admit directly to ICU / Inpatient Wards without re-registration.</p>
+
+              <form id="form-er-disposition">
+                <div class="form-row" style="display:grid; grid-template-columns:1fr 1fr; gap:1rem;">
+                  <div class="form-group">
+                    <label for="er-disp-type">Disposition Decision</label>
+                    <select id="er-disp-type" class="form-control" required>
+                      <option value="ADMIT_TO_ICU">🚨 Transfer & Admit to ICU</option>
+                      <option value="ADMIT_TO_IPD_WARD">🛏️ Transfer & Admit to Inpatient Ward</option>
+                      <option value="DISCHARGE_HOME">🏠 Discharge Home (Stabilized)</option>
+                      <option value="TRANSFER_EXTERNAL">🚑 External Facility Transfer</option>
+                    </select>
+                  </div>
+                  <div class="form-group" id="group-er-target-bed">
+                    <label for="er-disp-target-bed">Target Hospital Bed (Bed Hub)</label>
+                    <select id="er-disp-target-bed" class="form-control">
+                      <option value="">-- Auto-Assign Available Bed --</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div class="form-group">
+                  <label for="er-disp-diagnosis">Final ER Diagnosis</label>
+                  <input type="text" id="er-disp-diagnosis" class="form-control" placeholder="e.g. Acute STEMI, post-CPR, stabilized on inotropes" required>
+                </div>
+
+                <div class="form-group">
+                  <label for="er-disp-notes">Disposition / Handover Notes</label>
+                  <textarea id="er-disp-notes" class="form-control" rows="2" placeholder="Clinical handover summary, treatment given, and ongoing ICU orders..." required></textarea>
+                </div>
+
+                <div class="form-row" style="display:grid; grid-template-columns:1fr 1fr; gap:1rem;">
+                  <div class="form-group">
+                    <label for="er-disp-physician">Attending ER Physician</label>
+                    <input type="text" id="er-disp-physician" class="form-control" value="Dr. Vikram Seth (MD, Emergency Medicine)" required>
+                  </div>
+                  <div class="form-group">
+                    <label for="er-disp-reg">Physician Reg No</label>
+                    <input type="text" id="er-disp-reg" class="form-control" value="MCI-ER-77821" required>
+                  </div>
+                </div>
+
+                <button type="submit" class="btn btn-primary" style="width:100%; font-weight:700; margin-top:0.5rem;">
+                  🏥 Finalize ER Disposition & Release Bay
+                </button>
+              </form>
+            </div>
+
+            <!-- Empty state when no case selected -->
+            <div id="er-no-case-placeholder" style="text-align:center; padding:3rem 1rem; color:var(--text-muted);">
+              <span style="font-size:3rem;">🚨</span>
+              <h4 style="margin-top:0.5rem;">Select an ER Case or Bay</h4>
+              <p style="font-size:0.875rem;">Click any occupied bay on the left or select an active case from the dropdown above to manage resuscitation and hospital admission.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- VIEW 7: FINANCIAL LEDGER & CASHIER -->
     <section class="viewport-panel" id="panel-billing">
       <div class="grid-2-col">
         <!-- Live Itemized Bill -->
