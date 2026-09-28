@@ -12,6 +12,8 @@ let currentDiagOrders = [];
 let currentDiagCatalog = [];
 let selectedDiagOrderId = null;
 let currentDiagFilter = "ALL";
+let currentPharmacyInventory = [];
+let currentPharmFilter = "ALL";
 
 // DOM Elements
 document.addEventListener("DOMContentLoaded", () => {
@@ -23,6 +25,7 @@ document.addEventListener("DOMContentLoaded", () => {
   initClinicianConsultation();
   initIPDModule();
   initDiagnosticsModule();
+  initPharmacyModule();
   initBillingAndPayment();
   fetchHealthStatus();
 });
@@ -44,6 +47,9 @@ function initTabNavigation() {
       } else if (target === "diagnostics") {
         fetchDiagnosticsCatalog();
         fetchDiagnosticsWorklist();
+      } else if (target === "pharmacy") {
+        fetchPharmacyInventory();
+        populatePrescriptionDispenseQueue();
       } else if (target === "abdm-events" && currentPatient) {
         refreshAbdmAndOutbox();
       }
@@ -1835,4 +1841,427 @@ function loadDiagnosticWorkstation(orderId) {
     }
   }
 }
+
+// ==========================================================================
+// 8. PHARMACY & CLOSED-LOOP DISPENSING MODULE
+// ==========================================================================
+function initPharmacyModule() {
+  // Inventory filter buttons
+  const filterBtns = document.querySelectorAll(".filter-btn[data-pharmfilter]");
+  filterBtns.forEach(btn => {
+    btn.addEventListener("click", () => {
+      filterBtns.forEach(b => b.classList.remove("active"));
+      btn.classList.add("active");
+      currentPharmFilter = btn.dataset.pharmfilter;
+      renderPharmacyInventory();
+    });
+  });
+
+  // Restock Modal triggers
+  const btnOpenRestock = document.getElementById("btn-open-restock-modal");
+  if (btnOpenRestock) {
+    btnOpenRestock.addEventListener("click", () => {
+      document.getElementById("pharm-restock-modal").showModal();
+    });
+  }
+  document.getElementById("btn-close-restock-modal").addEventListener("click", () => {
+    document.getElementById("pharm-restock-modal").close();
+  });
+  document.getElementById("btn-cancel-restock").addEventListener("click", () => {
+    document.getElementById("pharm-restock-modal").close();
+  });
+
+  // Restock form submit
+  document.getElementById("pharm-restock-form").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const itemCode = document.getElementById("restock-select-item").value;
+    const batchNum = document.getElementById("restock-batch-num").value;
+    const expDate = document.getElementById("restock-expiry-date").value;
+    const qty = parseInt(document.getElementById("restock-qty").value, 10);
+    const mrp = parseFloat(document.getElementById("restock-mrp").value);
+    const cost = parseFloat(document.getElementById("restock-cost").value);
+    const mfr = document.getElementById("restock-mfr").value;
+
+    try {
+      const res = await fetch("/api/v1/pharmacy/stock/add", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          item_code: itemCode,
+          batch_number: batchNum,
+          expiry_date: expDate,
+          mrp: mrp,
+          unit_cost: cost,
+          quantity: qty,
+          manufacturer: mfr
+        })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.detail || "Restock failed");
+
+      document.getElementById("pharm-restock-modal").close();
+      await fetchPharmacyInventory();
+    } catch (err) {
+      alert("Restock Error: " + err.message);
+    }
+  });
+
+  // Add Manual Medicine Row
+  document.getElementById("btn-pharm-add-manual-row").addEventListener("click", () => {
+    addDispenseLine();
+  });
+
+  // Submit Dispense
+  document.getElementById("btn-submit-dispense").addEventListener("click", async () => {
+    if (!currentPatient) {
+      alert("Please register or select an active patient from the Front Desk first.");
+      return;
+    }
+
+    const lineCards = document.querySelectorAll(".dispense-line-card");
+    if (lineCards.length === 0) {
+      alert("No medication lines to dispense.");
+      return;
+    }
+
+    const items = [];
+    lineCards.forEach(card => {
+      const itemCode = card.querySelector(".disp-item-select").value;
+      const batchNum = card.querySelector(".disp-batch-select").value;
+      const qty = parseInt(card.querySelector(".disp-qty-input").value, 10);
+      if (itemCode && batchNum && qty > 0) {
+        items.push({
+          item_code: itemCode,
+          batch_number: batchNum,
+          quantity_to_dispense: qty
+        });
+      }
+    });
+
+    if (items.length === 0) {
+      alert("Please specify valid items and quantities to dispense.");
+      return;
+    }
+
+    const encId = currentEncounterId || "00000000-0000-0000-0000-" + Date.now().toString().slice(-12);
+    const pharmName = document.getElementById("pharm-signer-name").value;
+    const pharmReg = document.getElementById("pharm-signer-reg").value;
+
+    try {
+      const res = await fetch("/api/v1/pharmacy/dispense", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          mpi_id: currentPatient.mpi_id,
+          encounter_id: encId,
+          pharmacist_name: pharmName,
+          pharmacist_reg_no: pharmReg,
+          items: items,
+          patient_co_pay_ratio: 0.8
+        })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.detail || "Dispense failed");
+
+      // Render Receipt Card
+      const receiptCard = document.getElementById("pharm-receipt-card");
+      receiptCard.classList.remove("hidden");
+      document.getElementById("pharm-receipt-details").innerHTML = `
+        <p><strong>Invoice / Dispense No:</strong> <code>${data.dispense_number}</code></p>
+        <p><strong>Patient:</strong> ${data.patient_name} (UHID: ${data.patient_uhid})</p>
+        <p><strong>Dispensed At:</strong> ${data.dispensed_at.slice(0, 19).replace('T', ' ')}</p>
+        <p><strong>Verified by:</strong> ${data.pharmacist_name} (${data.pharmacist_reg_no})</p>
+        <div style="margin:0.75rem 0;">
+          <table class="report-table">
+            <thead>
+              <tr><th>Item</th><th>Batch</th><th>Expiry</th><th>Qty</th><th>MRP</th><th>Total</th></tr>
+            </thead>
+            <tbody>
+              ${data.lines.map(l => `
+                <tr>
+                  <td><strong>${l.brand_name}</strong><br><small>${l.generic_name}</small></td>
+                  <td><code>${l.batch_number}</code></td>
+                  <td>${l.expiry_date}</td>
+                  <td>${l.quantity_dispensed}</td>
+                  <td>₹${l.unit_price.toFixed(2)}</td>
+                  <td><strong>₹${l.total_price.toFixed(2)}</strong></td>
+                </tr>
+              `).join("")}
+            </tbody>
+          </table>
+        </div>
+        <div style="display:flex; justify-content:space-between; font-weight:700; border-top:1px solid #cbd5e1; padding-top:0.5rem;">
+          <span>Gross Total: ₹${data.gross_total.toFixed(2)}</span>
+          <span style="color:#047857;">Patient Share (80%): ₹${data.patient_share.toFixed(2)}</span>
+          <span style="color:#b45309;">Insurer / TPA (20%): ₹${data.insurer_share.toFixed(2)}</span>
+        </div>
+      `;
+
+      window._lastPharmacyDispense = data;
+      await fetchPharmacyInventory();
+      await fetchHealthStatus();
+    } catch (err) {
+      alert("Dispense Error: " + err.message);
+    }
+  });
+
+  // Proceed to Cashier Desk
+  document.getElementById("btn-pharm-goto-billing").addEventListener("click", () => {
+    const data = window._lastPharmacyDispense;
+    if (!data) return;
+
+    // Switch to billing tab
+    document.querySelectorAll(".tab-btn").forEach(t => t.classList.remove("active"));
+    const billingTab = document.querySelector('.tab-btn[data-tab="billing"]');
+    if (billingTab) billingTab.classList.add("active");
+    document.querySelectorAll(".viewport-panel").forEach(p => p.classList.remove("active"));
+    document.getElementById("panel-billing").classList.add("active");
+
+    // Populate billing charges table with the pharmacy items
+    const tbody = document.getElementById("billing-charges-tbody");
+    tbody.innerHTML = data.lines.map(l => `
+      <tr>
+        <td><strong>${l.brand_name} (${l.quantity_dispensed} units)</strong><br><small>Batch: ${l.batch_number} • Exp: ${l.expiry_date}</small></td>
+        <td><span class="badge badge-info">Pharmacy Dispense</span></td>
+        <td>₹${l.total_price.toFixed(2)}</td>
+        <td>₹${(l.total_price * 0.8).toFixed(2)}</td>
+        <td>₹${(l.total_price * 0.2).toFixed(2)}</td>
+      </tr>
+    `).join("");
+
+    document.getElementById("billing-gross-total").textContent = `₹${data.gross_total.toFixed(2)}`;
+    document.getElementById("billing-insurer-total").textContent = `₹${data.insurer_share.toFixed(2)}`;
+    document.getElementById("billing-net-payable").textContent = `₹${data.patient_share.toFixed(2)}`;
+    document.getElementById("pay-amount").value = data.patient_share.toFixed(2);
+  });
+}
+
+async function fetchPharmacyInventory() {
+  try {
+    const res = await fetch("/api/v1/pharmacy/inventory");
+    const data = await res.json();
+    currentPharmacyInventory = data;
+
+    const alertRes = await fetch("/api/v1/pharmacy/alerts");
+    const alerts = await alertRes.json();
+
+    const dispRes = await fetch("/api/v1/pharmacy/dispenses");
+    const dispenses = await dispRes.json();
+
+    // KPI Counters
+    document.getElementById("pharm-kpi-skus").textContent = data.length;
+    const totalUnits = data.reduce((sum, item) => sum + item.batches.reduce((bSum, b) => bSum + b.quantity_available, 0), 0);
+    document.getElementById("pharm-kpi-units").textContent = totalUnits.toLocaleString("en-IN");
+    document.getElementById("pharm-kpi-alerts").textContent = alerts.near_expiry_count + alerts.expired_count;
+    document.getElementById("pharm-kpi-dispenses").textContent = dispenses.length;
+
+    // Populate restock select
+    const select = document.getElementById("restock-select-item");
+    if (select) {
+      select.innerHTML = data.map(i => `
+        <option value="${i.item_code}">${i.brand_name} (${i.generic_name}) - Current Stock: ${i.batches.reduce((s,b)=>s+b.quantity_available,0)}</option>
+      `).join("");
+    }
+
+    renderPharmacyInventory();
+  } catch (err) {
+    console.error("Failed to fetch pharmacy inventory:", err);
+  }
+}
+
+function renderPharmacyInventory() {
+  const container = document.getElementById("pharm-inventory-container");
+  if (!container) return;
+
+  let filtered = currentPharmacyInventory;
+  if (currentPharmFilter === "HEALTHY") {
+    filtered = currentPharmacyInventory.filter(i => {
+      const hasAlert = i.batches.some(b => {
+        const exp = new Date(b.expiry_date);
+        const today = new Date();
+        const diffDays = (exp - today) / (1000 * 60 * 60 * 24);
+        return diffDays <= 90;
+      });
+      return !hasAlert;
+    });
+  } else if (currentPharmFilter === "ALERTS") {
+    filtered = currentPharmacyInventory.filter(i => {
+      return i.batches.some(b => {
+        const exp = new Date(b.expiry_date);
+        const today = new Date();
+        const diffDays = (exp - today) / (1000 * 60 * 60 * 24);
+        return diffDays <= 90;
+      });
+    });
+  }
+
+  if (filtered.length === 0) {
+    container.innerHTML = '<div class="empty-state">No pharmacy inventory in this filter.</div>';
+    return;
+  }
+
+  container.innerHTML = filtered.map(item => {
+    const totalStock = item.batches.reduce((sum, b) => sum + b.quantity_available, 0);
+    return `
+      <div class="pharm-item-card">
+        <div class="pharm-item-header">
+          <div>
+            <div class="pharm-brand-title">${item.brand_name} <small style="color:var(--primary);">${item.strength}</small></div>
+            <div class="pharm-generic-sub">${item.generic_name}</div>
+          </div>
+          <span class="pharm-stock-pill pharm-stock-HEALTHY">${totalStock} Units Available</span>
+        </div>
+
+        <table class="pharm-batch-table">
+          <thead>
+            <tr><th>Batch No.</th><th>Expiry</th><th>MRP</th><th>Stock</th><th>Status</th></tr>
+          </thead>
+          <tbody>
+            ${item.batches.map(b => {
+              const exp = new Date(b.expiry_date);
+              const today = new Date();
+              const diffDays = (exp - today) / (1000 * 60 * 60 * 24);
+              let tag = '<span class="batch-tag-healthy">🟢 Good</span>';
+              if (diffDays < 0) {
+                tag = '<span class="batch-tag-expired">🔴 EXPIRED</span>';
+              } else if (diffDays <= 90) {
+                tag = `<span class="batch-tag-near">🟡 Exp: ${Math.round(diffDays)}d</span>`;
+              }
+              return `
+                <tr>
+                  <td><code>${b.batch_number}</code></td>
+                  <td>${b.expiry_date}</td>
+                  <td>₹${b.mrp.toFixed(2)}</td>
+                  <td><strong>${b.quantity_available}</strong></td>
+                  <td>${tag}</td>
+                </tr>
+              `;
+            }).join("")}
+          </tbody>
+        </table>
+      </div>
+    `;
+  }).join("");
+}
+
+function populatePrescriptionDispenseQueue() {
+  if (currentPatient) {
+    document.getElementById("pharm-patient-name").textContent = `Active Patient: ${currentPatient.first_name} ${currentPatient.last_name}`;
+    document.getElementById("pharm-patient-meta").textContent = `UHID: ${currentPatient.uhid} • Dr. Anup Khatri (Orthopaedics)`;
+  }
+
+  const container = document.getElementById("pharm-dispense-lines-container");
+  if (!container) return;
+  container.innerHTML = "";
+
+  // Pre-seed with prescription medications: Ezorb Forte & Pan 40
+  addDispenseLine("MED-EZORB-FORTE", 30);
+  addDispenseLine("MED-PAN-40", 10);
+}
+
+function addDispenseLine(defaultItemCode = null, defaultQty = 10) {
+  const container = document.getElementById("pharm-dispense-lines-container");
+  if (!container) return;
+
+  const itemOptions = currentPharmacyInventory.map(i => `
+    <option value="${i.item_code}" ${i.item_code === defaultItemCode ? 'selected' : ''}>
+      ${i.brand_name} (${i.strength})
+    </option>
+  `).join("");
+
+  const lineCard = document.createElement("div");
+  lineCard.className = "dispense-line-card";
+  lineCard.innerHTML = `
+    <div>
+      <select class="disp-item-select">
+        ${itemOptions}
+      </select>
+    </div>
+    <div>
+      <select class="disp-batch-select">
+        <!-- Batches populated based on chosen item -->
+      </select>
+    </div>
+    <div>
+      <input type="number" class="disp-qty-input" min="1" value="${defaultQty}">
+    </div>
+    <div style="font-weight:700; text-align:right;">
+      <span class="disp-line-total">₹0.00</span>
+    </div>
+    <div>
+      <button type="button" class="btn-remove-line" title="Remove line">&times;</button>
+    </div>
+  `;
+
+  container.appendChild(lineCard);
+
+  const itemSelect = lineCard.querySelector(".disp-item-select");
+  const batchSelect = lineCard.querySelector(".disp-batch-select");
+  const qtyInput = lineCard.querySelector(".disp-qty-input");
+  const removeBtn = lineCard.querySelector(".btn-remove-line");
+
+  function updateBatches() {
+    const itemCode = itemSelect.value;
+    const item = currentPharmacyInventory.find(i => i.item_code === itemCode);
+    if (!item || item.batches.length === 0) {
+      batchSelect.innerHTML = '<option value="">No batches</option>';
+      return;
+    }
+    // FEFO: sort by expiry
+    const sorted = [...item.batches].sort((a,b) => new Date(a.expiry_date) - new Date(b.expiry_date));
+    batchSelect.innerHTML = sorted.map(b => {
+      const exp = new Date(b.expiry_date);
+      const isExp = exp < new Date();
+      return `
+        <option value="${b.batch_number}" data-mrp="${b.mrp}" data-avail="${b.quantity_available}" ${isExp ? 'disabled style="color:red;"' : ''}>
+          ${b.batch_number} (Exp: ${b.expiry_date}) [Stock: ${b.quantity_available}] ${isExp ? '(EXPIRED)' : ''}
+        </option>
+      `;
+    }).join("");
+    updateLinePrice();
+  }
+
+  function updateLinePrice() {
+    const opt = batchSelect.selectedOptions[0];
+    const mrp = opt ? parseFloat(opt.dataset.mrp || 0) : 0;
+    const qty = parseInt(qtyInput.value || 0, 10);
+    const lineTotal = mrp * qty;
+    lineCard.querySelector(".disp-line-total").textContent = `₹${lineTotal.toFixed(2)}`;
+    recalculatePharmacyTotals();
+  }
+
+  itemSelect.addEventListener("change", () => {
+    updateBatches();
+  });
+  batchSelect.addEventListener("change", () => {
+    updateLinePrice();
+  });
+  qtyInput.addEventListener("input", () => {
+    updateLinePrice();
+  });
+  removeBtn.addEventListener("click", () => {
+    lineCard.remove();
+    recalculatePharmacyTotals();
+  });
+
+  updateBatches();
+}
+
+function recalculatePharmacyTotals() {
+  const lineCards = document.querySelectorAll(".dispense-line-card");
+  let gross = 0.0;
+  lineCards.forEach(c => {
+    const opt = c.querySelector(".disp-batch-select").selectedOptions[0];
+    const mrp = opt ? parseFloat(opt.dataset.mrp || 0) : 0;
+    const qty = parseInt(c.querySelector(".disp-qty-input").value || 0, 10);
+    gross += (mrp * qty);
+  });
+
+  const patientShare = gross * 0.8;
+  const insurerShare = gross * 0.2;
+
+  document.getElementById("pharm-bill-gross").textContent = `₹${gross.toFixed(2)}`;
+  document.getElementById("pharm-bill-split").textContent = `Patient: ₹${patientShare.toFixed(2)} • TPA: ₹${insurerShare.toFixed(2)}`;
+}
+
 

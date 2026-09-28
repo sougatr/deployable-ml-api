@@ -78,6 +78,20 @@ diagnostics_service = DiagnosticsService(
     outbox=outbox_publisher
 )
 
+from health_platform.core.pharmacy.models import (
+    PharmacyCatalogItem,
+    AddStockBatchInput,
+    DispenseRequestInput,
+    MedicationDispenseRecord
+)
+from health_platform.core.pharmacy.service import PharmacyService
+
+pharmacy_service = PharmacyService(
+    identity_service=identity_service,
+    financial_service=financial_ledger_service,
+    outbox=outbox_publisher
+)
+
 import os
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
@@ -429,4 +443,46 @@ def verify_diagnostic_report(payload: VerificationInput):
         return diagnostics_service.verify_and_publish_report(payload)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
+
+# =============================================================================
+# 7. PHARMACY & CLOSED-LOOP DISPENSING ENDPOINTS (Pod 7)
+# =============================================================================
+@app.get("/api/v1/pharmacy/inventory", response_model=List[PharmacyCatalogItem])
+def get_pharmacy_inventory():
+    return pharmacy_service.get_inventory()
+
+@app.get("/api/v1/pharmacy/alerts")
+def get_pharmacy_alerts():
+    return pharmacy_service.get_alerts()
+
+@app.post("/api/v1/pharmacy/stock/add", response_model=PharmacyCatalogItem)
+def add_pharmacy_stock_batch(payload: AddStockBatchInput):
+    try:
+        return pharmacy_service.add_stock_batch(payload)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+@app.post("/api/v1/pharmacy/dispense", response_model=MedicationDispenseRecord)
+def dispense_prescription_medications(payload: DispenseRequestInput):
+    try:
+        return pharmacy_service.dispense_prescription(payload)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Dispense Processing Error: {str(e)}")
+
+@app.get("/api/v1/pharmacy/dispenses", response_model=List[MedicationDispenseRecord])
+def get_all_dispense_records():
+    return pharmacy_service.get_all_dispenses()
+
+@app.get("/api/v1/pharmacy/dispenses/{dispense_id}", response_model=MedicationDispenseRecord)
+def get_dispense_record_by_id(dispense_id: uuid.UUID):
+    rec = pharmacy_service.get_dispense_record(dispense_id)
+    if not rec:
+        raise HTTPException(status_code=404, detail="Dispense record not found.")
+    return rec
+
+@app.get("/api/v1/pharmacy/patients/{mpi_id}/dispenses", response_model=List[MedicationDispenseRecord])
+def get_patient_medication_dispenses(mpi_id: uuid.UUID):
+    return pharmacy_service.get_patient_dispenses(mpi_id)
 

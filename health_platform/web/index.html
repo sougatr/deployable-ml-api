@@ -46,11 +46,14 @@
     <button class="tab-btn" data-tab="diagnostics">
       <span class="tab-icon">🧪</span> 4. Diagnostics & LIS/RIS
     </button>
+    <button class="tab-btn" data-tab="pharmacy">
+      <span class="tab-icon">💊</span> 5. Pharmacy & Dispensing
+    </button>
     <button class="tab-btn" data-tab="billing">
-      <span class="tab-icon">💳</span> 5. Financial Ledger & Cashier
+      <span class="tab-icon">💳</span> 6. Financial Ledger & Cashier
     </button>
     <button class="tab-btn" data-tab="abdm-events">
-      <span class="tab-icon">⚡</span> 6. ABDM & Outbox Stream
+      <span class="tab-icon">⚡</span> 7. ABDM & Outbox Stream
     </button>
   </nav>
 
@@ -937,7 +940,131 @@
       </div>
     </section>
 
-    <!-- VIEW 5: FINANCIAL LEDGER & CASHIER -->
+    <!-- VIEW 5: PHARMACY & DISPENSING -->
+    <section class="viewport-panel" id="panel-pharmacy">
+      <!-- Pharmacy KPI Strip -->
+      <div class="kpi-strip">
+        <div class="kpi-card">
+          <div class="kpi-icon">💊</div>
+          <div class="kpi-content">
+            <span class="kpi-label">Formulary SKUs</span>
+            <span class="kpi-value" id="pharm-kpi-skus">7</span>
+          </div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-icon success">📦</div>
+          <div class="kpi-content">
+            <span class="kpi-label">Units in Stock</span>
+            <span class="kpi-value" id="pharm-kpi-units">3,110</span>
+          </div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-icon warning">⚠️</div>
+          <div class="kpi-content">
+            <span class="kpi-label">Near-Expiry / Expired</span>
+            <span class="kpi-value" id="pharm-kpi-alerts">2</span>
+          </div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-icon info">🧾</div>
+          <div class="kpi-content">
+            <span class="kpi-label">Prescriptions Dispensed</span>
+            <span class="kpi-value" id="pharm-kpi-dispenses">0</span>
+          </div>
+        </div>
+        <div class="kpi-card action-card">
+          <button type="button" class="btn btn-outline" id="btn-open-restock-modal">
+            📥 Receive Stock Batch
+          </button>
+        </div>
+      </div>
+
+      <!-- Main Layout: Drug Inventory (Left) & Dispensing Workstation (Right) -->
+      <div class="ipd-grid-layout">
+        <!-- Drug Inventory & FEFO Matrix -->
+        <div class="card">
+          <div class="card-header">
+            <div>
+              <h3>Real-Time Pharmacy Inventory</h3>
+              <span class="card-subtitle">FEFO Batch & Expiry Controlled Formulary</span>
+            </div>
+            <div class="matrix-filter-buttons">
+              <button type="button" class="filter-btn active" data-pharmfilter="ALL">All Items</button>
+              <button type="button" class="filter-btn" data-pharmfilter="HEALTHY">In Stock</button>
+              <button type="button" class="filter-btn" data-pharmfilter="ALERTS">Alerts</button>
+            </div>
+          </div>
+          <div id="pharm-inventory-container" class="pharm-inventory-list" style="margin-top:1rem;">
+            <div class="empty-state">Loading pharmacy inventory...</div>
+          </div>
+        </div>
+
+        <!-- Closed-Loop Dispensing Workstation -->
+        <div class="card" id="pharm-dispense-card">
+          <div class="card-header ipd-bedside-header">
+            <div>
+              <span class="badge badge-uhid">CLOSED-LOOP DISPENSING</span>
+              <h3 id="pharm-patient-name" style="margin-top:0.25rem;">Active Patient: Anindita Ray</h3>
+              <span class="card-subtitle" id="pharm-patient-meta">UHID: U-2026-0001 • Prescribed by Dr. Anup Khatri</span>
+            </div>
+            <div class="bedside-tariff-badge">
+              <span class="tariff-label">Billable To</span>
+              <span class="tariff-amount" id="pharm-bill-gross">₹0.00</span>
+              <span class="tariff-sub" id="pharm-bill-split">Patient 80% • TPA 20%</span>
+            </div>
+          </div>
+
+          <!-- Prescription Prescribed Medication Items -->
+          <div class="dispense-section">
+            <div class="section-title-row" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.75rem;">
+              <h4>Prescription Medications Queue</h4>
+              <button type="button" class="btn btn-outline btn-sm" id="btn-pharm-add-manual-row">
+                ➕ Add Item
+              </button>
+            </div>
+
+            <div id="pharm-dispense-lines-container" class="dispense-lines-list">
+              <!-- Dynamic Dispense Line Items -->
+            </div>
+
+            <!-- Pharmacist Verification & Sign-Off -->
+            <div class="pharmacist-signoff-box" style="margin-top:1.25rem; background:#f8fafc; padding:0.75rem; border-radius:var(--radius-sm); border:1px solid var(--border);">
+              <div class="form-row">
+                <div class="form-group">
+                  <label>Dispensing Pharmacist *</label>
+                  <input type="text" id="pharm-signer-name" value="Kavita Deshmukh, M.Pharm (Chief Pharmacist)" required>
+                </div>
+                <div class="form-group">
+                  <label>Pharmacy Council Reg. No *</label>
+                  <input type="text" id="pharm-signer-reg" value="MH-PHARM-20120045" required>
+                </div>
+              </div>
+            </div>
+
+            <div class="form-actions" style="margin-top:1rem;">
+              <button type="button" class="btn btn-success" id="btn-submit-dispense">
+                💊 Finalize Closed-Loop Dispense & Post Bill to Ledger
+              </button>
+            </div>
+          </div>
+
+          <!-- Official Dispense Receipt & Invoice Card -->
+          <div id="pharm-receipt-card" class="discharge-summary-card hidden" style="margin-top:1.25rem;">
+            <div class="summary-badge">DISPENSED & CHARGES CAPTURED</div>
+            <h4>Official Hospital Pharmacy Invoice</h4>
+            <div id="pharm-receipt-details" class="summary-details"></div>
+            <div class="summary-actions" style="margin-top:1rem;">
+              <button type="button" class="btn btn-primary" id="btn-pharm-goto-billing">
+                💳 Proceed to Cashier Desk to Settle Pharmacy Bill
+              </button>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </section>
+
+    <!-- VIEW 6: FINANCIAL LEDGER & CASHIER -->
     <section class="viewport-panel" id="panel-billing">
       <div class="grid-2-col">
         <!-- Live Itemized Bill -->
@@ -1169,6 +1296,60 @@
           <button type="button" class="btn btn-secondary" id="btn-cancel-diag-order">Cancel</button>
           <button type="submit" class="btn btn-primary" id="btn-confirm-diag-order">
             Confirm Order & Post Charge to Ledger
+          </button>
+        </div>
+      </form>
+    </div>
+  </dialog>
+
+  <!-- Restock Batch Modal -->
+  <dialog id="pharm-restock-modal" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>Receive Pharmacy Stock Batch</h3>
+        <button type="button" class="modal-close-btn" id="btn-close-restock-modal">&times;</button>
+      </div>
+      <form id="pharm-restock-form" class="form">
+        <div class="form-group">
+          <label>Select Medication SKU *</label>
+          <select id="restock-select-item" required>
+            <!-- Populated dynamically -->
+          </select>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Manufacturer Batch Number *</label>
+            <input type="text" id="restock-batch-num" placeholder="e.g. EZ-2025-C2" required>
+          </div>
+          <div class="form-group">
+            <label>Expiry Date (YYYY-MM-DD) *</label>
+            <input type="date" id="restock-expiry-date" required>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Units Received (Quantity) *</label>
+            <input type="number" id="restock-qty" placeholder="100" min="1" value="100" required>
+          </div>
+          <div class="form-group">
+            <label>Unit MRP (₹) *</label>
+            <input type="number" step="0.01" id="restock-mrp" placeholder="28.50" value="28.50" required>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Unit Acquisition Cost (₹) *</label>
+            <input type="number" step="0.01" id="restock-cost" placeholder="18.00" value="18.00" required>
+          </div>
+          <div class="form-group">
+            <label>Manufacturer / Supplier *</label>
+            <input type="text" id="restock-mfr" placeholder="e.g. Corona Remedies" value="Corona Remedies" required>
+          </div>
+        </div>
+        <div class="modal-actions" style="margin-top:1.25rem;">
+          <button type="button" class="btn btn-secondary" id="btn-cancel-restock">Cancel</button>
+          <button type="submit" class="btn btn-primary" id="btn-confirm-restock">
+            Receive & Update Stock Ledger
           </button>
         </div>
       </form>

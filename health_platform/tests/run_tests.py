@@ -28,6 +28,7 @@ from health_platform.tests.test_abdm_and_clinical_consultation import (
 from health_platform.tests.test_document_parser import TestClinicalDocumentParser
 from health_platform.tests.test_ipd_workflows import TestIPDWorkflows
 from health_platform.tests.test_diagnostics_workflows import TestDiagnosticsWorkflows
+from health_platform.tests.test_pharmacy_workflows import TestPharmacyWorkflows
 
 class PlatformCoreTestSuite(unittest.TestCase):
     # Identity & MPI Tests
@@ -149,6 +150,29 @@ class PlatformCoreTestSuite(unittest.TestCase):
         t = TestDiagnosticsWorkflows()
         t.setUp()
         t.test_05_api_diagnostics_endpoints()
+
+    # Pharmacy & e-Prescription Dispensing (Closed-Loop Inventory) Tests
+    def test_31_pharmacy_inventory_and_alerts(self):
+        t = TestPharmacyWorkflows()
+        t.setUp()
+        t.test_01_inventory_initialization_and_alerts()
+
+    def test_32_pharmacy_closed_loop_dispensing(self):
+        t = TestPharmacyWorkflows()
+        t.setUp()
+        t.test_02_successful_dispense_and_stock_decrement()
+
+    def test_33_pharmacy_expired_and_stock_safety(self):
+        t = TestPharmacyWorkflows()
+        t.setUp()
+        t.test_03_rejection_of_expired_medication_batch()
+        t.test_04_rejection_of_insufficient_stock()
+        t.test_05_restock_batch()
+
+    def test_34_pharmacy_api_endpoints(self):
+        t = TestPharmacyWorkflows()
+        t.setUp()
+        t.test_06_api_pharmacy_endpoints()
 
 if __name__ == "__main__":
     suite = unittest.TestLoader().loadTestsFromTestCase(PlatformCoreTestSuite)
