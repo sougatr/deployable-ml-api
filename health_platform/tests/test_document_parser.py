@@ -268,7 +268,74 @@ class TestClinicalDocumentParser(unittest.TestCase):
         orders = [o["tariff_code"] for o in parsed["orders"]]
         self.assertTrue(any("MAMMO" in code or "HEM" in code for code in orders))
 
+    def test_parse_inpatient_discharge_summary_metadata_filtering(self):
+        """Asserts IPD number, admitting doctor, payer, naval command, dates, DAMA are filtered and a structured summary is generated."""
+        discharge_text = (
+            "Discharge Summary\n"
+            "Name of the Patient\n"
+            "Chandrakant Krishna Chavan\n"
+            "Age\n"
+            "69\n"
+            "Gender\n"
+            "IPD rumber\n"
+            "Admitting Doctor\n"
+            "Male\n"
+            "MHHIK.0000013317\n"
+            "HIKIP6101\n"
+            "Dr.Ramkishan Nag\n"
+            ": Patient Direct Billing\n"
+            "Payer\n"
+            "Headquarters westem\n"
+            "naval command\n"
+            "Date of Registration\n"
+            ": 06/07/2026\n"
+            "Date of Admission\n"
+            ": 06/07/2026 01:19:00\n"
+            "PM\n"
+            "Date of Discharge\n"
+            ":09/07/2026\n"
+            "Date of Treatment\n"
+            ":06/07/2026\n"
+            "Type of Discharge\n"
+            ":DAMA\n"
+            "Department of Medical Oncology\n"
+            "Admitting Diagnosis :Carcinoma colon\n"
+            "with Hepatic mets\n"
+            "Allergies\n"
+            ":Not known\n"
+            "Alerts"
+        )
+
+        parsed = ClinicalDocumentParser.parse_clinical_text_to_columns(discharge_text)
+
+        # 1. Assert noise is filtered out of clinical notes
+        narrative = parsed["clinical_narrative"]
+        self.assertNotIn("IPD rumber", narrative)
+        self.assertNotIn("HIKIP6101", narrative)
+        self.assertNotIn("MHHIK.0000013317", narrative)
+        self.assertNotIn("Dr.Ramkishan Nag", narrative)
+        self.assertNotIn("naval command", narrative)
+        self.assertNotIn("01:19:00", narrative)
+        self.assertNotIn("DAMA", narrative)
+        self.assertNotIn("Patient Direct Billing", narrative)
+
+        # 2. Assert concise clinical summary was generated
+        self.assertIn("Clinical Summary", narrative)
+        self.assertIn("Carcinoma Colon", narrative)
+        self.assertIn("Hepatic Metastases", narrative)
+
+        # 3. Assert patient demographics extracted
+        self.assertIsNotNone(parsed["patient_info"])
+        self.assertEqual(parsed["patient_info"]["name"], "Chandrakant Krishna Chavan")
+        self.assertEqual(parsed["patient_info"]["age"], 69)
+        self.assertEqual(parsed["patient_info"]["gender"], "MALE")
+
+        # 4. Assert diagnosis mapped to colorectal carcinoma C18.9
+        icd_codes = [d["code_icd10"] for d in parsed["diagnoses"]]
+        self.assertIn("C18.9", icd_codes)
+
 if __name__ == "__main__":
     unittest.main()
+
 
 

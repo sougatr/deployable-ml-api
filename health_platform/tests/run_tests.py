@@ -293,6 +293,10 @@ class PlatformCoreTestSuite(unittest.TestCase):
         t = TestClinicalDocumentParser()
         t.test_parse_hcg_cancer_centre_letterhead_filtering()
 
+    def test_55_inpatient_discharge_summary_metadata_filtering(self):
+        t = TestClinicalDocumentParser()
+        t.test_parse_inpatient_discharge_summary_metadata_filtering()
+
 if __name__ == "__main__":
     suite = unittest.TestLoader().loadTestsFromTestCase(PlatformCoreTestSuite)
     runner = unittest.TextTestRunner(verbosity=2)

@@ -496,98 +496,113 @@
             </div>
           </div>
 
-          <form id="consultation-form" class="form hidden">
+          <form id="consultation-form" class="form hidden" style="margin-top: 1rem;">
             <!-- Hidden synchronized chief complaint field to maintain full API schema backward compatibility -->
             <input type="hidden" id="consult-complaint" required value="Clinical consultation">
 
-            <div class="form-group" style="margin-top: 0.75rem;">
-              <label>Clinical Notes (SOAP Narrative) *</label>
-              <textarea id="consult-narrative" rows="4" required placeholder="Clean clinical examination findings, history, and SOAP assessment...">Patient presents for clinical consultation. Examination and diagnostic care plan initiated.</textarea>
-            </div>
-
-            <div class="grid-2-col">
-              <!-- Diagnoses -->
-              <div class="form-section">
-                <h4>Confirmed Diagnosis (ICD-10)</h4>
-                <div class="form-group">
-                  <label>Diagnosis</label>
-                  <select id="consult-icd10">
-                    <option value="I10" data-snomed="38341003" data-name="Essential (primary) hypertension" selected>
-                      [I10] Essential (primary) hypertension
-                    </option>
-                    <option value="E11.9" data-snomed="73211009" data-name="Type 2 diabetes mellitus without complications">
-                      [E11.9] Type 2 diabetes mellitus without complications
-                    </option>
-                    <option value="J30.2" data-snomed="44482006" data-name="Other seasonal allergic rhinitis">
-                      [J30.2] Other seasonal allergic rhinitis
-                    </option>
-                  </select>
+            <!-- Primary Consultation Action Bar (Direct Sign-Off without Duplication) -->
+            <div class="consultation-finalization-bar">
+              <div style="display: flex; align-items: center; gap: 1rem; flex-wrap: wrap;">
+                <div class="form-group" style="margin: 0; min-width: 200px;">
+                  <label style="font-weight: 600; font-size: 0.8125rem; margin-bottom: 0.25rem; display: block;">Doctor Consultation Fee (₹)</label>
+                  <input type="number" id="consult-fee" value="500.00" style="padding: 0.4rem 0.6rem; font-weight: 700; width: 100%; border: 1px solid #cbd5e1; border-radius: var(--radius-sm);">
+                </div>
+                <div style="display: flex; flex-direction: column; gap: 0.2rem;">
+                  <span class="badge badge-success" style="font-size: 0.75rem; padding: 0.25rem 0.5rem; width: fit-content;">
+                    🔐 Verified Digital Signature (RSA-2048 • ABDM M2 Compliant)
+                  </span>
+                  <span style="font-size: 0.75rem; color: #64748b;">Attending Practitioner: Dr. Anand Kumar (MMC Reg: 20110324)</span>
                 </div>
               </div>
-
-              <!-- Vitals -->
-              <div class="form-section">
-                <h4>Vitals (LOINC Standard)</h4>
-                <div class="form-row">
-                  <div class="form-group">
-                    <label>Systolic BP (mm[Hg])</label>
-                    <input type="number" id="vital-sbp" value="138">
-                  </div>
-                  <div class="form-group">
-                    <label>Heart Rate (bpm)</label>
-                    <input type="number" id="vital-hr" value="78">
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div class="grid-2-col">
-              <!-- E-Prescription -->
-              <div class="form-section">
-                <h4>E-Prescription (Pharmacotherapy)</h4>
-                <div class="form-group">
-                  <label>Medicine</label>
-                  <select id="rx-medicine">
-                    <option value="Telma 40|Telmisartan 40mg|1-0-0|30" selected>Telma 40 (Telmisartan 40mg) - 1-0-0 (30 Days)</option>
-                    <option value="Glycomet 500|Metformin 500mg|1-0-1|60">Glycomet 500 (Metformin 500mg) - 1-0-1 (60 Days)</option>
-                    <option value="Allegra 120|Fexofenadine 120mg|0-0-1|10">Allegra 120 (Fexofenadine 120mg) - 0-0-1 (10 Days)</option>
-                  </select>
-                </div>
-                <div class="form-group">
-                  <label>Patient Instructions</label>
-                  <input type="text" id="rx-instructions" value="Take 1 tablet every morning after breakfast">
-                </div>
-              </div>
-
-              <!-- Diagnostic Orders -->
-              <div class="form-section">
-                <h4>Diagnostic Investigation Orders</h4>
-                <div class="form-group">
-                  <label>Order Test</label>
-                  <select id="order-test">
-                    <option value="4548-4|HbA1c Blood Test|LAB-BIO-042|BIOCHEMISTRY|650.00" selected>
-                      HbA1c Blood Panel (LOINC 4548-4) - ₹650.00
-                    </option>
-                    <option value="168731009|Standard Chest X-Ray|RAD-XRAY-001|RADIOLOGY|850.00">
-                      Standard Chest X-Ray (SNOMED 168731009) - ₹850.00
-                    </option>
-                    <option value="58410-2|Complete Blood Count|LAB-HEM-001|HEMATOLOGY|450.00">
-                      Complete Blood Count CBC (LOINC 58410-2) - ₹450.00
-                    </option>
-                  </select>
-                </div>
-                <div class="form-group">
-                  <label>Doctor Consultation Fee (₹)</label>
-                  <input type="number" id="consult-fee" value="500.00">
-                </div>
-              </div>
-            </div>
-
-            <div class="form-actions">
-              <button type="submit" class="btn btn-success" id="btn-complete-consult">
-                Apply Digital Signature & Finalize Consultation
+              <button type="submit" class="btn btn-success btn-lg" id="btn-complete-consult" style="padding: 0.65rem 1.4rem; font-size: 0.9375rem; font-weight: 700; box-shadow: var(--shadow-sm);">
+                ✍️ Apply Digital Signature & Finalize Consultation
               </button>
             </div>
+
+            <!-- Optional Collapsible Drawer for Manual Field Adjustment (Eliminates Visual Clutter & Repetition) -->
+            <details class="consultation-advanced-drawer" id="consult-advanced-drawer">
+              <summary>⚙️ Adjust Detailed Clinical Parameters (Optional Manual Override)</summary>
+              <div style="padding-top: 0.75rem;">
+                <div class="form-group">
+                  <label>Clinical Notes (SOAP Narrative) *</label>
+                  <textarea id="consult-narrative" rows="3" required placeholder="Clean clinical examination findings, history, and SOAP assessment...">Patient presents for clinical consultation. Examination and diagnostic care plan initiated.</textarea>
+                </div>
+
+                <div class="grid-2-col">
+                  <!-- Diagnoses -->
+                  <div class="form-section">
+                    <h4>Confirmed Diagnosis (ICD-10)</h4>
+                    <div class="form-group">
+                      <label>Diagnosis</label>
+                      <select id="consult-icd10">
+                        <option value="I10" data-snomed="38341003" data-name="Essential (primary) hypertension" selected>
+                          [I10] Essential (primary) hypertension
+                        </option>
+                        <option value="E11.9" data-snomed="73211009" data-name="Type 2 diabetes mellitus without complications">
+                          [E11.9] Type 2 diabetes mellitus without complications
+                        </option>
+                        <option value="J30.2" data-snomed="44482006" data-name="Other seasonal allergic rhinitis">
+                          [J30.2] Other seasonal allergic rhinitis
+                        </option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <!-- Vitals -->
+                  <div class="form-section">
+                    <h4>Vitals (LOINC Standard)</h4>
+                    <div class="form-row">
+                      <div class="form-group">
+                        <label>Systolic BP (mm[Hg])</label>
+                        <input type="number" id="vital-sbp" value="120">
+                      </div>
+                      <div class="form-group">
+                        <label>Heart Rate (bpm)</label>
+                        <input type="number" id="vital-hr" value="74">
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="grid-2-col">
+                  <!-- E-Prescription -->
+                  <div class="form-section">
+                    <h4>E-Prescription (Pharmacotherapy)</h4>
+                    <div class="form-group">
+                      <label>Medicine</label>
+                      <select id="rx-medicine">
+                        <option value="Telma 40|Telmisartan 40mg|1-0-0|30" selected>Telma 40 (Telmisartan 40mg) - 1-0-0 (30 Days)</option>
+                        <option value="Glycomet 500|Metformin 500mg|1-0-1|60">Glycomet 500 (Metformin 500mg) - 1-0-1 (60 Days)</option>
+                        <option value="Allegra 120|Fexofenadine 120mg|0-0-1|10">Allegra 120 (Fexofenadine 120mg) - 0-0-1 (10 Days)</option>
+                      </select>
+                    </div>
+                    <div class="form-group">
+                      <label>Patient Instructions</label>
+                      <input type="text" id="rx-instructions" value="Take 1 tablet every morning after breakfast">
+                    </div>
+                  </div>
+
+                  <!-- Diagnostic Orders -->
+                  <div class="form-section">
+                    <h4>Diagnostic Investigation Orders</h4>
+                    <div class="form-group">
+                      <label>Order Test</label>
+                      <select id="order-test">
+                        <option value="4548-4|HbA1c Blood Test|LAB-BIO-042|BIOCHEMISTRY|650.00" selected>
+                          HbA1c Blood Panel (LOINC 4548-4) - ₹650.00
+                        </option>
+                        <option value="168731009|Standard Chest X-Ray|RAD-XRAY-001|RADIOLOGY|850.00">
+                          Standard Chest X-Ray (SNOMED 168731009) - ₹850.00
+                        </option>
+                        <option value="58410-2|Complete Blood Count|LAB-HEM-001|HEMATOLOGY|450.00">
+                          Complete Blood Count CBC (LOINC 58410-2) - ₹450.00
+                        </option>
+                      </select>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </details>
           </form>
 
           <div id="consult-success-summary" class="alert alert-success hidden">
