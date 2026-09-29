@@ -2110,6 +2110,118 @@ body {
   border-radius: 3px;
 }
 
+/* Hospital Operations Combined Hub Styling */
+.hospital-header-card {
+  background: #ffffff;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 1.15rem 1.5rem;
+  margin-bottom: 1.25rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 1rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+  border-left: 4px solid #2563eb;
+}
+
+.hospital-header-left {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.hospital-avatar {
+  width: 48px;
+  height: 48px;
+  background: #eff6ff;
+  border: 2px solid #bfdbfe;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.5rem;
+  color: #1e40af;
+  flex-shrink: 0;
+}
+
+.hospital-quick-stats {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.hosp-stat-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.35rem 0.75rem;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 20px;
+  font-size: 0.775rem;
+  color: #334155;
+  font-weight: 500;
+}
+
+.hosp-stat-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+.hosp-stat-dot.dot-green { background: #16a34a; }
+.hosp-stat-dot.dot-blue { background: #2563eb; }
+.hosp-stat-dot.dot-amber { background: #d97706; }
+.hosp-stat-dot.dot-purple { background: #7c3aed; }
+
+.hospital-nav-bar {
+  display: flex;
+  gap: 0.5rem;
+  border-bottom: 2px solid #e2e8f0;
+  margin-bottom: 1.5rem;
+  overflow-x: auto;
+  padding-bottom: 2px;
+}
+
+.hospital-tab-btn {
+  background: transparent;
+  border: none;
+  padding: 0.75rem 1.15rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #64748b;
+  cursor: pointer;
+  border-radius: 6px 6px 0 0;
+  white-space: nowrap;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+}
+
+.hospital-tab-btn:hover {
+  color: #1e40af;
+  background: #eff6ff;
+}
+
+.hospital-tab-btn.active {
+  color: #1e40af;
+  background: #ffffff;
+  border-bottom: 3px solid #2563eb;
+  font-weight: 700;
+}
+
+.hospital-tab-panel {
+  display: none;
+}
+
+.hospital-tab-panel.active {
+  display: block;
+  animation: fadeIn 0.25s ease-in;
+}
+
 .portal-nav-bar {
   display: flex;
   gap: 0.5rem;

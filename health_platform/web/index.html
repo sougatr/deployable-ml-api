@@ -34,32 +34,17 @@
 
   <!-- Sub-Header: Persona Viewport Switcher -->
   <nav class="viewport-tabs">
-    <button class="tab-btn active" data-tab="reception">
-      <span class="tab-icon">👤</span> 1. Front Desk & Identity (MPI)
-    </button>
-    <button class="tab-btn" data-tab="clinician">
-      <span class="tab-icon">🩺</span> 2. Clinician Consultation (OPD)
-    </button>
-    <button class="tab-btn" data-tab="ipd">
-      <span class="tab-icon">🛏️</span> 3. Inpatient (IPD) & Bed Hub
-    </button>
-    <button class="tab-btn" data-tab="diagnostics">
-      <span class="tab-icon">🧪</span> 4. Diagnostics & LIS/RIS
-    </button>
-    <button class="tab-btn" data-tab="pharmacy">
-      <span class="tab-icon">💊</span> 5. Pharmacy & Dispensing
-    </button>
-    <button class="tab-btn" data-tab="emergency">
-      <span class="tab-icon">🚨</span> 6. Emergency & Triage (ER)
+    <button class="tab-btn active" data-tab="hospital">
+      <span class="tab-icon">🏥</span> 1. Hospital Operations Dashboard
     </button>
     <button class="tab-btn" data-tab="patient-portal" style="border-left:2px solid #0d9488; color:#0f766e; font-weight:600;">
-      <span class="tab-icon">📱</span> 7. Patient / Client Portal
+      <span class="tab-icon">📱</span> 2. Patient / Client Dashboard
     </button>
     <button class="tab-btn" data-tab="billing">
-      <span class="tab-icon">💳</span> 8. Financial Ledger & Cashier
+      <span class="tab-icon">💳</span> 3. Financial Ledger & Cashier
     </button>
     <button class="tab-btn" data-tab="abdm-events">
-      <span class="tab-icon">⚡</span> 9. ABDM & Outbox Stream
+      <span class="tab-icon">⚡</span> 4. ABDM & Outbox Stream
     </button>
   </nav>
 
@@ -80,6 +65,9 @@
         </div>
       </div>
       <div class="banner-actions" style="margin-left:auto; display:flex; gap:0.5rem; align-items:center;">
+        <button type="button" class="btn btn-outline btn-sm" id="btn-banner-open-hospital" style="background:#ffffff; font-weight:700; color:#1e40af; border-color:#1e40af; display:none;">
+          🏥 Switch to Hospital Dashboard
+        </button>
         <button type="button" class="btn btn-outline btn-sm" id="btn-banner-open-portal" style="background:#ffffff; font-weight:700; color:#0f766e; border-color:#0f766e;">
           📱 Open Patient Health Portal →
         </button>
@@ -90,9 +78,70 @@
   <!-- Main Container -->
   <main class="main-content">
 
-    <!-- VIEW 1: RECEPTION & REGISTRATION -->
-    <section class="viewport-panel active" id="panel-reception">
-      <div class="grid-2-col">
+    <!-- VIEW 1: HOSPITAL OPERATIONS DASHBOARD (COMBINED CLINICAL & OPERATIONS HUB) -->
+    <section class="viewport-panel active" id="panel-hospital">
+      <!-- Hospital Header Banner -->
+      <div class="hospital-header-card">
+        <div class="hospital-header-left">
+          <div class="hospital-avatar">🏥</div>
+          <div class="hospital-header-meta">
+            <div style="display:flex; align-items:center; gap:0.6rem; flex-wrap:wrap;">
+              <h2 style="margin:0; font-size:1.3rem; color:#0f172a;">Hospital Operations & Clinical Services Hub</h2>
+              <span class="badge badge-primary">Integrated Care</span>
+              <span class="badge badge-success">ABDM M1/M2 Active</span>
+            </div>
+            <p style="margin:0.25rem 0 0 0; font-size:0.825rem; color:#64748b;">
+              Unified hospital execution: Front Desk MPI, OPD Consultation, Inpatient Bed Hub, Diagnostic LIS/RIS, Pharmacy & Closed-Loop Dispensing, and Emergency Department.
+            </p>
+          </div>
+        </div>
+        <div class="hospital-header-right">
+          <div class="hospital-quick-stats">
+            <div class="hosp-stat-pill">
+              <span class="hosp-stat-dot dot-green"></span>
+              <span>LIS / RIS: <strong>NABL Ready</strong></span>
+            </div>
+            <div class="hosp-stat-pill">
+              <span class="hosp-stat-dot dot-blue"></span>
+              <span>Bed Hub: <strong>8 Beds Active</strong></span>
+            </div>
+            <div class="hosp-stat-pill">
+              <span class="hosp-stat-dot dot-amber"></span>
+              <span>ER Triage: <strong>ESI Protocols</strong></span>
+            </div>
+            <div class="hosp-stat-pill">
+              <span class="hosp-stat-dot dot-purple"></span>
+              <span>Pharmacy: <strong>Closed-Loop</strong></span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Inner Hospital Navigation Tabs -->
+      <div class="hospital-nav-bar">
+        <button type="button" class="hospital-tab-btn active" data-htab="reception">
+          <span>👤</span> 1. Front Desk & Identity (MPI)
+        </button>
+        <button type="button" class="hospital-tab-btn" data-htab="clinician">
+          <span>🩺</span> 2. Clinical Consultation (OPD)
+        </button>
+        <button type="button" class="hospital-tab-btn" data-htab="ipd">
+          <span>🛏️</span> 3. Inpatient (IPD) & Bed Hub
+        </button>
+        <button type="button" class="hospital-tab-btn" data-htab="diagnostics">
+          <span>🧪</span> 4. Diagnostic - Lab & Radiological (LIS/RIS)
+        </button>
+        <button type="button" class="hospital-tab-btn" data-htab="pharmacy">
+          <span>💊</span> 5. Pharmacy & Dispensing
+        </button>
+        <button type="button" class="hospital-tab-btn" data-htab="emergency">
+          <span>🚨</span> 6. Emergency & Triage (ER)
+        </button>
+      </div>
+
+      <!-- SUB-TAB 1: FRONT DESK & IDENTITY (MPI) -->
+      <div class="hospital-tab-panel active" id="htab-reception">
+        <div class="grid-2-col">
         <!-- Patient Registration Card -->
         <div class="card">
           <div class="card-header">
@@ -238,10 +287,10 @@
           </div>
         </div>
       </div>
-    </section>
+      </div>
 
-    <!-- VIEW 2: CLINICIAN OPD CONSULTATION -->
-    <section class="viewport-panel" id="panel-clinician">
+      <!-- SUB-TAB 2: CLINICAL CONSULTATION (OPD) -->
+      <div class="hospital-tab-panel" id="htab-clinician">
       <div class="card">
         <div class="card-header">
           <h3>Doctor Consultation Viewport (OPD Episode of Care)</h3>
@@ -463,10 +512,9 @@
           </div>
         </div>
       </div>
-    </section>
 
-    <!-- VIEW 3: INPATIENT (IPD) & BED HUB -->
-    <section class="viewport-panel" id="panel-ipd">
+      <!-- SUB-TAB 3: INPATIENT (IPD) & BED HUB -->
+      <div class="hospital-tab-panel" id="htab-ipd">
       <!-- Bed Occupancy KPI Strip -->
       <div class="kpi-strip">
         <div class="kpi-card">
@@ -697,10 +745,9 @@
           </div>
         </div>
       </div>
-    </section>
 
-    <!-- VIEW 4: DIAGNOSTICS & LIS/RIS -->
-    <section class="viewport-panel" id="panel-diagnostics">
+      <!-- SUB-TAB 4: DIAGNOSTIC - LAB & RADIOLOGICAL (LIS/RIS) -->
+      <div class="hospital-tab-panel" id="htab-diagnostics">
       <!-- Diagnostics KPI Strip -->
       <div class="kpi-strip">
         <div class="kpi-card">
@@ -949,10 +996,9 @@
           </div>
         </div>
       </div>
-    </section>
 
-    <!-- VIEW 5: PHARMACY & DISPENSING -->
-    <section class="viewport-panel" id="panel-pharmacy">
+      <!-- SUB-TAB 5: PHARMACY & DISPENSING -->
+      <div class="hospital-tab-panel" id="htab-pharmacy">
       <!-- Pharmacy KPI Strip -->
       <div class="kpi-strip">
         <div class="kpi-card">
@@ -1073,10 +1119,9 @@
 
         </div>
       </div>
-    </section>
 
-    <!-- VIEW 6: EMERGENCY DEPARTMENT & TRIAGE (MANCHESTER / ESI) -->
-    <section class="viewport-panel" id="panel-emergency">
+      <!-- SUB-TAB 6: EMERGENCY DEPARTMENT & TRIAGE (MANCHESTER / ESI) -->
+      <div class="hospital-tab-panel" id="htab-emergency">
       <!-- ER KPI Ribbon -->
       <div class="kpi-strip">
         <div class="kpi-card">
@@ -1369,10 +1414,10 @@
             </div>
           </div>
         </div>
-      </div>
-    </section>
+      </div> <!-- End of htab-emergency -->
+    </section> <!-- End of panel-hospital -->
 
-    <!-- VIEW 8: PATIENT / CLIENT PORTAL & AI HEALTH COMPANION -->
+    <!-- VIEW 2: PATIENT / CLIENT PORTAL & AI HEALTH COMPANION -->
     <section class="viewport-panel" id="panel-patient-portal">
       <!-- Portal Top Bar: Patient Selection & Identity Header -->
       <div class="portal-header-card">

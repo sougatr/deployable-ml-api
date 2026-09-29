@@ -42,25 +42,33 @@ function initTabNavigation() {
   const tabs = document.querySelectorAll(".tab-btn");
   tabs.forEach(tab => {
     tab.addEventListener("click", () => {
+      const target = tab.dataset.tab;
+
+      // Handle legacy or direct hospital sub-tab requests
+      if (["reception", "clinician", "ipd", "diagnostics", "pharmacy", "emergency"].includes(target)) {
+        tabs.forEach(t => t.classList.toggle("active", t.dataset.tab === "hospital"));
+        document.querySelectorAll(".viewport-panel").forEach(panel => panel.classList.remove("active"));
+        const hospPanel = document.getElementById("panel-hospital");
+        if (hospPanel) hospPanel.classList.add("active");
+        switchHospitalTab(target);
+        updateBannerNavButtons("hospital");
+        return;
+      }
+
       tabs.forEach(t => t.classList.remove("active"));
       tab.classList.add("active");
-      const target = tab.dataset.tab;
+      
       document.querySelectorAll(".viewport-panel").forEach(panel => {
         panel.classList.remove("active");
       });
-      document.getElementById(`panel-${target}`).classList.add("active");
-      if (target === "ipd") {
-        fetchBedMatrix();
-      } else if (target === "diagnostics") {
-        fetchDiagnosticsCatalog();
-        fetchDiagnosticsWorklist();
-      } else if (target === "pharmacy") {
-        fetchPharmacyInventory();
-        populatePrescriptionDispenseQueue();
-      } else if (target === "emergency") {
-        fetchEmergencyBays();
-        fetchActiveEmergencyCases();
-        populateEmergencyPatientSelect();
+      const targetPanel = document.getElementById(`panel-${target}`);
+      if (targetPanel) targetPanel.classList.add("active");
+
+      updateBannerNavButtons(target);
+
+      if (target === "hospital") {
+        const activeSub = document.querySelector(".hospital-tab-btn.active")?.dataset.htab || "reception";
+        switchHospitalTab(activeSub);
       } else if (target === "patient-portal") {
         populatePatientPortalSelect();
         const targetMpi = currentPortalMpiId || (currentPatient ? currentPatient.mpi_id : null);
@@ -80,7 +88,65 @@ function initTabNavigation() {
       if (tabBtn) tabBtn.click();
     });
   }
+
+  const btnBannerHospital = document.getElementById("btn-banner-open-hospital");
+  if (btnBannerHospital) {
+    btnBannerHospital.addEventListener("click", () => {
+      const tabBtn = document.querySelector(`.tab-btn[data-tab="hospital"]`);
+      if (tabBtn) tabBtn.click();
+    });
+  }
+
+  initHospitalSubTabNavigation();
 }
+
+function updateBannerNavButtons(activeTarget) {
+  const btnPortal = document.getElementById("btn-banner-open-portal");
+  const btnHospital = document.getElementById("btn-banner-open-hospital");
+  if (btnPortal && btnHospital) {
+    if (activeTarget === "patient-portal") {
+      btnPortal.style.display = "none";
+      btnHospital.style.display = "inline-flex";
+    } else {
+      btnPortal.style.display = "inline-flex";
+      btnHospital.style.display = "none";
+    }
+  }
+}
+
+function initHospitalSubTabNavigation() {
+  const hospTabs = document.querySelectorAll(".hospital-tab-btn");
+  hospTabs.forEach(btn => {
+    btn.addEventListener("click", () => {
+      const target = btn.dataset.htab;
+      switchHospitalTab(target);
+    });
+  });
+}
+
+function switchHospitalTab(target) {
+  const hospTabs = document.querySelectorAll(".hospital-tab-btn");
+  hospTabs.forEach(b => b.classList.toggle("active", b.dataset.htab === target));
+
+  document.querySelectorAll(".hospital-tab-panel").forEach(p => p.classList.remove("active"));
+  const panel = document.getElementById(`htab-${target}`);
+  if (panel) panel.classList.add("active");
+
+  if (target === "ipd") {
+    fetchBedMatrix();
+  } else if (target === "diagnostics") {
+    fetchDiagnosticsCatalog();
+    fetchDiagnosticsWorklist();
+  } else if (target === "pharmacy") {
+    fetchPharmacyInventory();
+    populatePrescriptionDispenseQueue();
+  } else if (target === "emergency") {
+    fetchEmergencyBays();
+    fetchActiveEmergencyCases();
+    populateEmergencyPatientSelect();
+  }
+}
+window.switchHospitalTab = switchHospitalTab;
 
 // Sub-Tabs in ABHA Linking Card
 function initSubTabs() {
