@@ -302,6 +302,11 @@ class PlatformCoreTestSuite(unittest.TestCase):
         t.setUp()
         t.test_04_portal_self_entry_and_auto_seed_ehr()
 
+    def test_57_cardiometabolic_risk_and_lifestyle_plan(self):
+        t = TestPatientPortal()
+        t.setUp()
+        t.test_05_cardiometabolic_risk_and_lifestyle_plan()
+
 if __name__ == "__main__":
     suite = unittest.TestLoader().loadTestsFromTestCase(PlatformCoreTestSuite)
     runner = unittest.TextTestRunner(verbosity=2)

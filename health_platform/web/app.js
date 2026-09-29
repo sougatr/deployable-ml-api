@@ -3151,6 +3151,198 @@ function initPatientPortalModule() {
     });
   }
 
+  // Upload External Lab Report (Toggle & Submit)
+  const btnToggleUpload = document.querySelector(".btn-toggle-upload-lab");
+  const cardUpload = document.getElementById("card-upload-labs");
+  const btnCancelUpload = document.querySelector(".btn-cancel-upload-lab");
+  if (btnToggleUpload && cardUpload) {
+    btnToggleUpload.addEventListener("click", () => {
+      cardUpload.style.display = cardUpload.style.display === "none" ? "block" : "none";
+    });
+  }
+  if (btnCancelUpload && cardUpload) {
+    btnCancelUpload.addEventListener("click", () => {
+      cardUpload.style.display = "none";
+    });
+  }
+
+  const formUploadLab = document.getElementById("form-upload-lab-doc");
+  if (formUploadLab) {
+    formUploadLab.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const mpiId = currentPortalMpiId || (currentPatient && currentPatient.mpi_id);
+      if (!mpiId) {
+        showToast("Please select a patient first.", "error");
+        return;
+      }
+      const fileInput = document.getElementById("portal-lab-upload-file");
+      const textInput = document.getElementById("portal-lab-upload-text");
+      const file = fileInput && fileInput.files ? fileInput.files[0] : null;
+      const text = textInput ? textInput.value.trim() : "";
+
+      if (!file && !text) {
+        showToast("Please select a lab report file or enter report text.", "error");
+        return;
+      }
+
+      const submitBtn = formUploadLab.querySelector("button[type='submit']");
+      submitBtn.disabled = true;
+      submitBtn.textContent = "⏳ Parsing & Calculating Risk...";
+
+      try {
+        const formData = new FormData();
+        if (file) formData.append("file", file);
+        if (text) formData.append("report_text", text);
+
+        const res = await fetch(`/api/v1/portal/patients/${mpiId}/upload-report`, {
+          method: "POST",
+          body: formData
+        });
+        if (res.ok) {
+          const result = await res.json();
+          showToast("✅ Lab Report ingested & Cardiometabolic Risk Scores updated!", "success");
+          formUploadLab.reset();
+          if (cardUpload) cardUpload.style.display = "none";
+          if (result.risk_scores) renderPortalRiskScores(result.risk_scores);
+          await loadPatientPortal(mpiId);
+        } else {
+          showToast("Failed to upload/parse lab report.", "error");
+        }
+      } catch (err) {
+        showToast("Error processing lab report upload.", "error");
+      } finally {
+        submitBtn.disabled = false;
+        submitBtn.textContent = "⚡ Parse Report & Update Risk Scores";
+      }
+    });
+  }
+
+  // Biomarker Drawer Toggle & Recalculate
+  const btnToggleBm = document.querySelector(".btn-toggle-biomarkers");
+  const drawerBm = document.getElementById("drawer-biomarkers");
+  if (btnToggleBm && drawerBm) {
+    btnToggleBm.addEventListener("click", () => {
+      drawerBm.style.display = drawerBm.style.display === "none" ? "block" : "none";
+    });
+  }
+
+  const formBm = document.getElementById("form-recalc-biomarkers");
+  if (formBm) {
+    formBm.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const mpiId = currentPortalMpiId || (currentPatient && currentPatient.mpi_id);
+      if (!mpiId) {
+        showToast("Please select a patient first.", "error");
+        return;
+      }
+      const payload = {
+        systolic_bp: parseFloat(document.getElementById("bm-sbp").value) || 120,
+        diastolic_bp: parseFloat(document.getElementById("bm-dbp").value) || 80,
+        triglycerides: parseFloat(document.getElementById("bm-tg").value) || 150,
+        fasting_glucose: parseFloat(document.getElementById("bm-glu").value) || 95,
+        total_cholesterol: parseFloat(document.getElementById("bm-tc").value) || 195,
+        hdl_cholesterol: parseFloat(document.getElementById("bm-hdl").value) || 45,
+        serum_creatinine: parseFloat(document.getElementById("bm-creat").value) || 0.95,
+        ast: parseFloat(document.getElementById("bm-ast").value) || 28,
+        alt: parseFloat(document.getElementById("bm-alt").value) || 32,
+        platelets: parseFloat(document.getElementById("bm-plt").value) || 240000,
+        is_smoker: document.getElementById("bm-smoker").checked,
+        is_diabetic: document.getElementById("bm-diabetic").checked,
+        is_treated_htn: document.getElementById("bm-htn").checked
+      };
+
+      try {
+        const res = await fetch(`/api/v1/portal/patients/${mpiId}/risk-scores/calculate`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload)
+        });
+        if (res.ok) {
+          const scores = await res.json();
+          renderPortalRiskScores(scores);
+          showToast("✅ Custom cardiometabolic risk scores calculated!", "success");
+        } else {
+          showToast("Error calculating risk scores.", "error");
+        }
+      } catch (err) {
+        showToast("Server error calculating risk scores.", "error");
+      }
+    });
+  }
+
+  const btnRecalcRisk = document.querySelector(".btn-recalc-risk");
+  if (btnRecalcRisk) {
+    btnRecalcRisk.addEventListener("click", async () => {
+      const mpiId = currentPortalMpiId || (currentPatient && currentPatient.mpi_id);
+      if (!mpiId) return;
+      try {
+        const res = await fetch(`/api/v1/portal/patients/${mpiId}/risk-scores`);
+        if (res.ok) {
+          const scores = await res.json();
+          renderPortalRiskScores(scores);
+          showToast("⚡ Scores synced from hospital labs!", "success");
+        }
+      } catch (e) {}
+    });
+  }
+
+  // Self-Enter Diagnosis & Lifestyle Plan Generator
+  const btnToggleLifestyle = document.querySelector(".btn-toggle-self-lifestyle");
+  const cardLifestyle = document.getElementById("card-self-lifestyle-plan");
+  if (btnToggleLifestyle && cardLifestyle) {
+    btnToggleLifestyle.addEventListener("click", () => {
+      cardLifestyle.style.display = cardLifestyle.style.display === "none" ? "block" : "none";
+    });
+  }
+
+  const formLifestyle = document.getElementById("form-self-lifestyle-plan");
+  if (formLifestyle) {
+    formLifestyle.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const mpiId = currentPortalMpiId || (currentPatient && currentPatient.mpi_id);
+      if (!mpiId) {
+        showToast("Please select a patient first.", "error");
+        return;
+      }
+      const condition = document.getElementById("self-lifestyle-condition").value.trim();
+      const diet = document.getElementById("self-lifestyle-diet").value;
+      const activity = document.getElementById("self-lifestyle-activity").value;
+      const focus = document.getElementById("self-lifestyle-focus").value;
+      const notes = document.getElementById("self-lifestyle-notes").value.trim();
+
+      const submitBtn = formLifestyle.querySelector("button[type='submit']");
+      submitBtn.disabled = true;
+      submitBtn.textContent = "⏳ Generating Custom Lifestyle Plan...";
+
+      try {
+        const res = await fetch(`/api/v1/portal/patients/${mpiId}/lifestyle-plan`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            condition_name: condition,
+            diet_preference: diet,
+            activity_level: activity,
+            lifestyle_focus: focus,
+            notes: notes
+          })
+        });
+        if (res.ok) {
+          const plan = await res.json();
+          renderPortalRecovery(plan);
+          showToast(`✅ Personalized plan generated for ${condition}!`, "success");
+          await loadPatientPortal(mpiId);
+        } else {
+          showToast("Failed to generate personalized lifestyle plan.", "error");
+        }
+      } catch (err) {
+        showToast("Server error generating lifestyle plan.", "error");
+      } finally {
+        submitBtn.disabled = false;
+        submitBtn.textContent = "🚀 Generate Personalized Lifestyle & Recovery Plan";
+      }
+    });
+  }
+
   initWearablesModule();
   initClinicalNutritionListeners();
 }
@@ -3256,8 +3448,9 @@ function renderPatientPortal(data) {
   // 3. Tab 1: Disease Profiles & AI Interpretations
   renderPortalDiseaseProfiles(data.disease_profiles);
 
-  // 4. Tab 2: Lab & Scan Reports
+  // 4. Tab 2: Lab & Scan Reports & Cardiometabolic Risk Scores
   renderPortalLabReports(data.lab_and_scan_reports);
+  renderPortalRiskScores(data.cardiometabolic_risk_scores);
 
   // 5. Tab 3: Prescriptions & Medication Guide
   renderPortalMedications(data.active_prescriptions);
@@ -3444,6 +3637,186 @@ function renderPortalLabReports(reports) {
     `;
     container.appendChild(card);
   });
+}
+
+function renderPortalRiskScores(scores) {
+  const grid = document.getElementById("portal-risk-scores-grid");
+  if (!grid) return;
+
+  if (!scores) {
+    grid.innerHTML = `
+      <div style="grid-column: 1 / -1; text-align:center; padding:1.5rem; color:#64748b; font-size:0.9rem;">
+        Calculating cardiometabolic risk scores from your laboratory panel...
+      </div>
+    `;
+    return;
+  }
+
+  // Update Takeaway text & banner
+  const takeawayEl = document.getElementById("portal-risk-takeaway-text");
+  if (takeawayEl && scores.clinical_takeaway) {
+    takeawayEl.textContent = scores.clinical_takeaway;
+  }
+
+  const statusText = document.getElementById("portal-overall-status-text");
+  if (statusText && scores.overall_status) {
+    statusText.textContent = scores.overall_status;
+  }
+
+  const statusBadge = document.getElementById("portal-overall-status-badge");
+  if (statusBadge && scores.overall_status) {
+    if (scores.overall_status.toLowerCase().includes("action")) {
+      statusBadge.className = "badge badge-danger";
+      statusBadge.textContent = "ACTION RECOMMENDED";
+    } else {
+      statusBadge.className = "badge badge-success";
+      statusBadge.textContent = "OPTIMAL / LOW RISK";
+    }
+  }
+
+  // Update biomarker drawer inputs if provided
+  if (scores.input_biomarkers) {
+    const b = scores.input_biomarkers;
+    if (document.getElementById("bm-sbp") && b.systolic_bp) document.getElementById("bm-sbp").value = Math.round(b.systolic_bp);
+    if (document.getElementById("bm-dbp") && b.diastolic_bp) document.getElementById("bm-dbp").value = Math.round(b.diastolic_bp);
+    if (document.getElementById("bm-tg") && b.triglycerides) document.getElementById("bm-tg").value = Math.round(b.triglycerides);
+    if (document.getElementById("bm-glu") && b.fasting_glucose) document.getElementById("bm-glu").value = Math.round(b.fasting_glucose);
+    if (document.getElementById("bm-tc") && b.total_cholesterol) document.getElementById("bm-tc").value = Math.round(b.total_cholesterol);
+    if (document.getElementById("bm-hdl") && b.hdl_cholesterol) document.getElementById("bm-hdl").value = Math.round(b.hdl_cholesterol);
+    if (document.getElementById("bm-creat") && b.serum_creatinine) document.getElementById("bm-creat").value = b.serum_creatinine;
+    if (document.getElementById("bm-ast") && b.ast) document.getElementById("bm-ast").value = Math.round(b.ast);
+    if (document.getElementById("bm-alt") && b.alt) document.getElementById("bm-alt").value = Math.round(b.alt);
+    if (document.getElementById("bm-plt") && b.platelets) document.getElementById("bm-plt").value = Math.round(b.platelets < 1000 ? b.platelets * 1000 : b.platelets);
+    if (document.getElementById("bm-smoker")) document.getElementById("bm-smoker").checked = !!b.is_smoker;
+    if (document.getElementById("bm-diabetic")) document.getElementById("bm-diabetic").checked = !!b.is_diabetic;
+    if (document.getElementById("bm-htn")) document.getElementById("bm-htn").checked = !!b.is_treated_htn;
+  }
+
+  const ascvd = scores.ascvd || {};
+  const tyg = scores.tyg || {};
+  const fib4 = scores.fib4 || {};
+  const egfr = scores.egfr || {};
+  const mets = scores.metabolic_syndrome || {};
+
+  // Meter calculations
+  const ascvdMeter = Math.min(100, Math.max(5, (ascvd.value / 25) * 100));
+  const tygMeter = Math.min(100, Math.max(5, ((tyg.value - 7.5) / 2.5) * 100));
+  const fib4Meter = Math.min(100, Math.max(5, (fib4.value / 3.0) * 100));
+  const egfrMeter = Math.min(100, Math.max(5, (egfr.value / 120) * 100));
+  const metsMeter = Math.min(100, Math.max(5, (mets.value / 5) * 100));
+
+  grid.innerHTML = `
+    <!-- Card 1: ASCVD -->
+    <div class="risk-card" style="border-top:4px solid ${ascvd.color || '#15803d'};">
+      <div>
+        <div class="risk-card-top">
+          <span class="risk-card-title">🫀 ASCVD 10-Yr Risk</span>
+          <span class="badge" style="background:${ascvd.color}15; color:${ascvd.color}; border:1px solid ${ascvd.color}40; font-size:0.7rem; font-weight:700;">
+            ${escapeHtml(ascvd.category || 'Low Risk')}
+          </span>
+        </div>
+        <div class="risk-score-display">
+          <span class="risk-score-num" style="color:${ascvd.color || '#15803d'};">${ascvd.value}</span>
+          <span class="risk-score-unit">% 10-yr event risk</span>
+        </div>
+        <div class="risk-meter">
+          <div class="risk-meter-fill" style="width:${ascvdMeter}%; background:${ascvd.color || '#15803d'};"></div>
+        </div>
+      </div>
+      <div class="risk-guidance" style="border-left-color:${ascvd.color || '#15803d'};">
+        <strong>Guidance:</strong> ${escapeHtml(ascvd.clinical_guidance || '')}
+      </div>
+    </div>
+
+    <!-- Card 2: TyG Index -->
+    <div class="risk-card" style="border-top:4px solid ${tyg.color || '#15803d'};">
+      <div>
+        <div class="risk-card-top">
+          <span class="risk-card-title">⚡ TyG (Insulin Resistance)</span>
+          <span class="badge" style="background:${tyg.color}15; color:${tyg.color}; border:1px solid ${tyg.color}40; font-size:0.7rem; font-weight:700;">
+            ${escapeHtml(tyg.category || 'Normal')}
+          </span>
+        </div>
+        <div class="risk-score-display">
+          <span class="risk-score-num" style="color:${tyg.color || '#15803d'};">${tyg.value}</span>
+          <span class="risk-score-unit">TyG index</span>
+        </div>
+        <div class="risk-meter">
+          <div class="risk-meter-fill" style="width:${tygMeter}%; background:${tyg.color || '#15803d'};"></div>
+        </div>
+      </div>
+      <div class="risk-guidance" style="border-left-color:${tyg.color || '#15803d'};">
+        <strong>Metabolic:</strong> ${escapeHtml(tyg.clinical_guidance || '')}
+      </div>
+    </div>
+
+    <!-- Card 3: FIB-4 Liver Fibrosis -->
+    <div class="risk-card" style="border-top:4px solid ${fib4.color || '#15803d'};">
+      <div>
+        <div class="risk-card-top">
+          <span class="risk-card-title">🧪 FIB-4 Liver Index</span>
+          <span class="badge" style="background:${fib4.color}15; color:${fib4.color}; border:1px solid ${fib4.color}40; font-size:0.7rem; font-weight:700;">
+            ${escapeHtml(fib4.category || 'Low Risk')}
+          </span>
+        </div>
+        <div class="risk-score-display">
+          <span class="risk-score-num" style="color:${fib4.color || '#15803d'};">${fib4.value}</span>
+          <span class="risk-score-unit">Fibrosis score</span>
+        </div>
+        <div class="risk-meter">
+          <div class="risk-meter-fill" style="width:${fib4Meter}%; background:${fib4.color || '#15803d'};"></div>
+        </div>
+      </div>
+      <div class="risk-guidance" style="border-left-color:${fib4.color || '#15803d'};">
+        <strong>Hepatic:</strong> ${escapeHtml(fib4.clinical_guidance || '')}
+      </div>
+    </div>
+
+    <!-- Card 4: eGFR Kidney Filtration -->
+    <div class="risk-card" style="border-top:4px solid ${egfr.color || '#15803d'};">
+      <div>
+        <div class="risk-card-top">
+          <span class="risk-card-title">🫘 eGFR Filtration</span>
+          <span class="badge" style="background:${egfr.color}15; color:${egfr.color}; border:1px solid ${egfr.color}40; font-size:0.7rem; font-weight:700;">
+            ${escapeHtml(egfr.category || 'Normal')}
+          </span>
+        </div>
+        <div class="risk-score-display">
+          <span class="risk-score-num" style="color:${egfr.color || '#15803d'};">${egfr.value}</span>
+          <span class="risk-score-unit">mL/min/1.73m²</span>
+        </div>
+        <div class="risk-meter">
+          <div class="risk-meter-fill" style="width:${egfrMeter}%; background:${egfr.color || '#15803d'};"></div>
+        </div>
+      </div>
+      <div class="risk-guidance" style="border-left-color:${egfr.color || '#15803d'};">
+        <strong>Nephro-Safety:</strong> ${escapeHtml(egfr.clinical_guidance || '')}
+      </div>
+    </div>
+
+    <!-- Card 5: Metabolic Syndrome -->
+    <div class="risk-card" style="border-top:4px solid ${mets.color || '#15803d'};">
+      <div>
+        <div class="risk-card-top">
+          <span class="risk-card-title">🛡️ Metabolic Syndrome</span>
+          <span class="badge" style="background:${mets.color}15; color:${mets.color}; border:1px solid ${mets.color}40; font-size:0.7rem; font-weight:700;">
+            ${escapeHtml(mets.category || 'Optimal')}
+          </span>
+        </div>
+        <div class="risk-score-display">
+          <span class="risk-score-num" style="color:${mets.color || '#15803d'};">${mets.value}</span>
+          <span class="risk-score-unit">of 5 criteria met</span>
+        </div>
+        <div class="risk-meter">
+          <div class="risk-meter-fill" style="width:${metsMeter}%; background:${mets.color || '#15803d'};"></div>
+        </div>
+      </div>
+      <div class="risk-guidance" style="border-left-color:${mets.color || '#15803d'};">
+        <strong>Assessment:</strong> ${escapeHtml(mets.clinical_guidance || '')}
+        ${mets.criteria_met && mets.criteria_met.length > 0 ? `<div style="margin-top:0.35rem; font-weight:600; color:#b45309;">Positive Factors: ${mets.criteria_met.join('; ')}</div>` : ''}
+      </div>
+    </div>
+  `;
 }
 
 function renderPortalMedications(medications) {

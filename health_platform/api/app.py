@@ -117,7 +117,10 @@ emergency_service = EmergencyService(
 from health_platform.core.patient_portal.models import (
     PatientPortalSummary,
     PatientAIQueryInput,
-    PatientAIQueryResponse
+    PatientAIQueryResponse,
+    PatientLifestylePlanInput,
+    CardiometabolicRiskInput,
+    HealthRecommendationsAI
 )
 from health_platform.core.patient_portal.service import PatientPortalService
 from health_platform.core.wearables.models import (
@@ -754,6 +757,65 @@ def add_patient_self_medication(mpi_id: uuid.UUID, payload: SelfEntryMedicationR
 def auto_seed_patient_ehr(mpi_id: uuid.UUID):
     try:
         return patient_portal_service.auto_seed_patient_ehr_data(mpi_id)
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/api/v1/portal/patients/{mpi_id}/lifestyle-plan", response_model=HealthRecommendationsAI)
+def generate_patient_lifestyle_plan(mpi_id: uuid.UUID, payload: PatientLifestylePlanInput):
+    try:
+        return patient_portal_service.generate_personalized_lifestyle_plan(
+            mpi_id=mpi_id,
+            condition_name=payload.condition_name,
+            diet_preference=payload.diet_preference,
+            activity_level=payload.activity_level,
+            lifestyle_focus=payload.lifestyle_focus,
+            notes=payload.notes or ""
+        )
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/api/v1/portal/patients/{mpi_id}/risk-scores")
+def get_patient_risk_scores(mpi_id: uuid.UUID):
+    try:
+        return patient_portal_service.compute_patient_cardiometabolic_risk(mpi_id)
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/api/v1/portal/patients/{mpi_id}/risk-scores/calculate")
+def calculate_patient_risk_scores(mpi_id: uuid.UUID, payload: CardiometabolicRiskInput):
+    try:
+        manual_dict = {k: v for k, v in payload.model_dump().items() if v is not None}
+        return patient_portal_service.compute_patient_cardiometabolic_risk(mpi_id, manual_inputs=manual_dict)
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/api/v1/portal/patients/{mpi_id}/upload-report")
+async def upload_patient_lab_report(
+    mpi_id: uuid.UUID,
+    file: Optional[UploadFile] = File(None),
+    report_text: Optional[str] = Form(None)
+):
+    try:
+        file_bytes = None
+        filename = None
+        if file:
+            file_bytes = await file.read()
+            filename = file.filename
+
+        return patient_portal_service.upload_and_ingest_patient_report(
+            mpi_id=mpi_id,
+            file_bytes=file_bytes,
+            filename=filename,
+            report_text=report_text
+        )
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
     except Exception as e:

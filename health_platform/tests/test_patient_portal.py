@@ -374,6 +374,102 @@ class TestPatientPortal(unittest.TestCase):
         self.assertTrue(len(summary["disease_profiles"]) >= 1)
         self.assertTrue(len(summary["lab_and_scan_reports"]) >= 1)
         self.assertTrue(len(summary["active_prescriptions"]) >= 1)
+        self.assertIsNotNone(summary.get("cardiometabolic_risk_scores"))
+
+    def test_05_cardiometabolic_risk_and_lifestyle_plan(self):
+        """Verifies self-entry diagnosis lifestyle plan, 5 cardiometabolic risk scores, and document upload."""
+        app_res = app_identity_service.resolve_or_create_patient(
+            PatientRegistrationRequest(
+                first_name="Ramesh",
+                last_name="Verma",
+                dob="1975-04-12",
+                gender="MALE",
+                primary_phone="+919830012345",
+                postal_code="110001",
+                identifiers=[]
+            )
+        )
+        mpi_id = app_res.mpi_id
+
+        # 1. Generate Lifestyle Plan for Self-Entered Diagnosis
+        resp = self.client.post(f"/api/v1/portal/patients/{mpi_id}/lifestyle-plan", json={
+            "condition_name": "Type 2 Diabetes Mellitus & Metabolic Fatty Liver",
+            "diet_preference": "vegetarian",
+            "activity_level": "moderate",
+            "lifestyle_focus": "blood_sugar",
+            "notes": "Fasting glucose elevated, wants structured diet and joint-friendly exercise."
+        })
+        self.assertEqual(resp.status_code, 200)
+        plan = resp.json()
+        self.assertIn("Metabolic", plan["prognosis_overview"])
+        self.assertTrue(len(plan["prognosis_milestones"]) >= 2)
+        self.assertTrue(len(plan["dietary_guidelines"]) >= 3)
+        self.assertTrue(len(plan["exercise_routine"]) >= 2)
+        self.assertIn("Fenugreek", str(plan["dietary_guidelines"]))
+
+        # 2. Compute Cardiometabolic Risk Scores from EHR
+        resp = self.client.get(f"/api/v1/portal/patients/{mpi_id}/risk-scores")
+        self.assertEqual(resp.status_code, 200)
+        scores = resp.json()
+        self.assertIn("ascvd", scores)
+        self.assertIn("tyg", scores)
+        self.assertIn("fib4", scores)
+        self.assertIn("egfr", scores)
+        self.assertIn("metabolic_syndrome", scores)
+        self.assertEqual(scores["ascvd"]["unit"], "%")
+        self.assertEqual(scores["egfr"]["unit"], "mL/min/1.73m²")
+
+        # 3. Calculate Risk with Custom Biomarker Overrides
+        resp = self.client.post(f"/api/v1/portal/patients/{mpi_id}/risk-scores/calculate", json={
+            "systolic_bp": 142.0,
+            "diastolic_bp": 88.0,
+            "triglycerides": 210.0,
+            "fasting_glucose": 128.0,
+            "total_cholesterol": 235.0,
+            "hdl_cholesterol": 38.0,
+            "serum_creatinine": 1.15,
+            "ast": 42.0,
+            "alt": 56.0,
+            "platelets": 210.0,
+            "is_smoker": False,
+            "is_diabetic": True,
+            "is_treated_htn": True
+        })
+        self.assertEqual(resp.status_code, 200)
+        calc_scores = resp.json()
+        self.assertTrue(calc_scores["metabolic_syndrome"]["is_positive"])
+        self.assertGreaterEqual(calc_scores["tyg"]["value"], 9.0)
+        self.assertIn("Multi-System", calc_scores["overall_status"])
+
+        # 4. Upload External Lab Report
+        sample_lab_text = (
+            "DR. LAL PATHLABS REPORT\n"
+            "Patient: Ramesh Verma | Age: 51 | Gender: Male\n"
+            "Serum Triglycerides: 195 mg/dL\n"
+            "Fasting Blood Glucose: 114 mg/dL\n"
+            "Total Cholesterol: 218 mg/dL\n"
+            "HDL Cholesterol: 41 mg/dL\n"
+            "Serum Creatinine: 1.02 mg/dL\n"
+            "AST (SGOT): 38 U/L\n"
+            "ALT (SGPT): 46 U/L\n"
+            "Platelets: 220000 /uL"
+        )
+        resp = self.client.post(
+            f"/api/v1/portal/patients/{mpi_id}/upload-report",
+            data={"report_text": sample_lab_text}
+        )
+        self.assertEqual(resp.status_code, 200)
+        upload_res = resp.json()
+        self.assertIn("report", upload_res)
+        self.assertIn("risk_scores", upload_res)
+        self.assertGreaterEqual(upload_res["risk_scores"]["tyg"]["value"], 8.5)
+
+        # 5. Check Summary reflects updated lifestyle plan and risk scores
+        resp = self.client.get(f"/api/v1/portal/patients/{mpi_id}/summary")
+        self.assertEqual(resp.status_code, 200)
+        portal_sum = resp.json()
+        self.assertIn("Fenugreek", str(portal_sum["ai_recommendations"]["dietary_guidelines"]))
+        self.assertIsNotNone(portal_sum["cardiometabolic_risk_scores"])
 
 if __name__ == "__main__":
     unittest.main()

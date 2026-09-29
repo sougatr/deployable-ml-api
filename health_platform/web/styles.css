@@ -2799,12 +2799,93 @@ body {
 }
 
 .portal-chat-area {
-  padding: 1.25rem;
-  height: 320px;
+  padding: 1.5rem;
+  min-height: 500px;
+  height: 520px;
+  max-height: 700px;
   overflow-y: auto;
   display: flex;
   flex-direction: column;
-  gap: 1rem;
+  gap: 1.25rem;
+  background: #ffffff;
+}
+
+/* CARDIOMETABOLIC RISK SCORING STYLES */
+.risk-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.risk-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);
+}
+
+.risk-card-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 0.5rem;
+}
+
+.risk-card-title {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #1e293b;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.risk-score-display {
+  display: flex;
+  align-items: baseline;
+  gap: 0.35rem;
+  margin: 0.35rem 0;
+}
+
+.risk-score-num {
+  font-size: 1.75rem;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.risk-score-unit {
+  font-size: 0.8rem;
+  color: #64748b;
+  font-weight: 600;
+}
+
+.risk-meter {
+  height: 6px;
+  background: #e2e8f0;
+  border-radius: 3px;
+  overflow: hidden;
+  margin: 0.5rem 0 0.75rem 0;
+  position: relative;
+}
+
+.risk-meter-fill {
+  height: 100%;
+  border-radius: 3px;
+  transition: width 0.3s ease;
+}
+
+.risk-guidance {
+  font-size: 0.75rem;
+  color: #475569;
+  line-height: 1.4;
+  background: #f8fafc;
+  padding: 0.5rem 0.65rem;
+  border-radius: 6px;
+  border-left: 3px solid #cbd5e1;
 }
 
 .chat-msg {

@@ -101,6 +101,30 @@ class PatientPortalSummary(BaseModel):
     active_prescriptions: List[PatientMedicationAI] = Field(default_factory=list)
     ai_recommendations: HealthRecommendationsAI
     vital_trends_summary: Dict[str, Any] = Field(default_factory=dict)
+    cardiometabolic_risk_scores: Optional[Dict[str, Any]] = None
+
+class PatientLifestylePlanInput(BaseModel):
+    condition_name: str
+    diet_preference: str = "balanced"  # balanced, vegetarian, vegan, mediterranean, low_carb, high_protein
+    activity_level: str = "moderate"   # sedentary, light_rehab, moderate, active
+    lifestyle_focus: str = "general"   # weight_loss, blood_sugar, joint_health, heart_health, gut_health, general
+    notes: Optional[str] = ""
+
+class CardiometabolicRiskInput(BaseModel):
+    systolic_bp: Optional[float] = None
+    diastolic_bp: Optional[float] = None
+    total_cholesterol: Optional[float] = None
+    hdl_cholesterol: Optional[float] = None
+    triglycerides: Optional[float] = None
+    fasting_glucose: Optional[float] = None
+    serum_creatinine: Optional[float] = None
+    ast: Optional[float] = None
+    alt: Optional[float] = None
+    platelets: Optional[float] = None
+    bmi: Optional[float] = None
+    is_smoker: Optional[bool] = False
+    is_diabetic: Optional[bool] = False
+    is_treated_htn: Optional[bool] = False
 
 class PatientAIQueryInput(BaseModel):
     mpi_id: uuid.UUID
