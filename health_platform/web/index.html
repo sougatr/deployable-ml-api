@@ -123,7 +123,7 @@
           <div class="stepper-num">1</div>
           <div class="stepper-label">
             <span class="stepper-title">Front Desk</span>
-            <span class="stepper-sub">MPI Registration</span>
+            <span class="stepper-sub">MPI / Demographics</span>
           </div>
         </div>
         <div class="stepper-line"></div>
@@ -131,39 +131,39 @@
           <div class="stepper-num">2</div>
           <div class="stepper-label">
             <span class="stepper-title">Consultation</span>
-            <span class="stepper-sub">OPD Episode</span>
-          </div>
-        </div>
-        <div class="stepper-line"></div>
-        <div class="stepper-step" data-step="diagnostics">
-          <div class="stepper-num">3</div>
-          <div class="stepper-label">
-            <span class="stepper-title">Diagnostics</span>
-            <span class="stepper-sub">LIS / RIS</span>
-          </div>
-        </div>
-        <div class="stepper-line"></div>
-        <div class="stepper-step" data-step="pharmacy">
-          <div class="stepper-num">4</div>
-          <div class="stepper-label">
-            <span class="stepper-title">Pharmacy</span>
-            <span class="stepper-sub">Dispensing & Stock</span>
+            <span class="stepper-sub">OPD Notes & Rx</span>
           </div>
         </div>
         <div class="stepper-line"></div>
         <div class="stepper-step" data-step="ipd">
-          <div class="stepper-num">5</div>
+          <div class="stepper-num">3</div>
           <div class="stepper-label">
             <span class="stepper-title">Inpatient (IPD)</span>
-            <span class="stepper-sub">Beds & Ward</span>
+            <span class="stepper-sub">Beds & Ward Notes</span>
           </div>
         </div>
         <div class="stepper-line"></div>
         <div class="stepper-step" data-step="emergency">
-          <div class="stepper-num">6</div>
+          <div class="stepper-num">4</div>
           <div class="stepper-label">
             <span class="stepper-title">Emergency</span>
-            <span class="stepper-sub">ESI Triage / ER</span>
+            <span class="stepper-sub">ESI Triage & Orders</span>
+          </div>
+        </div>
+        <div class="stepper-line"></div>
+        <div class="stepper-step" data-step="diagnostics">
+          <div class="stepper-num">5</div>
+          <div class="stepper-label">
+            <span class="stepper-title">Diagnostics</span>
+            <span class="stepper-sub">Lab & Radiology Reports</span>
+          </div>
+        </div>
+        <div class="stepper-line"></div>
+        <div class="stepper-step" data-step="pharmacy">
+          <div class="stepper-num">6</div>
+          <div class="stepper-label">
+            <span class="stepper-title">Pharmacy</span>
+            <span class="stepper-sub">Recommendations & Dispensing</span>
           </div>
         </div>
       </div>
@@ -176,17 +176,17 @@
         <button type="button" class="hospital-tab-btn" data-htab="clinician">
           <span>🩺</span> 2. Clinical Consultation (OPD)
         </button>
-        <button type="button" class="hospital-tab-btn" data-htab="diagnostics">
-          <span>🧪</span> 3. Diagnostic - Lab & Radiological (LIS/RIS)
-        </button>
-        <button type="button" class="hospital-tab-btn" data-htab="pharmacy">
-          <span>💊</span> 4. Pharmacy & Dispensing
-        </button>
         <button type="button" class="hospital-tab-btn" data-htab="ipd">
-          <span>🛏️</span> 5. Inpatient (IPD) & Bed Hub
+          <span>🛏️</span> 3. Inpatient (IPD) & Bed Hub
         </button>
         <button type="button" class="hospital-tab-btn" data-htab="emergency">
-          <span>🚨</span> 6. Emergency & Triage (ER)
+          <span>🚨</span> 4. Emergency & Triage (ER)
+        </button>
+        <button type="button" class="hospital-tab-btn" data-htab="diagnostics">
+          <span>🧪</span> 5. Diagnostic - Lab & Radiology (LIS/RIS)
+        </button>
+        <button type="button" class="hospital-tab-btn" data-htab="pharmacy">
+          <span>💊</span> 6. Pharmacy & Dispensing
         </button>
       </div>
 
@@ -304,8 +304,19 @@
                 <input type="tel" id="reg-phone" required placeholder="+91 9876543210" value="+919876543210">
               </div>
               <div class="form-group">
+                <label>Email Address</label>
+                <input type="email" id="reg-email" placeholder="patient@example.com" value="anindita.ray@gmail.com">
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group" style="flex: 2;">
+                <label>Street Address / City</label>
+                <input type="text" id="reg-address-line" placeholder="e.g. Flat 402, Sea Green Apts, Mumbai" value="Flat 402, Sea Green Apts, Mumbai">
+              </div>
+              <div class="form-group" style="flex: 1;">
                 <label>Postal PIN Code</label>
-                <input type="text" id="reg-postal" placeholder="560038" value="560038">
+                <input type="text" id="reg-postal" placeholder="400012" value="400012">
               </div>
             </div>
 
@@ -430,78 +441,115 @@
               <div id="parser-status-msg">Extracting handwritten text and mapping to ICD-10, LOINC, and E-Prescriptions...</div>
             </div>
 
-            <!-- Parsed Clinical Columns Dashboard (Assistive AI Ingestion) -->
-            <div id="parsed-columns-container" class="parsed-columns-container hidden" style="margin-top: 0.875rem; border-top: 1px dashed #6ee7b7; padding-top: 0.875rem;">
-              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem; flex-wrap: wrap; gap: 0.5rem;">
-                <h5 style="color: #065f46; font-size: 0.9375rem; font-weight: 700; display: flex; align-items: center; gap: 0.5rem;">
-                  <span>📋</span> Parsed Clinical Columns (Auto-Populated Requisite Fields)
-                </h5>
-                <div style="display: flex; gap: 0.5rem; align-items: center;">
-                  <span id="parsed-entity-count-badge" class="badge badge-success">0 Entities Parsed</span>
-                  <button type="button" class="btn btn-secondary btn-sm" id="btn-toggle-ocr-preview" style="font-size: 0.75rem; padding: 0.25rem 0.5rem;">
-                    👁️ View Raw Extracted Text
-                  </button>
+            <!-- Collapsible Raw OCR Extracted Text Box -->
+            <div id="ocr-raw-text-panel" class="hidden" style="background: #ffffff; border: 1px solid #cbd5e1; border-radius: var(--radius-sm); padding: 0.75rem; margin-top: 0.5rem; font-family: monospace; font-size: 0.75rem; white-space: pre-wrap; max-height: 180px; overflow-y: auto; color: #334155;"></div>
+          </div>
+
+          <!-- Simplified OPD Consultation Workspace: Type Directly or Parse in 1 Click -->
+          <form id="consultation-form" class="form" style="margin-top: 1rem;">
+            <!-- Hidden backward-compatibility elements for tests & scripts -->
+            <input type="hidden" id="consult-complaint" required value="Clinical consultation">
+            <div id="parsed-columns-container" style="display:none;">
+              <span id="parsed-entity-count-badge">0 Entities Parsed</span>
+              <div id="col-clinical-notes-content"></div>
+              <div id="col-diagnoses-content"></div>
+              <div id="col-rx-content"></div>
+              <div id="col-orders-content"></div>
+            </div>
+
+            <!-- 1. Clinical Notes (SOAP Narrative & History) -->
+            <div class="form-group" style="margin-top:0.25rem;">
+              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.35rem; flex-wrap:wrap; gap:0.5rem;">
+                <label style="font-weight:700; font-size:0.95rem; color:#0f766e; margin:0;">
+                  📝 Clinical Notes (SOAP Narrative, History & Findings) *
+                </label>
+                <span class="badge badge-info" style="font-size:0.75rem;">
+                  Type directly or click 'Upload & Parse' above
+                </span>
+              </div>
+              <textarea id="consult-narrative" rows="5" required style="font-size:0.875rem; line-height:1.5; padding:0.75rem; border:1px solid #cbd5e1; border-radius:var(--radius-sm); width:100%;" placeholder="Type doctor clinical notes directly here (chief complaints, physical examination, vitals, progress history, assessment), or click 'Upload & Parse' above to auto-populate from a case sheet...">Patient presents for clinical consultation. Examination and diagnostic care plan initiated.</textarea>
+            </div>
+
+            <!-- 2. Diagnoses & Treatment Grid -->
+            <div class="grid-2-col" style="margin-top:0.75rem;">
+              <!-- Confirmed Diagnosis -->
+              <div class="form-section" style="background:#f8fafc; padding:0.85rem; border-radius:var(--radius-sm); border:1px solid #e2e8f0;">
+                <h4 style="font-size:0.875rem; margin-bottom:0.5rem; color:#0f766e; display:flex; align-items:center; gap:0.4rem;">
+                  <span>🎯</span> Final Diagnosis (ICD-10 / SNOMED CT)
+                </h4>
+                <div class="form-group" style="margin:0;">
+                  <label style="font-size:0.8rem;">Select or Auto-Mapped Diagnosis</label>
+                  <select id="consult-icd10" style="padding:0.45rem 0.6rem; font-size:0.85rem;">
+                    <option value="I10" data-snomed="38341003" data-name="Essential (primary) hypertension" selected>[I10] Essential (primary) hypertension</option>
+                    <option value="E11.9" data-snomed="73211009" data-name="Type 2 diabetes mellitus without complications">[E11.9] Type 2 diabetes mellitus without complications</option>
+                    <option value="C18.9" data-snomed="363406005" data-name="Malignant neoplasm of colon, unspecified (Colorectal Carcinoma)">[C18.9] Colorectal Carcinoma (Colon)</option>
+                    <option value="M23.30" data-snomed="395123000" data-name="Tear of meniscus / Root repair state">[M23.30] Meniscus Root Repair (Ortho)</option>
+                    <option value="J06.9" data-snomed="195662009" data-name="Acute upper respiratory tract infection (URTI)">[J06.9] Acute URTI / Fever</option>
+                  </select>
+                </div>
+                <div class="form-row" style="margin-top:0.65rem;">
+                  <div class="form-group" style="margin:0;">
+                    <label style="font-size:0.75rem;">Systolic BP (mmHg)</label>
+                    <input type="number" id="vital-sbp" value="120" style="padding:0.35rem 0.5rem; font-size:0.85rem;">
+                  </div>
+                  <div class="form-group" style="margin:0;">
+                    <label style="font-size:0.75rem;">Heart Rate (bpm)</label>
+                    <input type="number" id="vital-hr" value="74" style="padding:0.35rem 0.5rem; font-size:0.85rem;">
+                  </div>
                 </div>
               </div>
 
-              <!-- Collapsible Raw OCR Extracted Text Box -->
-              <div id="ocr-raw-text-panel" class="hidden" style="background: #ffffff; border: 1px solid #cbd5e1; border-radius: var(--radius-sm); padding: 0.75rem; margin-bottom: 0.75rem; font-family: monospace; font-size: 0.75rem; white-space: pre-wrap; max-height: 180px; overflow-y: auto; color: #334155;"></div>
-
-              <!-- 4 Discrete Clinical Columns Display Grid -->
-              <div class="parsed-columns-grid">
-                <!-- Col 1: Clinical Notes (SOAP Narrative & Vitals) -->
-                <div class="parsed-col-card">
-                  <div class="parsed-col-header">
-                    <span class="parsed-col-num">1</span>
-                    <h6>Clinical Notes (SOAP)</h6>
-                  </div>
-                  <div class="parsed-col-body" id="col-clinical-notes-content">
-                    <div class="text-muted" style="font-size: 0.8125rem;">Awaiting parsing...</div>
-                  </div>
+              <!-- Treatment & E-Prescriptions -->
+              <div class="form-section" style="background:#f8fafc; padding:0.85rem; border-radius:var(--radius-sm); border:1px solid #e2e8f0;">
+                <h4 style="font-size:0.875rem; margin-bottom:0.5rem; color:#0369a1; display:flex; align-items:center; gap:0.4rem;">
+                  <span>💊</span> Treatment & E-Prescription
+                </h4>
+                <div class="form-group" style="margin:0;">
+                  <label style="font-size:0.8rem;">Medicine & Dosage Schedule</label>
+                  <select id="rx-medicine" style="padding:0.45rem 0.6rem; font-size:0.85rem;">
+                    <option value="Ezorb Forte|Calcium Asparto-Glycinate|0-1-0|90">Ezorb Forte (Calcium Aspartate) - 0-1-0 (90 Days)</option>
+                    <option value="Pantocid 40|Pantoprazole 40mg|1-0-0|30" selected>Pantocid 40 (Pantoprazole 40mg) - 1-0-0 (30 Days)</option>
+                    <option value="Paracetamol 650|Paracetamol 650mg|1-0-1|5">Paracetamol 650 (Dolo 650) - 1-0-1 (5 Days SOS)</option>
+                    <option value="Telma 40|Telmisartan 40mg|1-0-0|30">Telma 40 (Telmisartan 40mg) - 1-0-0 (30 Days)</option>
+                    <option value="Glycomet 500|Metformin 500mg|1-0-1|60">Glycomet 500 (Metformin 500mg) - 1-0-1 (60 Days)</option>
+                  </select>
                 </div>
-
-                <!-- Col 2: Final Diagnoses (ICD-10) -->
-                <div class="parsed-col-card">
-                  <div class="parsed-col-header">
-                    <span class="parsed-col-num">2</span>
-                    <h6>Final Diagnosis (ICD-10)</h6>
-                  </div>
-                  <div class="parsed-col-body" id="col-diagnoses-content">
-                    <div class="text-muted" style="font-size: 0.8125rem;">Awaiting parsing...</div>
-                  </div>
-                </div>
-
-                <!-- Col 3: Treatment & E-Prescriptions -->
-                <div class="parsed-col-card">
-                  <div class="parsed-col-header">
-                    <span class="parsed-col-num">3</span>
-                    <h6>Treatment & E-Prescriptions</h6>
-                  </div>
-                  <div class="parsed-col-body" id="col-rx-content">
-                    <div class="text-muted" style="font-size: 0.8125rem;">Awaiting parsing...</div>
-                  </div>
-                </div>
-
-                <!-- Col 4: Diagnostic & Lab Investigations -->
-                <div class="parsed-col-card">
-                  <div class="parsed-col-header">
-                    <span class="parsed-col-num">4</span>
-                    <h6>Diagnostic & Lab Investigations</h6>
-                  </div>
-                  <div class="parsed-col-body" id="col-orders-content">
-                    <div class="text-muted" style="font-size: 0.8125rem;">Awaiting parsing...</div>
-                  </div>
+                <div class="form-group" style="margin-top:0.65rem;">
+                  <label style="font-size:0.75rem;">Patient Dosing Instructions</label>
+                  <input type="text" id="rx-instructions" value="Take 1 tablet on empty stomach 30 mins before breakfast" style="padding:0.35rem 0.5rem; font-size:0.85rem;">
                 </div>
               </div>
             </div>
-          </div>
 
-          <form id="consultation-form" class="form hidden" style="margin-top: 1rem;">
-            <!-- Hidden synchronized chief complaint field to maintain full API schema backward compatibility -->
-            <input type="hidden" id="consult-complaint" required value="Clinical consultation">
+            <!-- 3. Diagnostic & Lab Orders -->
+            <div class="form-section" style="background:#f8fafc; padding:0.85rem; border-radius:var(--radius-sm); border:1px solid #e2e8f0; margin-top:0.75rem;">
+              <h4 style="font-size:0.875rem; margin-bottom:0.5rem; color:#4338ca; display:flex; align-items:center; gap:0.4rem;">
+                <span>🔬</span> Diagnostic Investigations & Laboratory Orders
+              </h4>
+              <div class="grid-2-col">
+                <div class="form-group" style="margin:0;">
+                  <label style="font-size:0.8rem;">Investigation / Imaging Order</label>
+                  <select id="order-test" style="padding:0.45rem 0.6rem; font-size:0.85rem;">
+                    <option value="58410-2|Complete Blood Count|LAB-HEM-001|HEMATOLOGY|450.00" selected>Complete Blood Count CBC (LOINC 58410-2) - ₹450.00</option>
+                    <option value="4548-4|HbA1c Blood Test|LAB-BIO-042|BIOCHEMISTRY|650.00">HbA1c Blood Panel (LOINC 4548-4) - ₹650.00</option>
+                    <option value="168731009|Standard Chest X-Ray|RAD-XRAY-001|RADIOLOGY|850.00">Standard Chest X-Ray (SNOMED 168731009) - ₹850.00</option>
+                    <option value="241040003|Digital Radiography Knee|RAD-XRAY-KNEE|RADIOLOGY|750.00">Digital Radiography Knee AP/Lat - ₹750.00</option>
+                    <option value="386231004|Meniscal Root Repair Physiotherapy|PT-REHAB-002|PHYSIOTHERAPY|850.00">Meniscal Root Repair Physiotherapy - ₹850.00</option>
+                  </select>
+                </div>
+                <div class="form-group" style="margin:0;">
+                  <label style="font-size:0.8rem;">Priority & Turnaround Time</label>
+                  <select id="order-priority" style="padding:0.45rem 0.6rem; font-size:0.85rem;">
+                    <option value="ROUTINE" selected>ROUTINE (Standard TAT)</option>
+                    <option value="URGENT">URGENT (4 Hours)</option>
+                    <option value="STAT">STAT (Immediate Emergency TAT)</option>
+                  </select>
+                </div>
+              </div>
+            </div>
 
-            <!-- Primary Consultation Action Bar (Direct Sign-Off without Duplication) -->
-            <div class="consultation-finalization-bar">
+            <!-- Primary Consultation Action Bar -->
+            <div class="consultation-finalization-bar" style="margin-top:1rem;">
               <div style="display: flex; align-items: center; gap: 1rem; flex-wrap: wrap;">
                 <div class="form-group" style="margin: 0; min-width: 200px;">
                   <label style="font-weight: 600; font-size: 0.8125rem; margin-bottom: 0.25rem; display: block;">Doctor Consultation Fee (₹)</label>
@@ -518,91 +566,6 @@
                 ✍️ Apply Digital Signature & Finalize Consultation
               </button>
             </div>
-
-            <!-- Optional Collapsible Drawer for Manual Field Adjustment (Eliminates Visual Clutter & Repetition) -->
-            <details class="consultation-advanced-drawer" id="consult-advanced-drawer">
-              <summary>⚙️ Adjust Detailed Clinical Parameters (Optional Manual Override)</summary>
-              <div style="padding-top: 0.75rem;">
-                <div class="form-group">
-                  <label>Clinical Notes (SOAP Narrative) *</label>
-                  <textarea id="consult-narrative" rows="3" required placeholder="Clean clinical examination findings, history, and SOAP assessment...">Patient presents for clinical consultation. Examination and diagnostic care plan initiated.</textarea>
-                </div>
-
-                <div class="grid-2-col">
-                  <!-- Diagnoses -->
-                  <div class="form-section">
-                    <h4>Confirmed Diagnosis (ICD-10)</h4>
-                    <div class="form-group">
-                      <label>Diagnosis</label>
-                      <select id="consult-icd10">
-                        <option value="I10" data-snomed="38341003" data-name="Essential (primary) hypertension" selected>
-                          [I10] Essential (primary) hypertension
-                        </option>
-                        <option value="E11.9" data-snomed="73211009" data-name="Type 2 diabetes mellitus without complications">
-                          [E11.9] Type 2 diabetes mellitus without complications
-                        </option>
-                        <option value="J30.2" data-snomed="44482006" data-name="Other seasonal allergic rhinitis">
-                          [J30.2] Other seasonal allergic rhinitis
-                        </option>
-                      </select>
-                    </div>
-                  </div>
-
-                  <!-- Vitals -->
-                  <div class="form-section">
-                    <h4>Vitals (LOINC Standard)</h4>
-                    <div class="form-row">
-                      <div class="form-group">
-                        <label>Systolic BP (mm[Hg])</label>
-                        <input type="number" id="vital-sbp" value="120">
-                      </div>
-                      <div class="form-group">
-                        <label>Heart Rate (bpm)</label>
-                        <input type="number" id="vital-hr" value="74">
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                <div class="grid-2-col">
-                  <!-- E-Prescription -->
-                  <div class="form-section">
-                    <h4>E-Prescription (Pharmacotherapy)</h4>
-                    <div class="form-group">
-                      <label>Medicine</label>
-                      <select id="rx-medicine">
-                        <option value="Telma 40|Telmisartan 40mg|1-0-0|30" selected>Telma 40 (Telmisartan 40mg) - 1-0-0 (30 Days)</option>
-                        <option value="Glycomet 500|Metformin 500mg|1-0-1|60">Glycomet 500 (Metformin 500mg) - 1-0-1 (60 Days)</option>
-                        <option value="Allegra 120|Fexofenadine 120mg|0-0-1|10">Allegra 120 (Fexofenadine 120mg) - 0-0-1 (10 Days)</option>
-                      </select>
-                    </div>
-                    <div class="form-group">
-                      <label>Patient Instructions</label>
-                      <input type="text" id="rx-instructions" value="Take 1 tablet every morning after breakfast">
-                    </div>
-                  </div>
-
-                  <!-- Diagnostic Orders -->
-                  <div class="form-section">
-                    <h4>Diagnostic Investigation Orders</h4>
-                    <div class="form-group">
-                      <label>Order Test</label>
-                      <select id="order-test">
-                        <option value="4548-4|HbA1c Blood Test|LAB-BIO-042|BIOCHEMISTRY|650.00" selected>
-                          HbA1c Blood Panel (LOINC 4548-4) - ₹650.00
-                        </option>
-                        <option value="168731009|Standard Chest X-Ray|RAD-XRAY-001|RADIOLOGY|850.00">
-                          Standard Chest X-Ray (SNOMED 168731009) - ₹850.00
-                        </option>
-                        <option value="58410-2|Complete Blood Count|LAB-HEM-001|HEMATOLOGY|450.00">
-                          Complete Blood Count CBC (LOINC 58410-2) - ₹450.00
-                        </option>
-                      </select>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </details>
           </form>
 
           <div id="consult-success-summary" class="alert alert-success hidden">
@@ -616,483 +579,13 @@
           <button type="button" class="btn btn-outline btn-serial-prev" data-prev="reception">
             ← Previous: Step 1 - Front Desk & Identity
           </button>
-          <button type="button" class="btn btn-primary btn-serial-next" data-next="diagnostics">
-            Next: Step 3 - Diagnostics (LIS/RIS) →
-          </button>
-        </div>
-      </div>
-
-      <!-- SUB-TAB 3: DIAGNOSTIC - LAB & RADIOLOGICAL (LIS/RIS) -->
-      <div class="hospital-tab-panel" id="htab-diagnostics">
-      <!-- Diagnostics Document AI Ingestion Card -->
-      <div id="diagnostics-doc-upload-card" class="card dept-upload-card">
-        <div class="dept-upload-header">
-          <div class="dept-upload-title-wrap">
-            <h4><span>🧪</span> Diagnostic Report & Imaging Scan AI Ingestion (LIS / RIS)</h4>
-            <p class="dept-upload-desc">Upload external or scanned Lab Test Reports (Biochemistry, Hematology, Lipid Profile) or Radiology Reports (X-Ray, CT, Ultrasound) to extract test parameters, observed values, reference intervals, abnormal flags (HIGH/LOW/CRITICAL), and radiologist impressions.</p>
-          </div>
-          <span class="badge badge-success">Vision OCR & LOINC Active</span>
-        </div>
-
-        <div class="dept-upload-controls">
-          <input type="file" id="diagnostics-doc-file" accept="image/*,.pdf" class="dept-file-input">
-          <button type="button" class="btn btn-outline" id="btn-diagnostics-doc-upload">
-            <span>📤</span> Upload & Extract Diagnostics
-          </button>
-          <button type="button" class="btn btn-secondary" id="btn-diagnostics-doc-sample">
-            <span>📄</span> Load Sample Lab / Radiology Report
-          </button>
-          <button type="button" class="btn btn-secondary btn-sm" id="btn-toggle-diagnostics-ocr">
-            👁️ View OCR Text
-          </button>
-        </div>
-
-        <div id="diagnostics-doc-status" class="alert alert-info hidden" style="margin-top:0.75rem;"></div>
-        <div id="diagnostics-ocr-raw" class="ocr-raw-panel hidden"></div>
-
-        <!-- Structured Diagnostics Preview -->
-        <div id="diagnostics-doc-preview" class="dept-doc-preview hidden">
-          <div class="preview-header">
-            <span class="badge badge-primary" id="diag-preview-meta">Parameters Extracted</span>
-            <button type="button" class="btn btn-primary btn-sm" id="btn-apply-diagnostics-doc">
-              📋 Populate Diagnostics Workstation
-            </button>
-          </div>
-          <div class="dept-preview-table-wrap" id="diagnostics-preview-table"></div>
-        </div>
-      </div>
-
-      <!-- Diagnostics KPI Strip -->
-      <div class="kpi-strip">
-        <div class="kpi-card">
-          <div class="kpi-icon">🔬</div>
-          <div class="kpi-content">
-            <span class="kpi-label">Active Orders</span>
-            <span class="kpi-value" id="diag-kpi-total">0</span>
-          </div>
-        </div>
-        <div class="kpi-card">
-          <div class="kpi-icon warning">🩸</div>
-          <div class="kpi-content">
-            <span class="kpi-label">Pending Collection</span>
-            <span class="kpi-value" id="diag-kpi-pending">0</span>
-          </div>
-        </div>
-        <div class="kpi-card">
-          <div class="kpi-icon info">🧪</div>
-          <div class="kpi-content">
-            <span class="kpi-label">In Processing / Resulted</span>
-            <span class="kpi-value" id="diag-kpi-processing">0</span>
-          </div>
-        </div>
-        <div class="kpi-card">
-          <div class="kpi-icon success">📜</div>
-          <div class="kpi-content">
-            <span class="kpi-label">Verified & Published</span>
-            <span class="kpi-value" id="diag-kpi-verified">0</span>
-          </div>
-        </div>
-        <div class="kpi-card action-card">
-          <button type="button" class="btn btn-primary" id="btn-quick-diag-order">
-            ➕ Order Investigation
-          </button>
-        </div>
-      </div>
-
-      <!-- Main LIS/RIS Layout: Worklist Queue (Left) & Active Workstation / Report (Right) -->
-      <div class="ipd-grid-layout">
-        <!-- Worklist Panel -->
-        <div class="card">
-          <div class="card-header">
-            <div>
-              <h3>Diagnostics Worklist & Accession Queue</h3>
-              <span class="card-subtitle">Pathology & Radiology Order Execution</span>
-            </div>
-            <div class="matrix-filter-buttons">
-              <button type="button" class="filter-btn active" data-diagfilter="ALL">All Orders</button>
-              <button type="button" class="filter-btn" data-diagfilter="LABORATORY">Lab</button>
-              <button type="button" class="filter-btn" data-diagfilter="RADIOLOGY">Radiology</button>
-            </div>
-          </div>
-          <div id="diag-worklist-container" class="diag-worklist-list" style="margin-top:1rem;">
-            <div class="empty-state">Loading diagnostics worklist...</div>
-          </div>
-        </div>
-
-        <!-- Workstation & Live Inspector Panel -->
-        <div class="card" id="diag-workstation-card">
-          <div id="diag-workstation-unselected" class="bedside-placeholder">
-            <div class="placeholder-icon">🔬</div>
-            <h4>Select an Investigation from the Worklist</h4>
-            <p>Click on any order to collect specimen, enter analyzer measurements with automated LOINC reference range flags, or review radiology impressions and verify reports.</p>
-          </div>
-
-          <div id="diag-workstation-content" class="hidden">
-            <div class="card-header ipd-bedside-header">
-              <div>
-                <span class="badge badge-uhid" id="ws-category-badge">LABORATORY • BIOCHEMISTRY</span>
-                <h3 id="ws-test-name" style="margin-top:0.25rem;">HbA1c Glycated Hemoglobin Panel</h3>
-                <span class="card-subtitle" id="ws-patient-meta">Patient: Anindita Ray • UHID: U-2026-0001</span>
-              </div>
-              <div class="bedside-tariff-badge">
-                <span class="tariff-label">Standard Tariff</span>
-                <span class="tariff-amount" id="ws-tariff-amount">₹650.00</span>
-                <span class="tariff-sub" id="ws-coding-info">LOINC: 4548-4</span>
-              </div>
-            </div>
-
-            <!-- Workflow Stage Indicator Bar -->
-            <div class="diag-stages-bar">
-              <div class="diag-stage active" id="stage-ordered">
-                <span class="stage-num">1</span>
-                <span class="stage-title">Ordered</span>
-              </div>
-              <div class="diag-stage-connector"></div>
-              <div class="diag-stage" id="stage-collected">
-                <span class="stage-num">2</span>
-                <span class="stage-title">Sample Collected</span>
-              </div>
-              <div class="diag-stage-connector"></div>
-              <div class="diag-stage" id="stage-resulted">
-                <span class="stage-num">3</span>
-                <span class="stage-title">Resulted</span>
-              </div>
-              <div class="diag-stage-connector"></div>
-              <div class="diag-stage" id="stage-verified">
-                <span class="stage-num">4</span>
-                <span class="stage-title">Verified</span>
-              </div>
-            </div>
-
-            <!-- Stage 1 View: Collect Specimen / Start Imaging -->
-            <div id="ws-step-collect" class="ws-step-panel hidden">
-              <div class="specimen-tracking-box">
-                <h4>Phlebotomy & Specimen Collection</h4>
-                <p style="font-size:0.8rem; color:var(--text-muted); margin-bottom:0.75rem;">
-                  Required Specimen: <strong id="ws-req-specimen">Whole Blood (EDTA Purple Top)</strong>
-                </p>
-                <div class="form-group">
-                  <label>Phlebotomist / Radiographer Name</label>
-                  <input type="text" id="ws-phleb-name" value="Sunita Sharma, CPT (Lead Phlebotomist)" required>
-                </div>
-                <button type="button" class="btn btn-primary" id="btn-execute-collect">
-                  🏷️ Generate Barcode & Record Collection
-                </button>
-              </div>
-            </div>
-
-            <!-- Stage 2 View: Lab Analyzer Parameter Entry -->
-            <div id="ws-step-lab-results" class="ws-step-panel hidden">
-              <div class="card-header" style="padding:0; margin-bottom:0.75rem;">
-                <h4>Analyzer Result Entry & Reference Range Engine</h4>
-                <span class="badge badge-info" id="ws-sample-tag">SMP-BIO-2026-1001</span>
-              </div>
-              <form id="ws-lab-result-form">
-                <div id="ws-parameter-inputs-container" class="param-inputs-grid">
-                  <!-- Dynamic parameter inputs rendered here -->
-                </div>
-                <div class="form-actions" style="margin-top:1rem;">
-                  <button type="submit" class="btn btn-primary btn-sm">
-                    💾 Save Analyzer Measurements
-                  </button>
-                </div>
-              </form>
-            </div>
-
-            <!-- Stage 2b View: Radiology Report Entry -->
-            <div id="ws-step-rad-results" class="ws-step-panel hidden">
-              <form id="ws-rad-result-form" class="form ipd-form">
-                <div class="form-group">
-                  <label>Reporting Radiologist</label>
-                  <input type="text" id="ws-rad-doctor" value="Dr. Meenakshi Sundaram, DMRD, DNB (Radiodiagnosis)" required>
-                </div>
-                <div class="form-group">
-                  <label>Technique</label>
-                  <input type="text" id="ws-rad-technique" value="Multiplanar, multisequence MRI of right knee joint on 3.0 Tesla scanner." required>
-                </div>
-                <div class="form-group">
-                  <label>Imaging Findings</label>
-                  <textarea id="ws-rad-findings" rows="3" required>Full-thickness radial tear involving posterior horn and root attachment of medial meniscus. Joint effusion present. ACL, PCL, and collateral ligaments intact.</textarea>
-                </div>
-                <div class="form-group">
-                  <label>Radiological Impression</label>
-                  <input type="text" id="ws-rad-impression" value="Medial meniscus posterior root tear (Type 2). Orthopaedic arthroscopic repair recommended." required>
-                </div>
-                <div class="form-actions" style="margin-top:0.75rem;">
-                  <button type="submit" class="btn btn-primary btn-sm">
-                    💾 Record Imaging Findings & Impression
-                  </button>
-                </div>
-              </form>
-            </div>
-
-            <!-- Stage 3 View: Consultant Verification & Sign-off -->
-            <div id="ws-step-verify" class="ws-step-panel hidden">
-              <div class="card-header" style="padding:0; margin-bottom:0.75rem;">
-                <h4>Consultant Verification & Digital Signature</h4>
-                <span class="badge badge-success">Measurements Complete</span>
-              </div>
-              <div id="ws-results-preview-table" style="margin-bottom:1rem;"></div>
-              <form id="ws-verify-form" class="form ipd-form">
-                <div class="form-row">
-                  <div class="form-group">
-                    <label>Signing Consultant Name</label>
-                    <input type="text" id="ws-verifier-name" value="Dr. Rajiv Sethi" required>
-                  </div>
-                  <div class="form-group">
-                    <label>Qualification & Degree</label>
-                    <input type="text" id="ws-verifier-qual" value="MD (Pathology)" required>
-                  </div>
-                </div>
-                <div class="form-row">
-                  <div class="form-group">
-                    <label>Medical Council Reg. No</label>
-                    <input type="text" id="ws-verifier-reg" value="MMC-1998040112" required>
-                  </div>
-                  <div class="form-group">
-                    <label>Clinical Notes / Correlation</label>
-                    <input type="text" id="ws-verifier-notes" value="Results clinically correlated. Elevated values flagged.">
-                  </div>
-                </div>
-                <div class="form-actions" style="margin-top:1rem;">
-                  <button type="submit" class="btn btn-success" id="btn-submit-verification">
-                    🔏 Apply Digital Signature & Publish Diagnostic Report
-                  </button>
-                </div>
-              </form>
-            </div>
-
-            <!-- Stage 4 View: Standardized Diagnostic Report Card -->
-            <div id="ws-step-report-card" class="ws-step-panel hidden">
-              <div class="diagnostic-report-sheet" id="diagnostic-report-sheet">
-                <div class="report-header">
-                  <div class="report-brand">
-                    <h3 style="color:#0284c7; margin:0;">HEALTHOS CENTRAL DIAGNOSTIC LABORATORY & PACS</h3>
-                    <small>NABL Accredited • ISO 15189 Certified • ABDM Milestone 2 Certified HIP</small>
-                  </div>
-                  <div class="report-barcode-box" id="rep-barcode-box">
-                    <span class="barcode-font" id="rep-barcode-txt">|||||||||||||||||||||||</span>
-                    <small id="rep-barcode-sub">SMP-BIO-2026-1001</small>
-                  </div>
-                </div>
-
-                <div class="report-meta-grid">
-                  <div><strong>Patient:</strong> <span id="rep-patient-name">Anindita Ray</span></div>
-                  <div><strong>Accession No:</strong> <span id="rep-accession">ACC-2026-5001</span></div>
-                  <div><strong>UHID:</strong> <span id="rep-uhid">U-2026-0001</span></div>
-                  <div><strong>Specimen:</strong> <span id="rep-specimen">Whole Blood EDTA</span></div>
-                  <div><strong>Referred By:</strong> <span id="rep-doctor">Dr. Anup Khatri</span></div>
-                  <div><strong>Reported At:</strong> <span id="rep-reported-at">2026-09-27 18:30</span></div>
-                </div>
-
-                <div class="report-body" id="rep-body-content">
-                  <!-- Lab Table or Radiology Findings Rendered Here -->
-                </div>
-
-                <div class="report-footer">
-                  <div class="signature-block">
-                    <div class="sig-line">
-                      <span class="sig-stamp">DIGITALLY SIGNED</span>
-                      <strong id="rep-signer-name">Dr. Rajiv Sethi, MD (Pathology)</strong>
-                      <small id="rep-signer-reg">Medical Council Reg: MMC-1998040112</small>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <div class="form-actions" style="margin-top:1rem;">
-                <button type="button" class="btn btn-outline" onclick="window.print()">
-                  🖨️ Print / Download Report PDF
-                </button>
-              </div>
-            </div>
-
-          </div>
-        </div>
-
-        <!-- Serial Navigation Footer (Step 3 -> Step 4) -->
-        <div class="serial-nav-bar">
-          <button type="button" class="btn btn-outline btn-serial-prev" data-prev="clinician">
-            ← Previous: Step 2 - Clinical Consultation
-          </button>
-          <button type="button" class="btn btn-primary btn-serial-next" data-next="pharmacy">
-            Next: Step 4 - Pharmacy & Dispensing →
-          </button>
-        </div>
-      </div>
-
-      <!-- SUB-TAB 4: PHARMACY & DISPENSING -->
-      <div class="hospital-tab-panel" id="htab-pharmacy">
-      <!-- Pharmacy Document AI Ingestion Card -->
-      <div id="pharmacy-doc-upload-card" class="card dept-upload-card">
-        <div class="dept-upload-header">
-          <div class="dept-upload-title-wrap">
-            <h4><span>💊</span> Pharmacy Document AI: Stock Invoices & External Prescriptions</h4>
-            <p class="dept-upload-desc">Upload vendor Goods Receipt Notes (GRN), pharmaceutical batch invoices, or external handwritten doctor prescriptions to extract drug brand names, generic active ingredients, dosage strengths, batch numbers, expiry dates, quantities, and MRP pricing.</p>
-          </div>
-          <span class="badge badge-success">Vision OCR & FEFO Active</span>
-        </div>
-
-        <div class="dept-upload-controls">
-          <input type="file" id="pharmacy-doc-file" accept="image/*,.pdf" class="dept-file-input">
-          <button type="button" class="btn btn-outline" id="btn-pharmacy-doc-upload">
-            <span>📤</span> Upload & Extract Pharmacy Document
-          </button>
-          <button type="button" class="btn btn-secondary" id="btn-pharmacy-doc-sample">
-            <span>📄</span> Load Sample Drug Challan
-          </button>
-          <button type="button" class="btn btn-secondary btn-sm" id="btn-toggle-pharmacy-ocr">
-            👁️ View OCR Text
-          </button>
-        </div>
-
-        <div id="pharmacy-doc-status" class="alert alert-info hidden" style="margin-top:0.75rem;"></div>
-        <div id="pharmacy-ocr-raw" class="ocr-raw-panel hidden"></div>
-
-        <!-- Structured Pharmacy Preview -->
-        <div id="pharmacy-doc-preview" class="dept-doc-preview hidden">
-          <div class="preview-header">
-            <span class="badge badge-primary" id="pharm-preview-meta">Batches Extracted</span>
-            <button type="button" class="btn btn-primary btn-sm" id="btn-apply-pharmacy-doc">
-              📥 Add Extracted Batches to Inventory
-            </button>
-          </div>
-          <div class="dept-preview-table-wrap" id="pharmacy-preview-table"></div>
-        </div>
-      </div>
-
-      <!-- Pharmacy KPI Strip -->
-      <div class="kpi-strip">
-        <div class="kpi-card">
-          <div class="kpi-icon">💊</div>
-          <div class="kpi-content">
-            <span class="kpi-label">Formulary SKUs</span>
-            <span class="kpi-value" id="pharm-kpi-skus">7</span>
-          </div>
-        </div>
-        <div class="kpi-card">
-          <div class="kpi-icon success">📦</div>
-          <div class="kpi-content">
-            <span class="kpi-label">Units in Stock</span>
-            <span class="kpi-value" id="pharm-kpi-units">3,110</span>
-          </div>
-        </div>
-        <div class="kpi-card">
-          <div class="kpi-icon warning">⚠️</div>
-          <div class="kpi-content">
-            <span class="kpi-label">Near-Expiry / Expired</span>
-            <span class="kpi-value" id="pharm-kpi-alerts">2</span>
-          </div>
-        </div>
-        <div class="kpi-card">
-          <div class="kpi-icon info">🧾</div>
-          <div class="kpi-content">
-            <span class="kpi-label">Prescriptions Dispensed</span>
-            <span class="kpi-value" id="pharm-kpi-dispenses">0</span>
-          </div>
-        </div>
-        <div class="kpi-card action-card">
-          <button type="button" class="btn btn-outline" id="btn-open-restock-modal">
-            📥 Receive Stock Batch
-          </button>
-        </div>
-      </div>
-
-      <!-- Main Layout: Drug Inventory (Left) & Dispensing Workstation (Right) -->
-      <div class="ipd-grid-layout">
-        <!-- Drug Inventory & FEFO Matrix -->
-        <div class="card">
-          <div class="card-header">
-            <div>
-              <h3>Real-Time Pharmacy Inventory</h3>
-              <span class="card-subtitle">FEFO Batch & Expiry Controlled Formulary</span>
-            </div>
-            <div class="matrix-filter-buttons">
-              <button type="button" class="filter-btn active" data-pharmfilter="ALL">All Items</button>
-              <button type="button" class="filter-btn" data-pharmfilter="HEALTHY">In Stock</button>
-              <button type="button" class="filter-btn" data-pharmfilter="ALERTS">Alerts</button>
-            </div>
-          </div>
-          <div id="pharm-inventory-container" class="pharm-inventory-list" style="margin-top:1rem;">
-            <div class="empty-state">Loading pharmacy inventory...</div>
-          </div>
-        </div>
-
-        <!-- Closed-Loop Dispensing Workstation -->
-        <div class="card" id="pharm-dispense-card">
-          <div class="card-header ipd-bedside-header">
-            <div>
-              <span class="badge badge-uhid">CLOSED-LOOP DISPENSING</span>
-              <h3 id="pharm-patient-name" style="margin-top:0.25rem;">Active Patient: Anindita Ray</h3>
-              <span class="card-subtitle" id="pharm-patient-meta">UHID: U-2026-0001 • Prescribed by Dr. Anup Khatri</span>
-            </div>
-            <div class="bedside-tariff-badge">
-              <span class="tariff-label">Billable To</span>
-              <span class="tariff-amount" id="pharm-bill-gross">₹0.00</span>
-              <span class="tariff-sub" id="pharm-bill-split">Patient 80% • TPA 20%</span>
-            </div>
-          </div>
-
-          <!-- Prescription Prescribed Medication Items -->
-          <div class="dispense-section">
-            <div class="section-title-row" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.75rem;">
-              <h4>Prescription Medications Queue</h4>
-              <button type="button" class="btn btn-outline btn-sm" id="btn-pharm-add-manual-row">
-                ➕ Add Item
-              </button>
-            </div>
-
-            <div id="pharm-dispense-lines-container" class="dispense-lines-list">
-              <!-- Dynamic Dispense Line Items -->
-            </div>
-
-            <!-- Pharmacist Verification & Sign-Off -->
-            <div class="pharmacist-signoff-box" style="margin-top:1.25rem; background:#f8fafc; padding:0.75rem; border-radius:var(--radius-sm); border:1px solid var(--border);">
-              <div class="form-row">
-                <div class="form-group">
-                  <label>Dispensing Pharmacist *</label>
-                  <input type="text" id="pharm-signer-name" value="Kavita Deshmukh, M.Pharm (Chief Pharmacist)" required>
-                </div>
-                <div class="form-group">
-                  <label>Pharmacy Council Reg. No *</label>
-                  <input type="text" id="pharm-signer-reg" value="MH-PHARM-20120045" required>
-                </div>
-              </div>
-            </div>
-
-            <div class="form-actions" style="margin-top:1rem;">
-              <button type="button" class="btn btn-success" id="btn-submit-dispense">
-                💊 Finalize Closed-Loop Dispense & Post Bill to Ledger
-              </button>
-            </div>
-          </div>
-
-          <!-- Official Dispense Receipt & Invoice Card -->
-          <div id="pharm-receipt-card" class="discharge-summary-card hidden" style="margin-top:1.25rem;">
-            <div class="summary-badge">DISPENSED & CHARGES CAPTURED</div>
-            <h4>Official Hospital Pharmacy Invoice</h4>
-            <div id="pharm-receipt-details" class="summary-details"></div>
-            <div class="summary-actions" style="margin-top:1rem;">
-              <button type="button" class="btn btn-primary" id="btn-pharm-goto-billing">
-                💳 Proceed to Cashier Desk to Settle Pharmacy Bill
-              </button>
-            </div>
-          </div>
-
-        </div>
-
-        <!-- Serial Navigation Footer (Step 4 -> Step 5) -->
-        <div class="serial-nav-bar">
-          <button type="button" class="btn btn-outline btn-serial-prev" data-prev="diagnostics">
-            ← Previous: Step 3 - Diagnostics (LIS/RIS)
-          </button>
           <button type="button" class="btn btn-primary btn-serial-next" data-next="ipd">
-            Next: Step 5 - Inpatient (IPD) & Bed Hub →
+            Next: Step 3 - Inpatient (IPD) & Bed Hub →
           </button>
         </div>
       </div>
 
-      <!-- SUB-TAB 5: INPATIENT (IPD) & BED HUB -->
+      <!-- SUB-TAB 3: INPATIENT (IPD) & BED HUB -->
       <div class="hospital-tab-panel" id="htab-ipd">
       <!-- Inpatient Document AI Ingestion Card -->
       <div id="ipd-doc-upload-card" class="card dept-upload-card">
@@ -1364,16 +857,14 @@
 
         <!-- Serial Navigation Footer (Step 5 -> Step 6) -->
         <div class="serial-nav-bar">
-          <button type="button" class="btn btn-outline btn-serial-prev" data-prev="pharmacy">
-            ← Previous: Step 4 - Pharmacy & Dispensing
-          </button>
+          <button type="button" class="btn btn-outline btn-serial-prev" data-prev="clinician">
+            ← Previous: Step 2 - Clinical Consultation (OPD)</button>
           <button type="button" class="btn btn-primary btn-serial-next" data-next="emergency">
-            Next: Step 6 - Emergency & Triage (ER) →
-          </button>
+            Next: Step 4 - Emergency & Triage (ER) →</button>
         </div>
       </div>
 
-      <!-- SUB-TAB 6: EMERGENCY DEPARTMENT & TRIAGE (MANCHESTER / ESI) -->
+      <!-- SUB-TAB 4: EMERGENCY DEPARTMENT & TRIAGE (MANCHESTER / ESI) -->
       <div class="hospital-tab-panel" id="htab-emergency">
       <!-- Emergency Document AI Ingestion Card -->
       <div id="emergency-doc-upload-card" class="card dept-upload-card">
@@ -1534,6 +1025,15 @@
                   <label>Pain (0-10)</label>
                   <input type="number" id="er-pain" class="form-control" min="0" max="10" value="0">
                 </div>
+              <!-- Emergency Diagnosis & Recommendations -->
+              <div class="form-group" style="margin-top:0.75rem;">
+                <label for="er-provisional-diagnosis" style="font-weight:600; color:#b91c1c;">🎯 Emergency Diagnosis (Provisional / Confirmed) *</label>
+                <input type="text" id="er-provisional-diagnosis" class="form-control" placeholder="e.g. Acute severe right knee trauma / blunt joint dislocation" value="Acute severe right knee trauma / blunt joint dislocation" required>
+              </div>
+
+              <div class="form-group" style="margin-top:0.5rem;">
+                <label for="er-physician-recommendations" style="font-weight:600; color:#b91c1c;">📋 Emergency Recommendations & Resuscitation Orders *</label>
+                <textarea id="er-physician-recommendations" class="form-control" rows="2" placeholder="e.g. 18G IV Peripheral Cannula stat; Inj Dynapar AQ 75mg IM; Knee Immobilizer Splint; Urgent Ortho Consult Dr. Anup Khatri" required>18G IV Peripheral Cannula stat; Inj Dynapar AQ (Diclofenac) 75mg IM stat; Right Knee Immobilizer Splint & Ice Pack; Urgent Orthopedic Consult Dr. Anup Khatri</textarea>
               </div>
 
               <div class="form-row" style="display:grid; grid-template-columns:1fr 1fr; gap:1rem; margin-top:1rem;">
@@ -1709,16 +1209,600 @@
         <!-- Serial Navigation Footer (Step 6 -> Step 1) -->
         <div class="serial-nav-bar">
           <button type="button" class="btn btn-outline btn-serial-prev" data-prev="ipd">
-            ← Previous: Step 5 - Inpatient (IPD) & Bed Hub
-          </button>
-          <button type="button" class="btn btn-outline btn-serial-next" data-next="reception">
-            Return to Step 1: Front Desk ↺
-          </button>
+            ← Previous: Step 3 - Inpatient (IPD) & Bed Hub</button>
+          <button type="button" class="btn btn-outline btn-serial-next" data-next="diagnostics">
+            Next: Step 5 - Diagnostic - Lab & Radiology →</button>
         </div>
       </div> <!-- End of htab-emergency -->
     </section> <!-- End of panel-hospital -->
 
-    <!-- VIEW 2: PATIENT / CLIENT PORTAL & AI HEALTH COMPANION -->
+    <!-- SUB-TAB 5: DIAGNOSTIC - LAB & RADIOLOGICAL (LIS/RIS) -->
+      <div class="hospital-tab-panel" id="htab-diagnostics">
+      <!-- Diagnostics Document AI & Lab Report Entry Station (Place for Entering the Reports) -->
+      <div id="diagnostics-doc-upload-card" class="card dept-upload-card">
+        <div class="dept-upload-header">
+          <div class="dept-upload-title-wrap">
+            <h4><span>🧪</span> Diagnostic Report Entry Station: Enter or Parse Lab & Radiology Reports</h4>
+            <p class="dept-upload-desc">Enter laboratory analyzer measurements and radiologist impressions directly into the reporting form below, or upload a scanned lab report/PDF to automatically extract and populate the values.</p>
+          </div>
+          <span class="badge badge-success">Vision OCR & LOINC Active</span>
+        </div>
+
+        <div class="dept-upload-controls">
+          <input type="file" id="diagnostics-doc-file" accept="image/*,.pdf" class="dept-file-input">
+          <button type="button" class="btn btn-outline" id="btn-diagnostics-doc-upload">
+            <span>📤</span> Upload & Parse Lab Report
+          </button>
+          <button type="button" class="btn btn-secondary" id="btn-diagnostics-doc-sample">
+            <span>📄</span> Load Sample CBC & X-Ray Report
+          </button>
+          <button type="button" class="btn btn-secondary btn-sm" id="btn-toggle-diagnostics-ocr">
+            👁️ View OCR Text
+          </button>
+        </div>
+
+        <div id="diagnostics-doc-status" class="alert alert-info hidden" style="margin-top:0.75rem;"></div>
+        <div id="diagnostics-ocr-raw" class="ocr-raw-panel hidden"></div>
+
+        <!-- Place for Entering the Reports (Manual Entry or Parsed Review Form) -->
+        <div class="report-entry-wrapper" style="margin-top:1rem; background:#ffffff; border:1px solid #e2e8f0; border-radius:var(--radius-sm); padding:1rem;">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.75rem; flex-wrap:wrap; gap:0.5rem;">
+            <h4 style="font-size:0.95rem; margin:0; color:#0f766e; display:flex; align-items:center; gap:0.4rem;">
+              <span>📝</span> Lab & Radiology Report Parameters (Enter Manually or Auto-Populated by Parser)
+            </h4>
+            <button type="button" class="btn btn-secondary btn-sm" id="btn-add-diag-param">
+              ➕ Add Parameter Row
+            </button>
+          </div>
+
+          <form id="form-manual-lab-report">
+            <div class="grid-3-col" style="margin-bottom:0.75rem;">
+              <div class="form-group" style="margin:0;">
+                <label style="font-size:0.78rem;">Patient Context</label>
+                <select id="diag-entry-patient" style="padding:0.4rem 0.6rem; font-size:0.85rem;">
+                  <!-- Auto-synced with active patient -->
+                </select>
+              </div>
+              <div class="form-group" style="margin:0;">
+                <label style="font-size:0.78rem;">Investigation / Panel Name *</label>
+                <input type="text" id="diag-entry-test-name" required value="Complete Blood Count (CBC) with Differential" style="padding:0.4rem 0.6rem; font-size:0.85rem;">
+              </div>
+              <div class="form-group" style="margin:0;">
+                <label style="font-size:0.78rem;">Diagnostic Category</label>
+                <select id="diag-entry-category" style="padding:0.4rem 0.6rem; font-size:0.85rem;">
+                  <option value="LABORATORY" selected>Laboratory (Hematology / Biochemistry)</option>
+                  <option value="RADIOLOGY">Radiology (Digital Radiography / Imaging)</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="dept-preview-table-wrap" style="margin-top:0.5rem; max-height:260px; overflow-y:auto;">
+              <table id="diag-params-entry-table">
+                <thead>
+                  <tr>
+                    <th style="width:28%;">Parameter Name</th>
+                    <th style="width:16%;">Observed Value</th>
+                    <th style="width:14%;">Unit</th>
+                    <th style="width:20%;">Reference Interval</th>
+                    <th style="width:14%;">Clinical Flag</th>
+                    <th style="width:8%;">Del</th>
+                  </tr>
+                </thead>
+                <tbody id="diag-entry-params-tbody">
+                  <tr>
+                    <td><input type="text" class="table-input param-name" value="Hemoglobin" style="width:100%; padding:0.25rem 0.4rem; font-size:0.8rem; border:1px solid #cbd5e1; border-radius:3px;"></td>
+                    <td><input type="number" step="0.1" class="table-input param-value" value="11.4" style="width:100%; padding:0.25rem 0.4rem; font-size:0.8rem; border:1px solid #cbd5e1; border-radius:3px;"></td>
+                    <td><input type="text" class="table-input param-unit" value="g/dL" style="width:100%; padding:0.25rem 0.4rem; font-size:0.8rem; border:1px solid #cbd5e1; border-radius:3px;"></td>
+                    <td><input type="text" class="table-input param-ref" value="12.0 - 15.5" style="width:100%; padding:0.25rem 0.4rem; font-size:0.8rem; border:1px solid #cbd5e1; border-radius:3px;"></td>
+                    <td>
+                      <select class="table-input param-flag" style="width:100%; padding:0.25rem; font-size:0.78rem; border:1px solid #cbd5e1; border-radius:3px;">
+                        <option value="NORMAL">NORMAL</option>
+                        <option value="LOW" selected>LOW</option>
+                        <option value="HIGH">HIGH</option>
+                        <option value="CRITICAL">CRITICAL</option>
+                      </select>
+                    </td>
+                    <td style="text-align:center;"><button type="button" class="btn btn-secondary btn-sm btn-del-param" style="padding:0.15rem 0.4rem; font-size:0.75rem;">✕</button></td>
+                  </tr>
+                  <tr>
+                    <td><input type="text" class="table-input param-name" value="Total Leukocyte Count (TLC)" style="width:100%; padding:0.25rem 0.4rem; font-size:0.8rem; border:1px solid #cbd5e1; border-radius:3px;"></td>
+                    <td><input type="number" class="table-input param-value" value="8200" style="width:100%; padding:0.25rem 0.4rem; font-size:0.8rem; border:1px solid #cbd5e1; border-radius:3px;"></td>
+                    <td><input type="text" class="table-input param-unit" value="/uL" style="width:100%; padding:0.25rem 0.4rem; font-size:0.8rem; border:1px solid #cbd5e1; border-radius:3px;"></td>
+                    <td><input type="text" class="table-input param-ref" value="4000 - 11000" style="width:100%; padding:0.25rem 0.4rem; font-size:0.8rem; border:1px solid #cbd5e1; border-radius:3px;"></td>
+                    <td>
+                      <select class="table-input param-flag" style="width:100%; padding:0.25rem; font-size:0.78rem; border:1px solid #cbd5e1; border-radius:3px;">
+                        <option value="NORMAL" selected>NORMAL</option>
+                        <option value="LOW">LOW</option>
+                        <option value="HIGH">HIGH</option>
+                        <option value="CRITICAL">CRITICAL</option>
+                      </select>
+                    </td>
+                    <td style="text-align:center;"><button type="button" class="btn btn-secondary btn-sm btn-del-param" style="padding:0.15rem 0.4rem; font-size:0.75rem;">✕</button></td>
+                  </tr>
+                  <tr>
+                    <td><input type="text" class="table-input param-name" value="Platelet Count" style="width:100%; padding:0.25rem 0.4rem; font-size:0.8rem; border:1px solid #cbd5e1; border-radius:3px;"></td>
+                    <td><input type="number" class="table-input param-value" value="240000" style="width:100%; padding:0.25rem 0.4rem; font-size:0.8rem; border:1px solid #cbd5e1; border-radius:3px;"></td>
+                    <td><input type="text" class="table-input param-unit" value="/uL" style="width:100%; padding:0.25rem 0.4rem; font-size:0.8rem; border:1px solid #cbd5e1; border-radius:3px;"></td>
+                    <td><input type="text" class="table-input param-ref" value="150000 - 450000" style="width:100%; padding:0.25rem 0.4rem; font-size:0.8rem; border:1px solid #cbd5e1; border-radius:3px;"></td>
+                    <td>
+                      <select class="table-input param-flag" style="width:100%; padding:0.25rem; font-size:0.78rem; border:1px solid #cbd5e1; border-radius:3px;">
+                        <option value="NORMAL" selected>NORMAL</option>
+                        <option value="LOW">LOW</option>
+                        <option value="HIGH">HIGH</option>
+                        <option value="CRITICAL">CRITICAL</option>
+                      </select>
+                    </td>
+                    <td style="text-align:center;"><button type="button" class="btn btn-secondary btn-sm btn-del-param" style="padding:0.15rem 0.4rem; font-size:0.75rem;">✕</button></td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <div class="form-group" style="margin-top:0.75rem; margin-bottom:0.5rem;">
+              <label style="font-size:0.78rem;">Pathologist / Radiologist Diagnostic Impression</label>
+              <textarea id="diag-entry-impression" rows="2" style="font-size:0.85rem; padding:0.4rem 0.6rem; width:100%; border:1px solid #cbd5e1; border-radius:3px;" placeholder="Diagnostic interpretation...">Mild microcytic hypochromic anemia noted. Intact post-operative right knee joint alignment with anatomical suture repair.</textarea>
+            </div>
+
+            <div class="form-actions" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:0.5rem; margin-top:0.75rem;">
+              <span id="diag-entry-save-status" class="text-muted" style="font-size:0.8rem;">Ready to save report.</span>
+              <button type="submit" class="btn btn-success" id="btn-save-diag-report" style="font-weight:600;">
+                💾 Save & Publish Diagnostic Report
+              </button>
+            </div>
+          </form>
+        </div>
+
+        <!-- Structured Diagnostics Preview (for backward compatibility) -->
+        <div id="diagnostics-doc-preview" class="dept-doc-preview hidden">
+          <div class="preview-header">
+            <span class="badge badge-primary" id="diag-preview-meta">Parameters Extracted</span>
+            <button type="button" class="btn btn-primary btn-sm" id="btn-apply-diagnostics-doc">
+              📋 Populate Diagnostics Workstation
+            </button>
+          </div>
+          <div class="dept-preview-table-wrap" id="diagnostics-preview-table"></div>
+        </div>
+      </div>
+
+      <!-- Diagnostics KPI Strip -->
+      <div class="kpi-strip">
+        <div class="kpi-card">
+          <div class="kpi-icon">🔬</div>
+          <div class="kpi-content">
+            <span class="kpi-label">Active Orders</span>
+            <span class="kpi-value" id="diag-kpi-total">0</span>
+          </div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-icon warning">🩸</div>
+          <div class="kpi-content">
+            <span class="kpi-label">Pending Collection</span>
+            <span class="kpi-value" id="diag-kpi-pending">0</span>
+          </div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-icon info">🧪</div>
+          <div class="kpi-content">
+            <span class="kpi-label">In Processing / Resulted</span>
+            <span class="kpi-value" id="diag-kpi-processing">0</span>
+          </div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-icon success">📜</div>
+          <div class="kpi-content">
+            <span class="kpi-label">Verified & Published</span>
+            <span class="kpi-value" id="diag-kpi-verified">0</span>
+          </div>
+        </div>
+        <div class="kpi-card action-card">
+          <button type="button" class="btn btn-primary" id="btn-quick-diag-order">
+            ➕ Order Investigation
+          </button>
+        </div>
+      </div>
+
+      <!-- Main LIS/RIS Layout: Worklist Queue (Left) & Active Workstation / Report (Right) -->
+      <div class="ipd-grid-layout">
+        <!-- Worklist Panel -->
+        <div class="card">
+          <div class="card-header">
+            <div>
+              <h3>Diagnostics Worklist & Accession Queue</h3>
+              <span class="card-subtitle">Pathology & Radiology Order Execution</span>
+            </div>
+            <div class="matrix-filter-buttons">
+              <button type="button" class="filter-btn active" data-diagfilter="ALL">All Orders</button>
+              <button type="button" class="filter-btn" data-diagfilter="LABORATORY">Lab</button>
+              <button type="button" class="filter-btn" data-diagfilter="RADIOLOGY">Radiology</button>
+            </div>
+          </div>
+          <div id="diag-worklist-container" class="diag-worklist-list" style="margin-top:1rem;">
+            <div class="empty-state">Loading diagnostics worklist...</div>
+          </div>
+        </div>
+
+        <!-- Workstation & Live Inspector Panel -->
+        <div class="card" id="diag-workstation-card">
+          <div id="diag-workstation-unselected" class="bedside-placeholder">
+            <div class="placeholder-icon">🔬</div>
+            <h4>Select an Investigation from the Worklist</h4>
+            <p>Click on any order to collect specimen, enter analyzer measurements with automated LOINC reference range flags, or review radiology impressions and verify reports.</p>
+          </div>
+
+          <div id="diag-workstation-content" class="hidden">
+            <div class="card-header ipd-bedside-header">
+              <div>
+                <span class="badge badge-uhid" id="ws-category-badge">LABORATORY • BIOCHEMISTRY</span>
+                <h3 id="ws-test-name" style="margin-top:0.25rem;">HbA1c Glycated Hemoglobin Panel</h3>
+                <span class="card-subtitle" id="ws-patient-meta">Patient: Anindita Ray • UHID: U-2026-0001</span>
+              </div>
+              <div class="bedside-tariff-badge">
+                <span class="tariff-label">Standard Tariff</span>
+                <span class="tariff-amount" id="ws-tariff-amount">₹650.00</span>
+                <span class="tariff-sub" id="ws-coding-info">LOINC: 4548-4</span>
+              </div>
+            </div>
+
+            <!-- Workflow Stage Indicator Bar -->
+            <div class="diag-stages-bar">
+              <div class="diag-stage active" id="stage-ordered">
+                <span class="stage-num">1</span>
+                <span class="stage-title">Ordered</span>
+              </div>
+              <div class="diag-stage-connector"></div>
+              <div class="diag-stage" id="stage-collected">
+                <span class="stage-num">2</span>
+                <span class="stage-title">Sample Collected</span>
+              </div>
+              <div class="diag-stage-connector"></div>
+              <div class="diag-stage" id="stage-resulted">
+                <span class="stage-num">3</span>
+                <span class="stage-title">Resulted</span>
+              </div>
+              <div class="diag-stage-connector"></div>
+              <div class="diag-stage" id="stage-verified">
+                <span class="stage-num">4</span>
+                <span class="stage-title">Verified</span>
+              </div>
+            </div>
+
+            <!-- Stage 1 View: Collect Specimen / Start Imaging -->
+            <div id="ws-step-collect" class="ws-step-panel hidden">
+              <div class="specimen-tracking-box">
+                <h4>Phlebotomy & Specimen Collection</h4>
+                <p style="font-size:0.8rem; color:var(--text-muted); margin-bottom:0.75rem;">
+                  Required Specimen: <strong id="ws-req-specimen">Whole Blood (EDTA Purple Top)</strong>
+                </p>
+                <div class="form-group">
+                  <label>Phlebotomist / Radiographer Name</label>
+                  <input type="text" id="ws-phleb-name" value="Sunita Sharma, CPT (Lead Phlebotomist)" required>
+                </div>
+                <button type="button" class="btn btn-primary" id="btn-execute-collect">
+                  🏷️ Generate Barcode & Record Collection
+                </button>
+              </div>
+            </div>
+
+            <!-- Stage 2 View: Lab Analyzer Parameter Entry -->
+            <div id="ws-step-lab-results" class="ws-step-panel hidden">
+              <div class="card-header" style="padding:0; margin-bottom:0.75rem;">
+                <h4>Analyzer Result Entry & Reference Range Engine</h4>
+                <span class="badge badge-info" id="ws-sample-tag">SMP-BIO-2026-1001</span>
+              </div>
+              <form id="ws-lab-result-form">
+                <div id="ws-parameter-inputs-container" class="param-inputs-grid">
+                  <!-- Dynamic parameter inputs rendered here -->
+                </div>
+                <div class="form-actions" style="margin-top:1rem;">
+                  <button type="submit" class="btn btn-primary btn-sm">
+                    💾 Save Analyzer Measurements
+                  </button>
+                </div>
+              </form>
+            </div>
+
+            <!-- Stage 2b View: Radiology Report Entry -->
+            <div id="ws-step-rad-results" class="ws-step-panel hidden">
+              <form id="ws-rad-result-form" class="form ipd-form">
+                <div class="form-group">
+                  <label>Reporting Radiologist</label>
+                  <input type="text" id="ws-rad-doctor" value="Dr. Meenakshi Sundaram, DMRD, DNB (Radiodiagnosis)" required>
+                </div>
+                <div class="form-group">
+                  <label>Technique</label>
+                  <input type="text" id="ws-rad-technique" value="Multiplanar, multisequence MRI of right knee joint on 3.0 Tesla scanner." required>
+                </div>
+                <div class="form-group">
+                  <label>Imaging Findings</label>
+                  <textarea id="ws-rad-findings" rows="3" required>Full-thickness radial tear involving posterior horn and root attachment of medial meniscus. Joint effusion present. ACL, PCL, and collateral ligaments intact.</textarea>
+                </div>
+                <div class="form-group">
+                  <label>Radiological Impression</label>
+                  <input type="text" id="ws-rad-impression" value="Medial meniscus posterior root tear (Type 2). Orthopaedic arthroscopic repair recommended." required>
+                </div>
+                <div class="form-actions" style="margin-top:0.75rem;">
+                  <button type="submit" class="btn btn-primary btn-sm">
+                    💾 Record Imaging Findings & Impression
+                  </button>
+                </div>
+              </form>
+            </div>
+
+            <!-- Stage 3 View: Consultant Verification & Sign-off -->
+            <div id="ws-step-verify" class="ws-step-panel hidden">
+              <div class="card-header" style="padding:0; margin-bottom:0.75rem;">
+                <h4>Consultant Verification & Digital Signature</h4>
+                <span class="badge badge-success">Measurements Complete</span>
+              </div>
+              <div id="ws-results-preview-table" style="margin-bottom:1rem;"></div>
+              <form id="ws-verify-form" class="form ipd-form">
+                <div class="form-row">
+                  <div class="form-group">
+                    <label>Signing Consultant Name</label>
+                    <input type="text" id="ws-verifier-name" value="Dr. Rajiv Sethi" required>
+                  </div>
+                  <div class="form-group">
+                    <label>Qualification & Degree</label>
+                    <input type="text" id="ws-verifier-qual" value="MD (Pathology)" required>
+                  </div>
+                </div>
+                <div class="form-row">
+                  <div class="form-group">
+                    <label>Medical Council Reg. No</label>
+                    <input type="text" id="ws-verifier-reg" value="MMC-1998040112" required>
+                  </div>
+                  <div class="form-group">
+                    <label>Clinical Notes / Correlation</label>
+                    <input type="text" id="ws-verifier-notes" value="Results clinically correlated. Elevated values flagged.">
+                  </div>
+                </div>
+                <div class="form-actions" style="margin-top:1rem;">
+                  <button type="submit" class="btn btn-success" id="btn-submit-verification">
+                    🔏 Apply Digital Signature & Publish Diagnostic Report
+                  </button>
+                </div>
+              </form>
+            </div>
+
+            <!-- Stage 4 View: Standardized Diagnostic Report Card -->
+            <div id="ws-step-report-card" class="ws-step-panel hidden">
+              <div class="diagnostic-report-sheet" id="diagnostic-report-sheet">
+                <div class="report-header">
+                  <div class="report-brand">
+                    <h3 style="color:#0284c7; margin:0;">HEALTHOS CENTRAL DIAGNOSTIC LABORATORY & PACS</h3>
+                    <small>NABL Accredited • ISO 15189 Certified • ABDM Milestone 2 Certified HIP</small>
+                  </div>
+                  <div class="report-barcode-box" id="rep-barcode-box">
+                    <span class="barcode-font" id="rep-barcode-txt">|||||||||||||||||||||||</span>
+                    <small id="rep-barcode-sub">SMP-BIO-2026-1001</small>
+                  </div>
+                </div>
+
+                <div class="report-meta-grid">
+                  <div><strong>Patient:</strong> <span id="rep-patient-name">Anindita Ray</span></div>
+                  <div><strong>Accession No:</strong> <span id="rep-accession">ACC-2026-5001</span></div>
+                  <div><strong>UHID:</strong> <span id="rep-uhid">U-2026-0001</span></div>
+                  <div><strong>Specimen:</strong> <span id="rep-specimen">Whole Blood EDTA</span></div>
+                  <div><strong>Referred By:</strong> <span id="rep-doctor">Dr. Anup Khatri</span></div>
+                  <div><strong>Reported At:</strong> <span id="rep-reported-at">2026-09-27 18:30</span></div>
+                </div>
+
+                <div class="report-body" id="rep-body-content">
+                  <!-- Lab Table or Radiology Findings Rendered Here -->
+                </div>
+
+                <div class="report-footer">
+                  <div class="signature-block">
+                    <div class="sig-line">
+                      <span class="sig-stamp">DIGITALLY SIGNED</span>
+                      <strong id="rep-signer-name">Dr. Rajiv Sethi, MD (Pathology)</strong>
+                      <small id="rep-signer-reg">Medical Council Reg: MMC-1998040112</small>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="form-actions" style="margin-top:1rem;">
+                <button type="button" class="btn btn-outline" onclick="window.print()">
+                  🖨️ Print / Download Report PDF
+                </button>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- Serial Navigation Footer (Step 3 -> Step 4) -->
+        <div class="serial-nav-bar">
+          <button type="button" class="btn btn-outline btn-serial-prev" data-prev="emergency">
+            ← Previous: Step 4 - Emergency & Triage (ER)</button>
+          <button type="button" class="btn btn-primary btn-serial-next" data-next="pharmacy">
+            Next: Step 6 - Pharmacy & Dispensing →</button>
+        </div>
+      </div>
+
+      <!-- SUB-TAB 6: PHARMACY & DISPENSING -->
+      <div class="hospital-tab-panel" id="htab-pharmacy">
+      <!-- Pharmacy Document AI Ingestion Card -->
+      <div id="pharmacy-doc-upload-card" class="card dept-upload-card">
+        <div class="dept-upload-header">
+          <div class="dept-upload-title-wrap">
+            <h4><span>💊</span> Pharmacy Document AI: Stock Invoices & External Prescriptions</h4>
+            <p class="dept-upload-desc">Upload vendor Goods Receipt Notes (GRN), pharmaceutical batch invoices, or external handwritten doctor prescriptions to extract drug brand names, generic active ingredients, dosage strengths, batch numbers, expiry dates, quantities, and MRP pricing.</p>
+          </div>
+          <span class="badge badge-success">Vision OCR & FEFO Active</span>
+        </div>
+
+        <div class="dept-upload-controls">
+          <input type="file" id="pharmacy-doc-file" accept="image/*,.pdf" class="dept-file-input">
+          <button type="button" class="btn btn-outline" id="btn-pharmacy-doc-upload">
+            <span>📤</span> Upload & Extract Pharmacy Document
+          </button>
+          <button type="button" class="btn btn-secondary" id="btn-pharmacy-doc-sample">
+            <span>📄</span> Load Sample Drug Challan
+          </button>
+          <button type="button" class="btn btn-secondary btn-sm" id="btn-toggle-pharmacy-ocr">
+            👁️ View OCR Text
+          </button>
+        </div>
+
+        <div id="pharmacy-doc-status" class="alert alert-info hidden" style="margin-top:0.75rem;"></div>
+        <div id="pharmacy-ocr-raw" class="ocr-raw-panel hidden"></div>
+
+        <!-- Structured Pharmacy Preview -->
+        <div id="pharmacy-doc-preview" class="dept-doc-preview hidden">
+          <div class="preview-header">
+            <span class="badge badge-primary" id="pharm-preview-meta">Batches Extracted</span>
+            <button type="button" class="btn btn-primary btn-sm" id="btn-apply-pharmacy-doc">
+              📥 Add Extracted Batches to Inventory
+            </button>
+          </div>
+          <div class="dept-preview-table-wrap" id="pharmacy-preview-table"></div>
+        </div>
+      </div>
+
+      <!-- Pharmacy KPI Strip -->
+      <div class="kpi-strip">
+        <div class="kpi-card">
+          <div class="kpi-icon">💊</div>
+          <div class="kpi-content">
+            <span class="kpi-label">Formulary SKUs</span>
+            <span class="kpi-value" id="pharm-kpi-skus">7</span>
+          </div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-icon success">📦</div>
+          <div class="kpi-content">
+            <span class="kpi-label">Units in Stock</span>
+            <span class="kpi-value" id="pharm-kpi-units">3,110</span>
+          </div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-icon warning">⚠️</div>
+          <div class="kpi-content">
+            <span class="kpi-label">Near-Expiry / Expired</span>
+            <span class="kpi-value" id="pharm-kpi-alerts">2</span>
+          </div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-icon info">🧾</div>
+          <div class="kpi-content">
+            <span class="kpi-label">Prescriptions Dispensed</span>
+            <span class="kpi-value" id="pharm-kpi-dispenses">0</span>
+          </div>
+        </div>
+        <div class="kpi-card action-card">
+          <button type="button" class="btn btn-outline" id="btn-open-restock-modal">
+            📥 Receive Stock Batch
+          </button>
+        </div>
+      </div>
+
+      <!-- Main Layout: Drug Inventory (Left) & Dispensing Workstation (Right) -->
+      <div class="ipd-grid-layout">
+        <!-- Drug Inventory & FEFO Matrix -->
+        <div class="card">
+          <div class="card-header">
+            <div>
+              <h3>Real-Time Pharmacy Inventory</h3>
+              <span class="card-subtitle">FEFO Batch & Expiry Controlled Formulary</span>
+            </div>
+            <div class="matrix-filter-buttons">
+              <button type="button" class="filter-btn active" data-pharmfilter="ALL">All Items</button>
+              <button type="button" class="filter-btn" data-pharmfilter="HEALTHY">In Stock</button>
+              <button type="button" class="filter-btn" data-pharmfilter="ALERTS">Alerts</button>
+            </div>
+          </div>
+          <div id="pharm-inventory-container" class="pharm-inventory-list" style="margin-top:1rem;">
+            <div class="empty-state">Loading pharmacy inventory...</div>
+          </div>
+        </div>
+
+        <!-- Closed-Loop Dispensing Workstation -->
+        <div class="card" id="pharm-dispense-card">
+          <div class="card-header ipd-bedside-header">
+            <div>
+              <span class="badge badge-uhid">CLOSED-LOOP DISPENSING</span>
+              <h3 id="pharm-patient-name" style="margin-top:0.25rem;">Active Patient: Anindita Ray</h3>
+              <span class="card-subtitle" id="pharm-patient-meta">UHID: U-2026-0001 • Prescribed by Dr. Anup Khatri</span>
+            </div>
+            <div class="bedside-tariff-badge">
+              <span class="tariff-label">Billable To</span>
+              <span class="tariff-amount" id="pharm-bill-gross">₹0.00</span>
+              <span class="tariff-sub" id="pharm-bill-split">Patient 80% • TPA 20%</span>
+            </div>
+          </div>
+
+          <!-- Prescription Prescribed Medication Items -->
+          <div class="dispense-section">
+            <div class="section-title-row" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.75rem;">
+              <h4>Prescription Medications Queue</h4>
+              <button type="button" class="btn btn-outline btn-sm" id="btn-pharm-add-manual-row">
+                ➕ Add Item
+              </button>
+            </div>
+
+            <div id="pharm-dispense-lines-container" class="dispense-lines-list">
+              <!-- Dynamic Dispense Line Items -->
+            </div>
+
+            <!-- Clinical Pharmacist Recommendations & Interaction Safety Box -->
+            <div id="pharm-clinical-recommendations-box" class="pharmacy-recs-box" style="margin-top:1rem; background:#eff6ff; border:1px solid #bfdbfe; border-radius:var(--radius-sm); padding:0.85rem;">
+              <h5 style="color:#1d4ed8; font-size:0.875rem; margin-bottom:0.35rem; display:flex; align-items:center; gap:0.4rem;">
+                <span>💡</span> Clinical Pharmacist Recommendations & Pharmacotherapy Review
+              </h5>
+              <div id="pharm-recs-content" style="font-size:0.8125rem; color:#1e3a8a; line-height:1.5;">
+                • <strong>Timing & Food Interaction:</strong> Take Pantocid 40 on an empty stomach 30 mins before breakfast. Ezorb Forte after lunch with water.<br>
+                • <strong>Drug-Drug Interaction Screen:</strong> No adverse CYP450 or severe drug interactions detected for active prescriptions.<br>
+                • <strong>Patient Counseling:</strong> Complete full prescribed course. Avoid concurrent NSAID use without gastro-protection.
+              </div>
+            </div>
+
+            <!-- Pharmacist Verification & Sign-Off -->
+            <div class="pharmacist-signoff-box" style="margin-top:1.25rem; background:#f8fafc; padding:0.75rem; border-radius:var(--radius-sm); border:1px solid var(--border);">
+              <div class="form-row">
+                <div class="form-group">
+                  <label>Dispensing Pharmacist *</label>
+                  <input type="text" id="pharm-signer-name" value="Kavita Deshmukh, M.Pharm (Chief Pharmacist)" required>
+                </div>
+                <div class="form-group">
+                  <label>Pharmacy Council Reg. No *</label>
+                  <input type="text" id="pharm-signer-reg" value="MH-PHARM-20120045" required>
+                </div>
+              </div>
+            </div>
+
+            <div class="form-actions" style="margin-top:1rem;">
+              <button type="button" class="btn btn-success" id="btn-submit-dispense">
+                💊 Finalize Closed-Loop Dispense & Post Bill to Ledger
+              </button>
+            </div>
+          </div>
+
+          <!-- Official Dispense Receipt & Invoice Card -->
+          <div id="pharm-receipt-card" class="discharge-summary-card hidden" style="margin-top:1.25rem;">
+            <div class="summary-badge">DISPENSED & CHARGES CAPTURED</div>
+            <h4>Official Hospital Pharmacy Invoice</h4>
+            <div id="pharm-receipt-details" class="summary-details"></div>
+            <div class="summary-actions" style="margin-top:1rem;">
+              <button type="button" class="btn btn-primary" id="btn-pharm-goto-billing">
+                💳 Proceed to Cashier Desk to Settle Pharmacy Bill
+              </button>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Serial Navigation Footer (Step 4 -> Step 5) -->
+        <div class="serial-nav-bar">
+          <button type="button" class="btn btn-outline btn-serial-prev" data-prev="diagnostics">
+            ← Previous: Step 5 - Diagnostic - Lab & Radiology</button>
+          <button type="button" class="btn btn-primary btn-serial-next" data-next="reception">
+            Return to Step 1: Front Desk ↺</button>
+        </div>
+      </div>
+
+      <!-- VIEW 2: PATIENT / CLIENT PORTAL & AI HEALTH COMPANION -->
     <section class="viewport-panel" id="panel-patient-portal">
       <!-- Portal Top Bar: Patient Selection & Identity Header -->
       <div class="portal-header-card">

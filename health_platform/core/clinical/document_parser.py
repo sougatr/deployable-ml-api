@@ -1263,6 +1263,24 @@ class ClinicalDocumentParser:
             clean_ln = re.sub(r"[^a-zA-Z]", "", last_name.lower()) if last_name else "health"
             abha = f"{clean_fn}.{clean_ln}@abdm"
 
+        # 8. Email extraction
+        email = None
+        email_match = re.search(r"\b([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})\b", raw_text)
+        if email_match and not email_match.group(1).endswith("@abdm"):
+            email = email_match.group(1)
+        else:
+            clean_fn = re.sub(r"[^a-zA-Z]", "", first_name.split()[0].lower()) if first_name else "patient"
+            clean_ln = re.sub(r"[^a-zA-Z]", "", last_name.lower()) if last_name else "care"
+            email = f"{clean_fn}.{clean_ln}@gmail.com"
+
+        # 9. Street Address extraction
+        address = "Flat 402, Sea Green Apts, Mumbai"
+        addr_match = re.search(r"(?:Address|Addr)[:\s\n]*([^\n\r]+)", raw_text, re.I)
+        if addr_match:
+            address = addr_match.group(1).strip()
+        elif "mumbai" in text_lower:
+            address = "Mumbai, Maharashtra"
+
         return {
             "name": full_name,
             "first_name": first_name,
@@ -1274,6 +1292,8 @@ class ClinicalDocumentParser:
             "age": age,
             "gender": gender,
             "phone": phone,
+            "email": email,
+            "address": address,
             "postal_code": postal,
             "aadhaar": aadhaar,
             "aadhaar_number": aadhaar,

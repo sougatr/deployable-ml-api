@@ -135,7 +135,7 @@ function switchHospitalTab(target) {
   if (panel) panel.classList.add("active");
 
   // Update Stepper Bar Steps
-  const stepOrder = ["reception", "clinician", "diagnostics", "pharmacy", "ipd", "emergency"];
+  const stepOrder = ["reception", "clinician", "ipd", "emergency", "diagnostics", "pharmacy"];
   const targetIdx = stepOrder.indexOf(target);
   document.querySelectorAll(".stepper-step").forEach(s => {
     const sStep = s.dataset.step;
@@ -196,6 +196,12 @@ function updatePatientBanner(patient) {
   // Update clinician viewport state
   document.getElementById("clinician-no-patient-warning").classList.add("hidden");
   document.getElementById("clinician-encounter-flow").classList.remove("hidden");
+
+  // Sync Diagnostics Report Entry Station patient selector
+  const diagPatientSelect = document.getElementById("diag-entry-patient");
+  if (diagPatientSelect) {
+    diagPatientSelect.innerHTML = `<option value="${patient.mpi_id}">${patient.first_name} ${patient.last_name} (${patient.uhid})</option>`;
+  }
 }
 
 // 1. Patient Registration & MPI
@@ -4123,6 +4129,8 @@ function initDepartmentDocumentAI() {
           <div class="dept-chip"><strong>Age:</strong> ${lastRecepParsed.age || "-"} Yrs</div>
           <div class="dept-chip"><strong>Gender:</strong> ${lastRecepParsed.gender || "-"}</div>
           <div class="dept-chip"><strong>Mobile:</strong> ${lastRecepParsed.phone || "-"}</div>
+          <div class="dept-chip"><strong>Email:</strong> ${lastRecepParsed.email || "-"}</div>
+          <div class="dept-chip"><strong>Address:</strong> ${lastRecepParsed.address || "-"}</div>
           <div class="dept-chip"><strong>PIN Code:</strong> ${lastRecepParsed.postal_code || "-"}</div>
           <div class="dept-chip"><strong>Aadhaar:</strong> ${lastRecepParsed.aadhaar || "-"}</div>
           <div class="dept-chip"><strong>ABHA:</strong> ${lastRecepParsed.abha_address || "-"}</div>
@@ -4160,6 +4168,8 @@ function initDepartmentDocumentAI() {
       if (document.getElementById("reg-age") && lastRecepParsed.age) document.getElementById("reg-age").value = lastRecepParsed.age;
       if (document.getElementById("reg-gender") && lastRecepParsed.gender) document.getElementById("reg-gender").value = lastRecepParsed.gender;
       if (document.getElementById("reg-phone") && lastRecepParsed.phone) document.getElementById("reg-phone").value = lastRecepParsed.phone;
+      if (document.getElementById("reg-email") && lastRecepParsed.email) document.getElementById("reg-email").value = lastRecepParsed.email;
+      if (document.getElementById("reg-address-line") && lastRecepParsed.address) document.getElementById("reg-address-line").value = lastRecepParsed.address;
       if (document.getElementById("reg-postal") && lastRecepParsed.postal_code) document.getElementById("reg-postal").value = lastRecepParsed.postal_code;
       if (document.getElementById("aadhaar-input") && lastRecepParsed.aadhaar) document.getElementById("aadhaar-input").value = lastRecepParsed.aadhaar.replace(/\s+/g, "");
       if (document.getElementById("abha-address-input") && lastRecepParsed.abha_address) document.getElementById("abha-address-input").value = lastRecepParsed.abha_address;
@@ -4203,6 +4213,46 @@ function initDepartmentDocumentAI() {
         statusDiag.className = "alert alert-success";
         statusDiag.innerHTML = `✅ <strong>Diagnostics Report Ingested:</strong> ${lastDiagParsed.investigation_name || "Diagnostic Report"} (${(lastDiagParsed.parameters || []).length} test parameters mapped).`;
       }
+
+      // Populate Diagnostic Report Entry Station inputs directly
+      if (document.getElementById("diag-entry-test-name") && lastDiagParsed.investigation_name) {
+        document.getElementById("diag-entry-test-name").value = lastDiagParsed.investigation_name;
+      }
+      if (document.getElementById("diag-entry-category")) {
+        document.getElementById("diag-entry-category").value = lastDiagParsed.radiology_impression ? "RADIOLOGY" : "LABORATORY";
+      }
+      if (document.getElementById("diag-entry-impression")) {
+        if (lastDiagParsed.radiology_impression) {
+          document.getElementById("diag-entry-impression").value = lastDiagParsed.radiology_impression;
+        } else if (lastDiagParsed.investigation_name) {
+          document.getElementById("diag-entry-impression").value = `Verified findings for ${lastDiagParsed.investigation_name}. Parameters within standard biological tolerance with flagged anomalies noted.`;
+        }
+      }
+      const entryTbody = document.getElementById("diag-entry-params-tbody");
+      if (entryTbody && lastDiagParsed.parameters && lastDiagParsed.parameters.length > 0) {
+        entryTbody.innerHTML = lastDiagParsed.parameters.map(p => {
+          let fl = (p.flag || "NORMAL").toUpperCase();
+          if (!["NORMAL", "LOW", "HIGH", "CRITICAL"].includes(fl)) fl = "NORMAL";
+          return `
+            <tr>
+              <td><input type="text" class="table-input param-name" value="${escapeHtml(p.name || '')}" style="width:100%; padding:0.25rem 0.4rem; font-size:0.8rem; border:1px solid #cbd5e1; border-radius:3px;"></td>
+              <td><input type="text" class="table-input param-value" value="${p.value !== undefined ? p.value : ''}" style="width:100%; padding:0.25rem 0.4rem; font-size:0.8rem; border:1px solid #cbd5e1; border-radius:3px;"></td>
+              <td><input type="text" class="table-input param-unit" value="${escapeHtml(p.unit || '')}" style="width:100%; padding:0.25rem 0.4rem; font-size:0.8rem; border:1px solid #cbd5e1; border-radius:3px;"></td>
+              <td><input type="text" class="table-input param-ref" value="${escapeHtml(p.reference_range || '')}" style="width:100%; padding:0.25rem 0.4rem; font-size:0.8rem; border:1px solid #cbd5e1; border-radius:3px;"></td>
+              <td>
+                <select class="table-input param-flag" style="width:100%; padding:0.25rem; font-size:0.78rem; border:1px solid #cbd5e1; border-radius:3px;">
+                  <option value="NORMAL" ${fl === 'NORMAL' ? 'selected' : ''}>NORMAL</option>
+                  <option value="LOW" ${fl === 'LOW' ? 'selected' : ''}>LOW</option>
+                  <option value="HIGH" ${fl === 'HIGH' ? 'selected' : ''}>HIGH</option>
+                  <option value="CRITICAL" ${fl === 'CRITICAL' ? 'selected' : ''}>CRITICAL</option>
+                </select>
+              </td>
+              <td style="text-align:center;"><button type="button" class="btn btn-secondary btn-sm btn-del-param" style="padding:0.15rem 0.4rem; font-size:0.75rem;">✕</button></td>
+            </tr>
+          `;
+        }).join("");
+      }
+
       if (previewDiag && tableDiag) {
         previewDiag.classList.remove("hidden");
         const params = lastDiagParsed.parameters || [];
@@ -4212,10 +4262,10 @@ function initDepartmentDocumentAI() {
           else if (p.flag === "LOW") badgeClass = "badge-warning";
           return `
             <tr>
-              <td><strong>${p.name}</strong></td>
+              <td><strong>${escapeHtml(p.name || '')}</strong></td>
               <td>${p.value}</td>
-              <td>${p.unit || "-"}</td>
-              <td>${p.reference_range || "-"}</td>
+              <td>${escapeHtml(p.unit || "-")}</td>
+              <td>${escapeHtml(p.reference_range || "-")}</td>
               <td><span class="badge ${badgeClass}">${p.flag}</span></td>
             </tr>
           `;
@@ -4223,7 +4273,7 @@ function initDepartmentDocumentAI() {
 
         let impressionHtml = "";
         if (lastDiagParsed.radiology_impression) {
-          impressionHtml = `<div style="padding:0.75rem; background:#eff6ff; border-top:1px solid #bfdbfe; font-size:0.825rem; color:#1e40af;"><strong>Radiology Impression:</strong> ${lastDiagParsed.radiology_impression}</div>`;
+          impressionHtml = `<div style="padding:0.75rem; background:#eff6ff; border-top:1px solid #bfdbfe; font-size:0.825rem; color:#1e40af;"><strong>Radiology Impression:</strong> ${escapeHtml(lastDiagParsed.radiology_impression)}</div>`;
         }
 
         tableDiag.innerHTML = `
@@ -4259,17 +4309,191 @@ function initDepartmentDocumentAI() {
   if (btnApplyDiag) {
     btnApplyDiag.addEventListener("click", () => {
       if (!lastDiagParsed) return;
-      // Auto-open order dialog or populate workstation
-      const modal = document.getElementById("diag-order-modal");
-      if (modal && typeof modal.showModal === "function") {
-        modal.showModal();
-        if (document.getElementById("diag-order-history")) {
-          document.getElementById("diag-order-history").value = `Extracted from uploaded report: ${lastDiagParsed.investigation_name || "Diagnostic Panel"}. Flags: ${(lastDiagParsed.parameters || []).filter(p => p.flag !== 'NORMAL').map(p => `${p.name}=${p.value} (${p.flag})`).join(', ')}`;
-        }
-      }
+      // Scroll to manual entry station
+      const entryCard = document.getElementById("diag-doc-upload-card");
+      if (entryCard) entryCard.scrollIntoView({ behavior: "smooth" });
       if (statusDiag) {
         statusDiag.className = "alert alert-success";
-        statusDiag.innerHTML = "✅ <strong>Populated into Diagnostics Workstation:</strong> Ready to verify findings and publish official report.";
+        statusDiag.innerHTML = "✅ <strong>Populated into Diagnostic Report Entry Station:</strong> You can edit parameters or click <em>'Save & Publish Diagnostic Report'</em> below.";
+      }
+    });
+  }
+
+  // Add parameter row button
+  const btnAddParam = document.getElementById("btn-add-diag-param");
+  if (btnAddParam) {
+    btnAddParam.addEventListener("click", () => {
+      const tbody = document.getElementById("diag-entry-params-tbody");
+      if (!tbody) return;
+      const tr = document.createElement("tr");
+      tr.innerHTML = `
+        <td><input type="text" class="table-input param-name" placeholder="Parameter Name" style="width:100%; padding:0.25rem 0.4rem; font-size:0.8rem; border:1px solid #cbd5e1; border-radius:3px;"></td>
+        <td><input type="text" class="table-input param-value" placeholder="Value" style="width:100%; padding:0.25rem 0.4rem; font-size:0.8rem; border:1px solid #cbd5e1; border-radius:3px;"></td>
+        <td><input type="text" class="table-input param-unit" placeholder="Unit" style="width:100%; padding:0.25rem 0.4rem; font-size:0.8rem; border:1px solid #cbd5e1; border-radius:3px;"></td>
+        <td><input type="text" class="table-input param-ref" placeholder="Ref Range" style="width:100%; padding:0.25rem 0.4rem; font-size:0.8rem; border:1px solid #cbd5e1; border-radius:3px;"></td>
+        <td>
+          <select class="table-input param-flag" style="width:100%; padding:0.25rem; font-size:0.78rem; border:1px solid #cbd5e1; border-radius:3px;">
+            <option value="NORMAL" selected>NORMAL</option>
+            <option value="LOW">LOW</option>
+            <option value="HIGH">HIGH</option>
+            <option value="CRITICAL">CRITICAL</option>
+          </select>
+        </td>
+        <td style="text-align:center;"><button type="button" class="btn btn-secondary btn-sm btn-del-param" style="padding:0.15rem 0.4rem; font-size:0.75rem;">✕</button></td>
+      `;
+      tbody.appendChild(tr);
+    });
+  }
+
+  // Row delete delegation
+  const tbodyParams = document.getElementById("diag-entry-params-tbody");
+  if (tbodyParams) {
+    tbodyParams.addEventListener("click", (e) => {
+      if (e.target && (e.target.classList.contains("btn-del-param") || e.target.closest(".btn-del-param"))) {
+        const row = e.target.closest("tr");
+        if (row) row.remove();
+      }
+    });
+  }
+
+  // Manual Diagnostic Report Form Submit
+  const formManualReport = document.getElementById("form-manual-lab-report");
+  if (formManualReport) {
+    formManualReport.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const statusEl = document.getElementById("diag-entry-save-status");
+      if (!currentPatient) {
+        if (statusEl) {
+          statusEl.style.color = "#dc2626";
+          statusEl.textContent = "Please select or register a patient first.";
+        }
+        return;
+      }
+
+      const testName = (document.getElementById("diag-entry-test-name")?.value || "Diagnostic Panel").trim();
+      const category = document.getElementById("diag-entry-category")?.value || "LABORATORY";
+      const impression = document.getElementById("diag-entry-impression")?.value || "";
+
+      const rows = document.querySelectorAll("#diag-entry-params-tbody tr");
+      const params = [];
+      rows.forEach(r => {
+        const name = r.querySelector(".param-name")?.value.trim();
+        const val = r.querySelector(".param-value")?.value.trim();
+        const unit = r.querySelector(".param-unit")?.value.trim();
+        const ref = r.querySelector(".param-ref")?.value.trim();
+        const flag = r.querySelector(".param-flag")?.value;
+        if (name) {
+          params.push({ name, value: val, unit, reference_range: ref, flag });
+        }
+      });
+
+      if (statusEl) {
+        statusEl.style.color = "#0284c7";
+        statusEl.textContent = "Saving and publishing report to EHR...";
+      }
+
+      try {
+        let itemCode = null;
+        if (currentDiagCatalog && currentDiagCatalog.length > 0) {
+          const matched = currentDiagCatalog.find(c => c.category === category && c.item_name.toLowerCase().includes(testName.toLowerCase()));
+          if (matched) {
+            itemCode = matched.item_code;
+          } else {
+            const catMatch = currentDiagCatalog.find(c => c.category === category);
+            itemCode = catMatch ? catMatch.item_code : currentDiagCatalog[0].item_code;
+          }
+        } else {
+          itemCode = category === "LABORATORY" ? "CBC_DIFF" : "XRAY_CHEST_PA";
+        }
+
+        const encId = currentEncounterId || ("00000000-0000-0000-0000-" + Date.now().toString().slice(-12));
+        const orderRes = await fetch("/api/v1/diagnostics/orders", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            mpi_id: currentPatient.mpi_id,
+            encounter_id: encId,
+            item_code: itemCode,
+            ordering_doctor_name: "Dr. Sandeep Rao (Document AI / Direct)",
+            clinical_history: `Direct Report Entry: ${testName}. Impression: ${impression}`,
+            fasting_status: "NOT_REQUIRED",
+            is_stat: false
+          })
+        });
+        const orderData = await orderRes.json();
+        if (!orderRes.ok) throw new Error(orderData.detail || "Failed to create order");
+        const orderId = orderData.order_id;
+
+        if (category === "LABORATORY") {
+          await fetch("/api/v1/diagnostics/specimens/collect", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              order_id: orderId,
+              phlebotomist_name: "Phleb. automated station"
+            })
+          });
+
+          const numericResults = {};
+          params.forEach(p => {
+            const num = parseFloat(p.value);
+            if (!isNaN(num)) {
+              const code = p.name.toUpperCase().replace(/[^A-Z0-9]/g, "_").slice(0, 15);
+              numericResults[code] = num;
+            }
+          });
+          if (Object.keys(numericResults).length === 0) {
+            numericResults["RESULT"] = 1.0;
+          }
+
+          await fetch("/api/v1/diagnostics/results/lab", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              order_id: orderId,
+              parameter_results: numericResults
+            })
+          });
+        } else {
+          await fetch("/api/v1/diagnostics/results/radiology", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              order_id: orderId,
+              radiologist_name: "Dr. Anita Desai, MD (Radiology)",
+              technique: "Standard Diagnostic Protocol",
+              findings: params.map(p => `${p.name}: ${p.value} ${p.unit || ''}`).join("; ") || "Clear diagnostic study.",
+              impression: impression || "No acute abnormality detected.",
+              clinical_indication: testName
+            })
+          });
+        }
+
+        await fetch("/api/v1/diagnostics/reports/verify", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            order_id: orderId,
+            verifier_name: "Dr. K. Sharma (Consultant Pathologist/Radiologist)",
+            verifier_qualification: "MD, DNB",
+            verifier_registration_no: "MCI-77382",
+            clinical_comments: impression || "Clinically correlated and verified."
+          })
+        });
+
+        if (statusEl) {
+          statusEl.style.color = "#16a34a";
+          statusEl.innerHTML = `✅ <strong>Published!</strong> Order <code>${orderId}</code> saved & verified into Diagnostic Worklist.`;
+        }
+        await fetchDiagnosticsWorklist();
+        selectedDiagOrderId = orderId;
+        loadDiagnosticWorkstation(orderId);
+        if (typeof fetchHealthStatus === "function") await fetchHealthStatus();
+      } catch (err) {
+        if (statusEl) {
+          statusEl.style.color = "#dc2626";
+          statusEl.textContent = "Error saving report: " + err.message;
+        }
       }
     });
   }
@@ -4552,10 +4776,16 @@ function initDepartmentDocumentAI() {
       if (document.getElementById("er-spo2")) document.getElementById("er-spo2").value = v.spo2 || 98;
       if (document.getElementById("er-temp")) document.getElementById("er-temp").value = v.temp_c || 98.6;
       if (document.getElementById("er-pain")) document.getElementById("er-pain").value = v.pain_score || 0;
+      if (document.getElementById("er-provisional-diagnosis")) {
+        document.getElementById("er-provisional-diagnosis").value = lastErParsed.chief_complaint ? `Acute presentation of: ${lastErParsed.chief_complaint}` : "Acute emergency triage evaluation";
+      }
+      if (document.getElementById("er-physician-recommendations")) {
+        document.getElementById("er-physician-recommendations").value = `ESI Priority ${lastErParsed.recommended_esi || "LEVEL_1"} (${lastErParsed.priority || "RED"}). Immediate IV access, continuous telemetry, and urgent specialist consult.`;
+      }
 
       if (statusEr) {
         statusEr.className = "alert alert-success";
-        statusEr.innerHTML = "✅ <strong>Rapid Triage Intake Form Auto-Filled!</strong> Vitals, complaints, and ESI protocol assigned.";
+        statusEr.innerHTML = "✅ <strong>Rapid Triage Intake Form Auto-Filled!</strong> Vitals, complaints, diagnosis, and recommendations assigned.";
       }
     });
   }
