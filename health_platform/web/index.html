@@ -117,76 +117,25 @@
         </div>
       </div>
 
-      <!-- Interactive Clinical Workflow Stepper Bar -->
-      <div class="hospital-stepper-bar" id="hospital-stepper-bar">
-        <div class="stepper-step active" data-step="reception">
-          <div class="stepper-num">1</div>
-          <div class="stepper-label">
-            <span class="stepper-title">Front Desk</span>
-            <span class="stepper-sub">MPI / Demographics</span>
-          </div>
-        </div>
-        <div class="stepper-line"></div>
-        <div class="stepper-step" data-step="clinician">
-          <div class="stepper-num">2</div>
-          <div class="stepper-label">
-            <span class="stepper-title">Consultation</span>
-            <span class="stepper-sub">OPD Notes & Rx</span>
-          </div>
-        </div>
-        <div class="stepper-line"></div>
-        <div class="stepper-step" data-step="ipd">
-          <div class="stepper-num">3</div>
-          <div class="stepper-label">
-            <span class="stepper-title">Inpatient (IPD)</span>
-            <span class="stepper-sub">Beds & Ward Notes</span>
-          </div>
-        </div>
-        <div class="stepper-line"></div>
-        <div class="stepper-step" data-step="emergency">
-          <div class="stepper-num">4</div>
-          <div class="stepper-label">
-            <span class="stepper-title">Emergency</span>
-            <span class="stepper-sub">ESI Triage & Orders</span>
-          </div>
-        </div>
-        <div class="stepper-line"></div>
-        <div class="stepper-step" data-step="diagnostics">
-          <div class="stepper-num">5</div>
-          <div class="stepper-label">
-            <span class="stepper-title">Diagnostics</span>
-            <span class="stepper-sub">Lab & Radiology Reports</span>
-          </div>
-        </div>
-        <div class="stepper-line"></div>
-        <div class="stepper-step" data-step="pharmacy">
-          <div class="stepper-num">6</div>
-          <div class="stepper-label">
-            <span class="stepper-title">Pharmacy</span>
-            <span class="stepper-sub">Recommendations & Dispensing</span>
-          </div>
-        </div>
-      </div>
-
-      <!-- Inner Hospital Navigation Tabs -->
+      <!-- Serial Workflow Navigation Tabs (Unified Stepper & Tabs) -->
       <div class="hospital-nav-bar">
         <button type="button" class="hospital-tab-btn active" data-htab="reception">
-          <span>👤</span> 1. Front Desk & Identity (MPI)
+          <span class="tab-step-badge">1</span> <span>👤</span> Front Desk & Identity (MPI)
         </button>
         <button type="button" class="hospital-tab-btn" data-htab="clinician">
-          <span>🩺</span> 2. Clinical Consultation (OPD)
+          <span class="tab-step-badge">2</span> <span>🩺</span> Clinical Consultation (OPD)
         </button>
         <button type="button" class="hospital-tab-btn" data-htab="ipd">
-          <span>🛏️</span> 3. Inpatient (IPD) & Bed Hub
+          <span class="tab-step-badge">3</span> <span>🛏️</span> Inpatient (IPD) & Bed Hub
         </button>
         <button type="button" class="hospital-tab-btn" data-htab="emergency">
-          <span>🚨</span> 4. Emergency & Triage (ER)
+          <span class="tab-step-badge">4</span> <span>🚨</span> Emergency & Triage (ER)
         </button>
         <button type="button" class="hospital-tab-btn" data-htab="diagnostics">
-          <span>🧪</span> 5. Diagnostic - Lab & Radiology (LIS/RIS)
+          <span class="tab-step-badge">5</span> <span>🧪</span> Diagnostic - Lab & Radiology (LIS/RIS)
         </button>
         <button type="button" class="hospital-tab-btn" data-htab="pharmacy">
-          <span>💊</span> 6. Pharmacy & Dispensing
+          <span class="tab-step-badge">6</span> <span>💊</span> Pharmacy & Dispensing
         </button>
       </div>
 
@@ -585,6 +534,8 @@
         </div>
       </div>
 
+      </div> <!-- End of htab-clinician -->
+
       <!-- SUB-TAB 3: INPATIENT (IPD) & BED HUB -->
       <div class="hospital-tab-panel" id="htab-ipd">
       <!-- Inpatient Document AI Ingestion Card -->
@@ -863,6 +814,8 @@
             Next: Step 4 - Emergency & Triage (ER) →</button>
         </div>
       </div>
+
+      </div> <!-- End of htab-ipd -->
 
       <!-- SUB-TAB 4: EMERGENCY DEPARTMENT & TRIAGE (MANCHESTER / ESI) -->
       <div class="hospital-tab-panel" id="htab-emergency">
@@ -1206,6 +1159,8 @@
           </div>
         </div>
 
+        </div> <!-- Close grid-2-col -->
+
         <!-- Serial Navigation Footer (Step 6 -> Step 1) -->
         <div class="serial-nav-bar">
           <button type="button" class="btn btn-outline btn-serial-prev" data-prev="ipd">
@@ -1214,7 +1169,7 @@
             Next: Step 5 - Diagnostic - Lab & Radiology →</button>
         </div>
       </div> <!-- End of htab-emergency -->
-    </section> <!-- End of panel-hospital -->
+    
 
     <!-- SUB-TAB 5: DIAGNOSTIC - LAB & RADIOLOGICAL (LIS/RIS) -->
       <div class="hospital-tab-panel" id="htab-diagnostics">
@@ -1621,6 +1576,8 @@
         </div>
       </div>
 
+      </div> <!-- End of htab-diagnostics -->
+
       <!-- SUB-TAB 6: PHARMACY & DISPENSING -->
       <div class="hospital-tab-panel" id="htab-pharmacy">
       <!-- Pharmacy Document AI Ingestion Card -->
@@ -1802,7 +1759,10 @@
         </div>
       </div>
 
-      <!-- VIEW 2: PATIENT / CLIENT PORTAL & AI HEALTH COMPANION -->
+      </div> <!-- End of htab-pharmacy -->
+    </section> <!-- End of panel-hospital -->
+
+    <!-- VIEW 2: PATIENT / CLIENT PORTAL & AI HEALTH COMPANION -->
     <section class="viewport-panel" id="panel-patient-portal">
       <!-- Portal Top Bar: Patient Selection & Identity Header -->
       <div class="portal-header-card">

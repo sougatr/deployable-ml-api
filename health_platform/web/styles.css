@@ -2259,6 +2259,26 @@ body {
   font-weight: 700;
 }
 
+.tab-step-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #e2e8f0;
+  color: #475569;
+  font-size: 0.72rem;
+  font-weight: 700;
+  margin-right: 0.15rem;
+  transition: all 0.2s ease;
+}
+
+.hospital-tab-btn.active .tab-step-badge {
+  background: #2563eb;
+  color: #ffffff;
+}
+
 .hospital-tab-panel {
   display: none;
 }
