@@ -216,6 +216,59 @@ class TestClinicalDocumentParser(unittest.TestCase):
             self.assertIn("parsed_data", data)
             self.assertIn("raw_extracted_text", data)
 
+    def test_parse_hcg_cancer_centre_letterhead_filtering(self):
+        """Asserts letterhead, contact, CIN, app promo, and token lines are stripped from clinical notes."""
+        hcg_raw = (
+            "HCG ICS Khubchandani Cancer Centre\n"
+            "Maharishi Karve Road, Opposite Cooperage Football Ground, Cooperage, Mumbai - 400 021\n"
+            "Your Ph No. 6358883821 7406199999 | quer@hegel.comhcooncology.com /CIN: 1.15200KA1998P1.C02345\n"
+            "can to download the new HCG CARE App today!\n"
+            "T. No. - 83442N\n"
+            "Dr. Ananya Sen, MD (Medical Oncology)\n"
+            "Patient: Sunita Verma (52 Y / Female)\n"
+            "C/O: Right breast lump follow-up, mild fatigue after cycle 3.\n"
+            "O/E: BP: 120/80 mmHg, Pulse: 76 bpm, Temp: 98.4 F, SpO2: 99%.\n"
+            "Impression: Carcinoma Breast (Invasive Ductal Carcinoma, Stage IIA)\n"
+            "Rx:\n"
+            "1. Tab Tamoxifen 20mg - 0-1-0 x 90 days\n"
+            "2. Tab Pantocid 40mg - 1-0-0 x 30 days\n"
+            "Advise:\n"
+            "- Bilateral Mammography & Ultrasound Breast\n"
+            "- Complete Blood Count (CBC) with Platelets\n"
+            "Review with reports after 3 weeks."
+        )
+
+        parsed = ClinicalDocumentParser.parse_clinical_text_to_columns(hcg_raw)
+
+        # 1. Letterhead / Metadata must NOT be in clinical narrative
+        self.assertNotIn("Cooperage", parsed["clinical_narrative"])
+        self.assertNotIn("6358883821", parsed["clinical_narrative"])
+        self.assertNotIn("HCG CARE", parsed["clinical_narrative"])
+        self.assertNotIn("CIN:", parsed["clinical_narrative"])
+
+        # 2. Token No must NOT be chief complaint
+        self.assertNotIn("T. No.", parsed["chief_complaint"])
+        self.assertIn("breast lump", parsed["chief_complaint"].lower())
+
+        # 3. Vitals must have physiological bounds (no phone number leakage like 610 or 348)
+        vitals = {v["code_loinc"]: v for v in parsed["vitals"]}
+        self.assertEqual(vitals["8867-4"]["value"], 76.0)
+        self.assertEqual(vitals["59408-5"]["value"], 99.0)
+        self.assertEqual(vitals["8480-6"]["value"], 120.0)
+
+        # 4. Oncology Diagnoses
+        icd_codes = [d["code_icd10"] for d in parsed["diagnoses"]]
+        self.assertIn("C50.9", icd_codes) # Malignant neoplasm of breast
+
+        # 5. Oncology Rx
+        drugs = [p["brand_name"] for p in parsed["prescriptions"]]
+        self.assertTrue(any("Tamoxifen" in d for d in drugs))
+
+        # 6. Oncology Orders
+        orders = [o["tariff_code"] for o in parsed["orders"]]
+        self.assertTrue(any("MAMMO" in code or "HEM" in code for code in orders))
+
 if __name__ == "__main__":
     unittest.main()
+
 

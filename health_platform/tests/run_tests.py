@@ -289,6 +289,10 @@ class PlatformCoreTestSuite(unittest.TestCase):
         t.test_department_document_parser_emergency()
         t.test_api_department_upload_and_parse_endpoint()
 
+    def test_54_document_parser_letterhead_filtering_and_oncology(self):
+        t = TestClinicalDocumentParser()
+        t.test_parse_hcg_cancer_centre_letterhead_filtering()
+
 if __name__ == "__main__":
     suite = unittest.TestLoader().loadTestsFromTestCase(PlatformCoreTestSuite)
     runner = unittest.TextTestRunner(verbosity=2)

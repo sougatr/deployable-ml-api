@@ -447,57 +447,46 @@
               <!-- Collapsible Raw OCR Extracted Text Box -->
               <div id="ocr-raw-text-panel" class="hidden" style="background: #ffffff; border: 1px solid #cbd5e1; border-radius: var(--radius-sm); padding: 0.75rem; margin-bottom: 0.75rem; font-family: monospace; font-size: 0.75rem; white-space: pre-wrap; max-height: 180px; overflow-y: auto; color: #334155;"></div>
 
-              <!-- 5 Columns Display Grid -->
+              <!-- 4 Discrete Clinical Columns Display Grid -->
               <div class="parsed-columns-grid">
-                <!-- Col 1: Chief Complaints -->
+                <!-- Col 1: Clinical Notes (SOAP Narrative & Vitals) -->
                 <div class="parsed-col-card">
                   <div class="parsed-col-header">
                     <span class="parsed-col-num">1</span>
-                    <h6>Chief Complaints</h6>
+                    <h6>Clinical Notes (SOAP)</h6>
                   </div>
-                  <div class="parsed-col-body" id="col-complaints-content">
+                  <div class="parsed-col-body" id="col-clinical-notes-content">
                     <div class="text-muted" style="font-size: 0.8125rem;">Awaiting parsing...</div>
                   </div>
                 </div>
 
-                <!-- Col 2: Coded Diagnoses -->
+                <!-- Col 2: Final Diagnoses (ICD-10) -->
                 <div class="parsed-col-card">
                   <div class="parsed-col-header">
                     <span class="parsed-col-num">2</span>
-                    <h6>Coded Diagnoses (ICD-10)</h6>
+                    <h6>Final Diagnosis (ICD-10)</h6>
                   </div>
                   <div class="parsed-col-body" id="col-diagnoses-content">
                     <div class="text-muted" style="font-size: 0.8125rem;">Awaiting parsing...</div>
                   </div>
                 </div>
 
-                <!-- Col 3: Vitals -->
+                <!-- Col 3: Treatment & E-Prescriptions -->
                 <div class="parsed-col-card">
                   <div class="parsed-col-header">
                     <span class="parsed-col-num">3</span>
-                    <h6>Vitals (LOINC Standard)</h6>
-                  </div>
-                  <div class="parsed-col-body" id="col-vitals-content">
-                    <div class="text-muted" style="font-size: 0.8125rem;">Awaiting parsing...</div>
-                  </div>
-                </div>
-
-                <!-- Col 4: E-Prescriptions -->
-                <div class="parsed-col-card parsed-col-wide">
-                  <div class="parsed-col-header">
-                    <span class="parsed-col-num">4</span>
-                    <h6>E-Prescriptions (Pharmacotherapy)</h6>
+                    <h6>Treatment & E-Prescriptions</h6>
                   </div>
                   <div class="parsed-col-body" id="col-rx-content">
                     <div class="text-muted" style="font-size: 0.8125rem;">Awaiting parsing...</div>
                   </div>
                 </div>
 
-                <!-- Col 5: Diagnostic Orders -->
-                <div class="parsed-col-card parsed-col-wide">
+                <!-- Col 4: Diagnostic & Lab Investigations -->
+                <div class="parsed-col-card">
                   <div class="parsed-col-header">
-                    <span class="parsed-col-num">5</span>
-                    <h6>Diagnostic Investigation Orders</h6>
+                    <span class="parsed-col-num">4</span>
+                    <h6>Diagnostic & Lab Investigations</h6>
                   </div>
                   <div class="parsed-col-body" id="col-orders-content">
                     <div class="text-muted" style="font-size: 0.8125rem;">Awaiting parsing...</div>
@@ -508,14 +497,12 @@
           </div>
 
           <form id="consultation-form" class="form hidden">
-            <div class="form-group" style="margin-top: 0.75rem;">
-              <label>Chief Complaints & Symptoms *</label>
-              <input type="text" id="consult-complaint" required value="Persistent morning headaches, elevated blood pressure">
-            </div>
+            <!-- Hidden synchronized chief complaint field to maintain full API schema backward compatibility -->
+            <input type="hidden" id="consult-complaint" required value="Clinical consultation">
 
-            <div class="form-group">
+            <div class="form-group" style="margin-top: 0.75rem;">
               <label>Clinical Notes (SOAP Narrative) *</label>
-              <textarea id="consult-narrative" rows="3" required>Patient presents with 2-week history of fatigue and headaches. Physical examination shows SBP 138/88. Prescribed antihypertensives and ordered basic metabolic investigations.</textarea>
+              <textarea id="consult-narrative" rows="4" required placeholder="Clean clinical examination findings, history, and SOAP assessment...">Patient presents for clinical consultation. Examination and diagnostic care plan initiated.</textarea>
             </div>
 
             <div class="grid-2-col">

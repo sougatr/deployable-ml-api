@@ -606,28 +606,55 @@ function initClinicianConsultation() {
         }
       }
 
-      // 1. Column 1: Chief Complaints & Symptoms
-      const colComplaints = document.getElementById("col-complaints-content");
-      if (colComplaints) {
-        colComplaints.innerHTML = `
-          <div class="parsed-item-badge">
-            <span>🩺</span>
-            <span>${parsed.chief_complaint || "Patient clinical consultation"}</span>
-          </div>
-        `;
+      // 1. Column 1: Clinical Notes (SOAP Narrative & History + Vitals)
+      const colNotes = document.getElementById("col-clinical-notes-content");
+      if (colNotes) {
+        colNotes.innerHTML = "";
+        const narrativeDiv = document.createElement("div");
+        narrativeDiv.style.fontSize = "0.8125rem";
+        narrativeDiv.style.lineHeight = "1.45";
+        narrativeDiv.style.whiteSpace = "pre-wrap";
+        narrativeDiv.style.color = "#1e293b";
+        narrativeDiv.textContent = parsed.clinical_narrative || "Patient presented for clinical consultation. Examination and evaluation completed.";
+        colNotes.appendChild(narrativeDiv);
+
+        if (parsed.vitals && parsed.vitals.length > 0) {
+          const vitalsStrip = document.createElement("div");
+          vitalsStrip.className = "parsed-vitals-strip";
+          parsed.vitals.forEach(v => {
+            const isNorm = v.interpretation === "NORMAL";
+            const pill = document.createElement("span");
+            pill.className = `badge ${isNorm ? 'badge-success' : 'badge-warning'}`;
+            pill.style.fontSize = "0.71875rem";
+            pill.style.padding = "0.15rem 0.4rem";
+            pill.innerHTML = `<strong>${v.display}:</strong> ${v.value} ${v.unit}`;
+            vitalsStrip.appendChild(pill);
+
+            if (v.code_loinc === "8480-6") {
+              const el = document.getElementById("vital-sbp");
+              if (el) { el.value = v.value; highlightEls.push(el); }
+            } else if (v.code_loinc === "8867-4") {
+              const el = document.getElementById("vital-hr");
+              if (el) { el.value = v.value; highlightEls.push(el); }
+            }
+          });
+          colNotes.appendChild(vitalsStrip);
+        }
       }
+
       if (parsed.chief_complaint) {
         const el = document.getElementById("consult-complaint");
-        el.value = parsed.chief_complaint;
-        highlightEls.push(el);
+        if (el) el.value = parsed.chief_complaint;
       }
       if (parsed.clinical_narrative) {
         const el = document.getElementById("consult-narrative");
-        el.value = parsed.clinical_narrative;
-        highlightEls.push(el);
+        if (el) {
+          el.value = parsed.clinical_narrative;
+          highlightEls.push(el);
+        }
       }
 
-      // 2. Column 2: Coded Diagnoses (ICD-10 & SNOMED CT)
+      // 2. Column 2: Final Diagnoses (ICD-10 & SNOMED CT)
       const colDiag = document.getElementById("col-diagnoses-content");
       const diagSelect = document.getElementById("consult-icd10");
       if (colDiag) colDiag.innerHTML = "";
@@ -661,32 +688,6 @@ function initClinicianConsultation() {
           }
         });
         highlightEls.push(diagSelect);
-      }
-
-      // 3. Column 3: Vitals (LOINC Standard)
-      const colVitals = document.getElementById("col-vitals-content");
-      if (colVitals) colVitals.innerHTML = "";
-
-      if (parsed.vitals && parsed.vitals.length > 0) {
-        for (const v of parsed.vitals) {
-          if (colVitals) {
-            const badge = document.createElement("div");
-            badge.className = "parsed-item-badge";
-            const isNorm = v.interpretation === "NORMAL";
-            badge.innerHTML = `<strong>${v.display}:</strong> ${v.value} ${v.unit} <span class="badge ${isNorm ? 'badge-success' : 'badge-warning'}" style="font-size:0.65rem; padding: 0.1rem 0.35rem;">${v.interpretation}</span>`;
-            colVitals.appendChild(badge);
-          }
-
-          if (v.code_loinc === "8480-6") {
-            const el = document.getElementById("vital-sbp");
-            el.value = v.value;
-            highlightEls.push(el);
-          } else if (v.code_loinc === "8867-4") {
-            const el = document.getElementById("vital-hr");
-            el.value = v.value;
-            highlightEls.push(el);
-          }
-        }
       }
 
       // 4. Column 4: E-Prescriptions
