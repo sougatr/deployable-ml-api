@@ -30,6 +30,7 @@ from health_platform.tests.test_ipd_workflows import TestIPDWorkflows
 from health_platform.tests.test_diagnostics_workflows import TestDiagnosticsWorkflows
 from health_platform.tests.test_pharmacy_workflows import TestPharmacyWorkflows
 from health_platform.tests.test_emergency_workflows import TestEmergencyWorkflows
+from health_platform.tests.test_patient_portal import TestPatientPortal
 
 class PlatformCoreTestSuite(unittest.TestCase):
     # Identity & MPI Tests
@@ -196,6 +197,22 @@ class PlatformCoreTestSuite(unittest.TestCase):
         t = TestEmergencyWorkflows()
         t.setUp()
         t.test_05_api_emergency_endpoints()
+
+    # Patient / Client Portal & AI Health Companion Tests (Pod 9)
+    def test_39_patient_portal_ehr_synthesis_and_ai_translations(self):
+        t = TestPatientPortal()
+        t.setUp()
+        t.test_01_patient_portal_summary_orthopedic()
+
+    def test_40_patient_portal_ai_query_assistant(self):
+        t = TestPatientPortal()
+        t.setUp()
+        t.test_02_patient_ai_query_assistant()
+
+    def test_41_patient_portal_api_endpoints(self):
+        t = TestPatientPortal()
+        t.setUp()
+        t.test_03_portal_api_endpoints()
 
 if __name__ == "__main__":
     suite = unittest.TestLoader().loadTestsFromTestCase(PlatformCoreTestSuite)

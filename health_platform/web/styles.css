@@ -2025,3 +2025,367 @@ body {
   font-size: 0.7rem;
   color: var(--text-muted);
 }
+
+/* ==========================================================================
+   PATIENT / CLIENT PORTAL & AI HEALTH COMPANION MODULE
+   ========================================================================== */
+
+.portal-header-card {
+  background: linear-gradient(135deg, #f0fdfa 0%, #ffffff 100%);
+  border: 1px solid #ccfbf1;
+  border-left: 5px solid #0d9488;
+  border-radius: var(--radius-md);
+  padding: 1.25rem 1.5rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 1.25rem;
+  box-shadow: var(--shadow-sm);
+  margin-bottom: 1.25rem;
+}
+
+.portal-header-left {
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+}
+
+.portal-avatar {
+  width: 58px;
+  height: 58px;
+  border-radius: 50%;
+  background: #0d9488;
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 1.4rem;
+  box-shadow: 0 4px 6px -1px rgba(13, 148, 136, 0.3);
+}
+
+.portal-vitals-strip {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.portal-vital-card {
+  background: #ffffff;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 0.85rem 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  box-shadow: var(--shadow-sm);
+  transition: transform 0.15s ease;
+}
+
+.portal-vital-card:hover {
+  transform: translateY(-2px);
+}
+
+.portal-vital-card .vital-label {
+  font-size: 0.725rem;
+  text-transform: uppercase;
+  font-weight: 700;
+  color: #64748b;
+  letter-spacing: 0.03em;
+}
+
+.portal-vital-card .vital-val {
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.portal-vital-card .vital-tag {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  align-self: flex-start;
+  padding: 0.15rem 0.4rem;
+  border-radius: 3px;
+}
+
+.portal-nav-bar {
+  display: flex;
+  gap: 0.5rem;
+  border-bottom: 2px solid #e2e8f0;
+  margin-bottom: 1.5rem;
+  overflow-x: auto;
+  padding-bottom: 2px;
+}
+
+.portal-tab-btn {
+  background: transparent;
+  border: none;
+  padding: 0.75rem 1.15rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #64748b;
+  cursor: pointer;
+  border-radius: 6px 6px 0 0;
+  white-space: nowrap;
+  transition: all 0.2s ease;
+}
+
+.portal-tab-btn:hover {
+  color: #0f766e;
+  background: #f0fdfa;
+}
+
+.portal-tab-btn.active {
+  color: #0f766e;
+  background: #ffffff;
+  border-bottom: 3px solid #0d9488;
+  font-weight: 700;
+}
+
+.portal-tab-panel {
+  display: none;
+}
+
+.portal-tab-panel.active {
+  display: block;
+  animation: fadeIn 0.25s ease-in;
+}
+
+.portal-section-intro {
+  margin-bottom: 1.25rem;
+}
+
+.portal-section-intro h3 {
+  margin: 0 0 0.25rem 0;
+  font-size: 1.2rem;
+  color: #0f172a;
+}
+
+.portal-cards-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+/* AI Clinical Callout Box */
+.ai-insight-box {
+  background: #f0fdfa;
+  border: 1px solid #99f6e4;
+  border-left: 4px solid #0d9488;
+  border-radius: 6px;
+  padding: 0.85rem 1rem;
+  margin-top: 0.75rem;
+}
+
+.ai-insight-box-title {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-weight: 700;
+  color: #0f766e;
+  font-size: 0.85rem;
+  margin-bottom: 0.35rem;
+}
+
+.ai-insight-box p {
+  margin: 0;
+  font-size: 0.85rem;
+  line-height: 1.5;
+  color: #134e4a;
+}
+
+/* Medication Guide Cards */
+.portal-med-card {
+  background: #ffffff;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 1.25rem;
+  box-shadow: var(--shadow-sm);
+}
+
+.med-timing-grid {
+  display: flex;
+  gap: 0.6rem;
+  margin-top: 0.6rem;
+  flex-wrap: wrap;
+}
+
+.schedule-pill {
+  padding: 0.25rem 0.6rem;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.pill-morning { background: #fef3c7; color: #b45309; }
+.pill-afternoon { background: #e0f2fe; color: #0369a1; }
+.pill-night { background: #ede9fe; color: #5b21b6; }
+
+/* Timeline Milestones */
+.milestones-timeline {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.milestone-item {
+  border-left: 3px solid #0d9488;
+  padding-left: 1rem;
+  position: relative;
+}
+
+.milestone-item::before {
+  content: '';
+  position: absolute;
+  left: -7px;
+  top: 4px;
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+  background: #0d9488;
+}
+
+.milestone-phase {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #0f766e;
+  text-transform: uppercase;
+}
+
+.milestone-title {
+  font-weight: 700;
+  font-size: 0.95rem;
+  color: #1e293b;
+  margin: 0.15rem 0 0.35rem 0;
+}
+
+.milestone-mobility {
+  font-size: 0.8rem;
+  color: #047857;
+  font-weight: 600;
+  margin-top: 0.35rem;
+}
+
+/* Diet & Exercise Items */
+.diet-item {
+  padding: 0.75rem;
+  border-radius: 6px;
+  margin-bottom: 0.6rem;
+  font-size: 0.85rem;
+}
+
+.diet-item.beneficial {
+  background: #f0fdf4;
+  border-left: 4px solid #16a34a;
+}
+
+.diet-item.avoid {
+  background: #fff1f2;
+  border-left: 4px solid #e11d48;
+}
+
+.exercise-item {
+  background: #f8fafc;
+  border: 1px solid var(--border);
+  border-left: 4px solid #2563eb;
+  border-radius: 6px;
+  padding: 0.85rem;
+  margin-bottom: 0.75rem;
+  font-size: 0.85rem;
+}
+
+.red-flag-item {
+  background: #fef2f2;
+  border: 1px solid #fee2e2;
+  border-left: 4px solid #dc2626;
+  border-radius: 6px;
+  padding: 0.65rem 0.85rem;
+  margin-bottom: 0.5rem;
+  font-size: 0.85rem;
+  color: #991b1b;
+}
+
+/* AI Companion Chat */
+.portal-quick-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.portal-chip-btn {
+  background: #ffffff;
+  border: 1px solid #cbd5e1;
+  border-radius: 16px;
+  padding: 0.3rem 0.75rem;
+  font-size: 0.775rem;
+  color: #334155;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.portal-chip-btn:hover {
+  background: #0d9488;
+  color: #ffffff;
+  border-color: #0d9488;
+}
+
+.portal-chat-area {
+  padding: 1.25rem;
+  height: 320px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.chat-msg {
+  display: flex;
+  gap: 0.75rem;
+  max-width: 85%;
+}
+
+.chat-msg.chat-ai {
+  align-self: flex-start;
+}
+
+.chat-msg.chat-user {
+  align-self: flex-end;
+  flex-direction: row-reverse;
+}
+
+.chat-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1rem;
+  background: #ccfbf1;
+  flex-shrink: 0;
+}
+
+.chat-msg.chat-user .chat-avatar {
+  background: #e2e8f0;
+}
+
+.chat-bubble {
+  background: #f8fafc;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 0.85rem 1rem;
+  font-size: 0.875rem;
+  line-height: 1.5;
+  color: #1e293b;
+}
+
+.chat-msg.chat-user .chat-bubble {
+  background: #0d9488;
+  color: #ffffff;
+  border-color: #0d9488;
+}

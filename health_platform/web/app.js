@@ -17,6 +17,8 @@ let currentPharmFilter = "ALL";
 let currentEmergencyBays = [];
 let currentEmergencyCases = [];
 let selectedEmergencyCaseId = null;
+let currentPortalMpiId = null;
+let currentPortalSummary = null;
 
 // DOM Elements
 document.addEventListener("DOMContentLoaded", () => {
@@ -30,6 +32,7 @@ document.addEventListener("DOMContentLoaded", () => {
   initDiagnosticsModule();
   initPharmacyModule();
   initEmergencyModule();
+  initPatientPortalModule();
   initBillingAndPayment();
   fetchHealthStatus();
 });
@@ -58,11 +61,25 @@ function initTabNavigation() {
         fetchEmergencyBays();
         fetchActiveEmergencyCases();
         populateEmergencyPatientSelect();
+      } else if (target === "patient-portal") {
+        populatePatientPortalSelect();
+        const targetMpi = currentPortalMpiId || (currentPatient ? currentPatient.mpi_id : null);
+        if (targetMpi) {
+          loadPatientPortal(targetMpi);
+        }
       } else if (target === "abdm-events" && currentPatient) {
         refreshAbdmAndOutbox();
       }
     });
   });
+
+  const btnBannerPortal = document.getElementById("btn-banner-open-portal");
+  if (btnBannerPortal) {
+    btnBannerPortal.addEventListener("click", () => {
+      const tabBtn = document.querySelector(`.tab-btn[data-tab="patient-portal"]`);
+      if (tabBtn) tabBtn.click();
+    });
+  }
 }
 
 // Sub-Tabs in ABHA Linking Card
@@ -2775,4 +2792,583 @@ function populateEmergencyPatientSelect() {
       });
     })
     .catch(() => {});
+}
+
+// =============================================================================
+// PATIENT / CLIENT PORTAL & AI HEALTH COMPANION (Pod 9)
+// =============================================================================
+
+function initPatientPortalModule() {
+  // Inner Sub-Tab Switching
+  const portalTabBtns = document.querySelectorAll(".portal-tab-btn");
+  portalTabBtns.forEach(btn => {
+    btn.addEventListener("click", () => {
+      portalTabBtns.forEach(b => b.classList.remove("active"));
+      btn.classList.add("active");
+      const targetId = btn.dataset.ptab;
+      document.querySelectorAll(".portal-tab-panel").forEach(p => p.classList.remove("active"));
+      const targetPanel = document.getElementById(`ptab-${targetId}`);
+      if (targetPanel) targetPanel.classList.add("active");
+    });
+  });
+
+  // Patient Selector Switcher
+  const patientSelect = document.getElementById("portal-patient-select");
+  if (patientSelect) {
+    patientSelect.addEventListener("change", (e) => {
+      const mpiId = e.target.value;
+      if (mpiId) {
+        currentPortalMpiId = mpiId;
+        loadPatientPortal(mpiId);
+      }
+    });
+  }
+
+  // Refresh Button
+  const btnRefresh = document.getElementById("btn-refresh-portal");
+  if (btnRefresh) {
+    btnRefresh.addEventListener("click", () => {
+      if (currentPortalMpiId) {
+        loadPatientPortal(currentPortalMpiId);
+      } else if (currentPatient) {
+        loadPatientPortal(currentPatient.mpi_id);
+      }
+    });
+  }
+
+  // Print Summary Button
+  const btnPrint = document.getElementById("btn-print-patient-summary");
+  if (btnPrint) {
+    btnPrint.addEventListener("click", () => {
+      window.print();
+    });
+  }
+
+  // AI Query Form Submission
+  const formAI = document.getElementById("form-portal-ai-query");
+  if (formAI) {
+    formAI.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const input = document.getElementById("portal-ai-query-input");
+      const q = input.value.trim();
+      if (!q) return;
+      input.value = "";
+      await handlePortalAIQuery(q);
+    });
+  }
+
+  // Quick Chips
+  const chips = document.querySelectorAll(".portal-chip-btn");
+  chips.forEach(chip => {
+    chip.addEventListener("click", () => {
+      const q = chip.dataset.q;
+      if (q) {
+        handlePortalAIQuery(q);
+      }
+    });
+  });
+}
+
+function populatePatientPortalSelect() {
+  const select = document.getElementById("portal-patient-select");
+  if (!select) return;
+  select.innerHTML = `<option value="">-- Choose Registered Patient --</option>`;
+
+  if (currentPatient) {
+    const opt = document.createElement("option");
+    opt.value = currentPatient.mpi_id;
+    opt.textContent = `⭐ ACTIVE: ${currentPatient.first_name} ${currentPatient.last_name} (${currentPatient.uhid})`;
+    opt.selected = true;
+    currentPortalMpiId = currentPatient.mpi_id;
+    select.appendChild(opt);
+  }
+
+  fetch("/api/v1/patients/search?q=a")
+    .then(r => r.ok ? r.json() : [])
+    .then(list => {
+      list.forEach(p => {
+        if (!currentPatient || p.mpi_id !== currentPatient.mpi_id) {
+          const opt = document.createElement("option");
+          opt.value = p.mpi_id;
+          opt.textContent = `${p.first_name} ${p.last_name} (${p.uhid || 'UHID Pending'})`;
+          if (!currentPortalMpiId) {
+            currentPortalMpiId = p.mpi_id;
+            opt.selected = true;
+            loadPatientPortal(p.mpi_id);
+          }
+          select.appendChild(opt);
+        }
+      });
+      if (currentPortalMpiId) {
+        select.value = currentPortalMpiId;
+      }
+    })
+    .catch(() => {});
+}
+
+async function loadPatientPortal(mpiId) {
+  if (!mpiId) return;
+  currentPortalMpiId = mpiId;
+
+  try {
+    const res = await fetch(`/api/v1/portal/patients/${mpiId}/summary`);
+    if (!res.ok) {
+      showToast("Unable to load patient portal summary.", "error");
+      return;
+    }
+    const data = await res.json();
+    currentPortalSummary = data;
+    renderPatientPortal(data);
+  } catch (err) {
+    console.error("Error loading patient portal summary:", err);
+  }
+}
+
+function renderPatientPortal(data) {
+  // 1. Header Demographic Data
+  const avatar = document.getElementById("portal-avatar");
+  if (avatar) {
+    const initials = data.full_name.split(" ").map(n => n[0]).slice(0, 2).join("").toUpperCase();
+    avatar.textContent = initials || "PT";
+  }
+
+  document.getElementById("portal-patient-name").textContent = data.full_name;
+  document.getElementById("portal-uhid").textContent = data.uhid;
+  document.getElementById("portal-age-gender").textContent = `${data.age} Yrs / ${data.gender}`;
+  document.getElementById("portal-phone").textContent = data.phone;
+  document.getElementById("portal-last-visit").textContent = new Date(data.last_visit_date).toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' });
+
+  // Badges
+  const settingBadge = document.getElementById("portal-setting-badge");
+  settingBadge.textContent = data.current_care_setting;
+  if (data.current_care_setting.includes("Emergency")) {
+    settingBadge.className = "badge badge-danger";
+  } else if (data.current_care_setting.includes("Inpatient")) {
+    settingBadge.className = "badge badge-warning";
+  } else {
+    settingBadge.className = "badge badge-success";
+  }
+
+  const abhaBadge = document.getElementById("portal-abha-badge");
+  if (data.abha_id) {
+    abhaBadge.textContent = `ABHA: ${data.abha_id}`;
+    abhaBadge.className = "badge badge-info";
+  } else {
+    abhaBadge.textContent = "ABHA: Optional / Not Linked";
+    abhaBadge.className = "badge badge-gray";
+  }
+
+  // 2. Vitals Ribbon
+  const vitals = data.vital_trends_summary || {};
+  document.getElementById("portal-v-bp").textContent = vitals.blood_pressure || "120/80 mmHg";
+  document.getElementById("portal-v-hr").textContent = vitals.heart_rate || "76 bpm";
+  document.getElementById("portal-v-spo2").textContent = vitals.oxygen_saturation || "99%";
+  document.getElementById("portal-v-temp").textContent = vitals.body_temperature || "98.6 °F";
+  document.getElementById("portal-v-status").textContent = vitals.status || "Stable & Monitored";
+
+  // 3. Tab 1: Disease Profiles & AI Interpretations
+  renderPortalDiseaseProfiles(data.disease_profiles);
+
+  // 4. Tab 2: Lab & Scan Reports
+  renderPortalLabReports(data.lab_and_scan_reports);
+
+  // 5. Tab 3: Prescriptions & Medication Guide
+  renderPortalMedications(data.active_prescriptions);
+
+  // 6. Tab 4: Diet, Exercise & Recovery Roadmap
+  renderPortalRecovery(data.ai_recommendations);
+
+  // 7. Tab 5: Reset AI Assistant Welcome
+  resetPortalAIChat(data);
+}
+
+function renderPortalDiseaseProfiles(profiles) {
+  const container = document.getElementById("portal-disease-cards-container");
+  if (!container) return;
+  container.innerHTML = "";
+
+  profiles.forEach(p => {
+    const card = document.createElement("div");
+    card.className = "card";
+    card.innerHTML = `
+      <div class="card-header">
+        <div>
+          <h4 style="margin:0; font-size:1.15rem; color:#0f766e;">${escapeHtml(p.condition_name)}</h4>
+          <span style="font-size:0.8rem; color:#64748b;">ICD-10: <code>${p.icd10_code}</code> • Source: ${escapeHtml(p.source)}</span>
+        </div>
+        <div style="display:flex; gap:0.4rem; align-items:center;">
+          <span class="badge ${p.severity_level === 'High Acuity' ? 'badge-danger' : 'badge-warning'}">
+            ${p.severity_level} Acuity
+          </span>
+          <span class="badge badge-success">${p.status}</span>
+        </div>
+      </div>
+
+      <div class="ai-insight-box">
+        <div class="ai-insight-box-title">
+          <span>💡</span> <strong>AI Clinical Translation for Patients:</strong>
+        </div>
+        <p>${escapeHtml(p.plain_english_summary)}</p>
+      </div>
+
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:1rem; margin-top:0.85rem; font-size:0.85rem;">
+        <div style="background:#f8fafc; padding:0.75rem; border-radius:6px; border:1px solid #e2e8f0;">
+          <strong style="color:#334155; display:block; margin-bottom:0.25rem;">🔍 Why this happens:</strong>
+          <span style="color:#475569;">${escapeHtml(p.what_causes_it)}</span>
+        </div>
+        <div style="background:#f8fafc; padding:0.75rem; border-radius:6px; border:1px solid #e2e8f0;">
+          <strong style="color:#334155; display:block; margin-bottom:0.25rem;">📈 What to expect next:</strong>
+          <span style="color:#475569;">${escapeHtml(p.what_to_expect)}</span>
+        </div>
+      </div>
+    `;
+    container.appendChild(card);
+  });
+}
+
+function renderPortalLabReports(reports) {
+  const container = document.getElementById("portal-lab-reports-container");
+  if (!container) return;
+  container.innerHTML = "";
+
+  if (reports.length === 0) {
+    container.innerHTML = `<div class="card" style="text-align:center; padding:2rem; color:#64748b;">No diagnostic laboratory or imaging reports on file for this patient.</div>`;
+    return;
+  }
+
+  reports.forEach(r => {
+    const card = document.createElement("div");
+    card.className = "card";
+
+    let paramsHtml = "";
+    if (r.parameters && r.parameters.length > 0) {
+      paramsHtml = `
+        <div style="margin-top:1rem; overflow-x:auto;">
+          <table class="parsed-table">
+            <thead>
+              <tr>
+                <th>Investigation Parameter</th>
+                <th>Measured Value</th>
+                <th>Reference Interval</th>
+                <th>Status</th>
+                <th>AI Insight</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${r.parameters.map(p => `
+                <tr>
+                  <td><strong>${escapeHtml(p.parameter_name)}</strong></td>
+                  <td style="font-weight:700; color:${p.status === 'CRITICAL' ? '#dc2626' : p.status === 'ELEVATED' ? '#b45309' : '#15803d'};">
+                    ${p.measured_value} ${escapeHtml(p.unit)}
+                  </td>
+                  <td>${escapeHtml(p.reference_interval)}</td>
+                  <td>
+                    <span class="badge ${p.status === 'NORMAL' ? 'badge-success' : p.status === 'CRITICAL' ? 'badge-danger' : 'badge-warning'}">
+                      ${p.status}
+                    </span>
+                  </td>
+                  <td style="font-size:0.75rem; color:#475569;">${escapeHtml(p.interpretation)}</td>
+                </tr>
+              `).join("")}
+            </tbody>
+          </table>
+        </div>
+      `;
+    }
+
+    let radiologyHtml = "";
+    if (r.radiology_findings || r.radiology_impression) {
+      radiologyHtml = `
+        <div style="margin-top:1rem; background:#f8fafc; border:1px solid #e2e8f0; border-radius:6px; padding:0.85rem;">
+          ${r.radiology_impression ? `<div><strong style="color:#0f766e;">Impression:</strong> ${escapeHtml(r.radiology_impression)}</div>` : ''}
+          ${r.radiology_findings ? `<div style="margin-top:0.4rem; font-size:0.825rem; color:#475569;"><strong>Findings:</strong> ${escapeHtml(r.radiology_findings)}</div>` : ''}
+          <div style="margin-top:0.4rem; font-size:0.75rem; color:#64748b;"><strong>Verified by:</strong> ${escapeHtml(r.radiologist_or_pathologist || 'Consultant Specialist')}</div>
+        </div>
+      `;
+    }
+
+    card.innerHTML = `
+      <div class="card-header">
+        <div>
+          <h4 style="margin:0; color:#0f766e;">${escapeHtml(r.test_name)}</h4>
+          <span style="font-size:0.8rem; color:#64748b;">
+            Category: ${r.category} • Date: ${new Date(r.reported_at).toLocaleDateString()}
+          </span>
+        </div>
+        <span class="badge ${r.has_critical_findings ? 'badge-danger' : r.is_abnormal ? 'badge-warning' : 'badge-success'}">
+          ${r.status}
+        </span>
+      </div>
+
+      <div class="ai-insight-box">
+        <div class="ai-insight-box-title">
+          <span>🧠</span> <strong>AI Clinical Takeaway:</strong>
+        </div>
+        <p>${escapeHtml(r.ai_clinical_takeaway)}</p>
+      </div>
+
+      <div style="font-size:0.85rem; color:#475569; margin-top:0.5rem;">
+        <em>${escapeHtml(r.patient_plain_explanation)}</em>
+      </div>
+
+      ${paramsHtml}
+      ${radiologyHtml}
+    `;
+    container.appendChild(card);
+  });
+}
+
+function renderPortalMedications(medications) {
+  const container = document.getElementById("portal-medications-container");
+  if (!container) return;
+  container.innerHTML = "";
+
+  medications.forEach(m => {
+    const card = document.createElement("div");
+    card.className = "portal-med-card";
+
+    // Interpret frequency pills
+    const freq = m.frequency;
+    let schedulePills = "";
+    if (freq.includes("1-0-1")) {
+      schedulePills = `
+        <span class="schedule-pill pill-morning">🌅 Morning (8:00 AM)</span>
+        <span class="schedule-pill pill-night">🌙 Night (8:00 PM)</span>
+      `;
+    } else if (freq.includes("1-0-0")) {
+      schedulePills = `
+        <span class="schedule-pill pill-morning">🌅 Morning (7:00 AM - 30m before breakfast)</span>
+      `;
+    } else if (freq.includes("0-0-1")) {
+      schedulePills = `
+        <span class="schedule-pill pill-night">🌙 Night (Bedtime)</span>
+      `;
+    } else {
+      schedulePills = `
+        <span class="schedule-pill pill-morning">🕒 Schedule: ${escapeHtml(freq)}</span>
+      `;
+    }
+
+    card.innerHTML = `
+      <div style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:0.5rem;">
+        <div>
+          <h4 style="margin:0; font-size:1.15rem; color:#0f766e;">💊 ${escapeHtml(m.drug_name)}</h4>
+          <span style="font-size:0.8rem; color:#64748b;">
+            Dosage: <strong>${escapeHtml(m.dosage)}</strong> • Duration: <strong>${escapeHtml(m.duration)}</strong> • Route: ${escapeHtml(m.route)}
+          </span>
+        </div>
+        <span class="badge ${m.dispensed ? 'badge-success' : 'badge-warning'}">
+          ${m.dispensed ? '✅ Dispensed from Pharmacy' : '⏳ Dispense Pending'}
+        </span>
+      </div>
+
+      <div class="med-timing-grid">
+        ${schedulePills}
+      </div>
+
+      <div class="ai-insight-box" style="margin-top:0.75rem;">
+        <div class="ai-insight-box-title">
+          <span>🎯</span> <strong>Why your doctor prescribed this:</strong>
+        </div>
+        <p>${escapeHtml(m.purpose_ai)}</p>
+      </div>
+
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:0.85rem; margin-top:0.85rem; font-size:0.825rem;">
+        <div style="background:#f0fdf4; border:1px solid #bbf7d0; border-radius:6px; padding:0.65rem 0.85rem;">
+          <strong style="color:#15803d; display:block; margin-bottom:0.2rem;">🍽️ Food & Water Instructions:</strong>
+          <span style="color:#166534;">${escapeHtml(m.food_instructions)}</span>
+        </div>
+        <div style="background:#fffbeb; border:1px solid #fde68a; border-radius:6px; padding:0.65rem 0.85rem;">
+          <strong style="color:#b45309; display:block; margin-bottom:0.2rem;">⚠️ Safety Precautions:</strong>
+          <span style="color:#92400e;">${escapeHtml(m.key_precautions)}</span>
+        </div>
+      </div>
+
+      ${m.side_effects_to_watch && m.side_effects_to_watch.length > 0 ? `
+        <div style="margin-top:0.6rem; font-size:0.75rem; color:#64748b;">
+          <strong>Potential mild effects to monitor:</strong> ${m.side_effects_to_watch.map(e => escapeHtml(e)).join(" • ")}
+        </div>
+      ` : ''}
+    `;
+    container.appendChild(card);
+  });
+}
+
+function renderPortalRecovery(recs) {
+  // Prognosis & Milestones
+  document.getElementById("portal-prognosis-text").textContent = recs.prognosis_overview;
+  document.getElementById("portal-recovery-timeline-badge").textContent = recs.estimated_recovery_timeline;
+
+  const milestonesContainer = document.getElementById("portal-milestones-container");
+  if (milestonesContainer) {
+    milestonesContainer.innerHTML = "";
+    (recs.prognosis_milestones || []).forEach(m => {
+      const item = document.createElement("div");
+      item.className = "milestone-item";
+      item.innerHTML = `
+        <div class="milestone-phase">${escapeHtml(m.phase)}</div>
+        <div class="milestone-title">${escapeHtml(m.title)}</div>
+        <ul style="margin:0; padding-left:1.15rem; font-size:0.825rem; color:#475569;">
+          ${m.focus_points.map(p => `<li>${escapeHtml(p)}</li>`).join("")}
+        </ul>
+        <div class="milestone-mobility">🚶 Expected Mobility: ${escapeHtml(m.expected_mobility)}</div>
+      `;
+      milestonesContainer.appendChild(item);
+    });
+  }
+
+  // Dietary Guidelines
+  document.getElementById("portal-hydration-badge").textContent = `💧 Hydration: ${recs.hydration_target}`;
+  const dietContainer = document.getElementById("portal-diet-container");
+  if (dietContainer) {
+    dietContainer.innerHTML = "";
+    (recs.dietary_guidelines || []).forEach(d => {
+      const isBeneficial = d.category.includes("Beneficial") || d.category.includes("Superfood");
+      const item = document.createElement("div");
+      item.className = `diet-item ${isBeneficial ? 'beneficial' : 'avoid'}`;
+      item.innerHTML = `
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.2rem;">
+          <strong style="color:${isBeneficial ? '#166534' : '#991b1b'};">${isBeneficial ? '✅' : '🚫'} ${escapeHtml(d.food_item)}</strong>
+          <span style="font-size:0.7rem; font-weight:700; text-transform:uppercase;">${d.category}</span>
+        </div>
+        <p style="margin:0; font-size:0.8rem; color:#334155;">${escapeHtml(d.rationale)}</p>
+      `;
+      dietContainer.appendChild(item);
+    });
+  }
+
+  // Exercise Routine
+  const exContainer = document.getElementById("portal-exercise-container");
+  if (exContainer) {
+    exContainer.innerHTML = "";
+    (recs.exercise_routine || []).forEach(e => {
+      const item = document.createElement("div");
+      item.className = "exercise-item";
+      item.innerHTML = `
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.25rem;">
+          <strong style="color:#1e40af; font-size:0.9rem;">🏋️ ${escapeHtml(e.exercise_name)}</strong>
+          <span class="badge badge-info">${escapeHtml(e.repetitions_and_sets)}</span>
+        </div>
+        <div style="font-size:0.775rem; color:#64748b; margin-bottom:0.35rem;">Target: ${escapeHtml(e.target_muscle_or_joint)}</div>
+        <p style="margin:0; color:#334155; font-size:0.825rem;">${escapeHtml(e.instructions)}</p>
+        <div style="margin-top:0.35rem; font-size:0.75rem; color:#0369a1;"><strong>Safety Tip:</strong> ${escapeHtml(e.safety_precaution)}</div>
+      `;
+      exContainer.appendChild(item);
+    });
+  }
+
+  // Restrictions
+  const restList = document.getElementById("portal-restrictions-list");
+  if (restList) {
+    restList.innerHTML = (recs.strict_activity_restrictions || []).map(r => `<li style="margin-bottom:0.25rem;">${escapeHtml(r)}</li>`).join("");
+  }
+
+  // Red Flags
+  const redFlagsContainer = document.getElementById("portal-redflags-container");
+  if (redFlagsContainer) {
+    redFlagsContainer.innerHTML = (recs.red_flag_warning_signs || []).map(r => `
+      <div class="red-flag-item">
+        <strong>${escapeHtml(r)}</strong>
+      </div>
+    `).join("");
+  }
+
+  // Follow-up
+  const followUpEl = document.getElementById("portal-followup-advice");
+  if (followUpEl) {
+    followUpEl.textContent = recs.next_follow_up_advice || "Follow-up review as recommended by physician.";
+  }
+}
+
+function resetPortalAIChat(data) {
+  const container = document.getElementById("portal-chat-messages");
+  if (!container) return;
+  const condNames = (data.disease_profiles || []).map(p => p.condition_name).join(", ");
+  container.innerHTML = `
+    <div class="chat-msg chat-ai">
+      <div class="chat-avatar">🤖</div>
+      <div class="chat-bubble">
+        <p>Hello <strong>${escapeHtml(data.full_name)}</strong>! I am your AI Health Companion. I have active visibility of your health profile${condNames ? ` for <em>${escapeHtml(condNames)}</em>` : ''}, your prescriptions, and your diagnostic scans. Feel free to ask any question about your medications, morning knee stiffness, safe exercises, or diet!</p>
+        <small class="text-muted" style="display:block; margin-top:0.35rem; font-size:0.75rem;">
+          ℹ️ Grounded in your physician's clinical notes • Educational guidance
+        </small>
+      </div>
+    </div>
+  `;
+}
+
+async function handlePortalAIQuery(question) {
+  if (!currentPortalMpiId) {
+    showToast("Please select a patient first.", "error");
+    return;
+  }
+
+  const container = document.getElementById("portal-chat-messages");
+
+  // User Message
+  const userMsg = document.createElement("div");
+  userMsg.className = "chat-msg chat-user";
+  userMsg.innerHTML = `
+    <div class="chat-avatar">👤</div>
+    <div class="chat-bubble">
+      <p>${escapeHtml(question)}</p>
+    </div>
+  `;
+  container.appendChild(userMsg);
+  container.scrollTop = container.scrollHeight;
+
+  // AI Loading Bubble
+  const aiLoading = document.createElement("div");
+  aiLoading.className = "chat-msg chat-ai";
+  aiLoading.id = "ai-loading-bubble";
+  aiLoading.innerHTML = `
+    <div class="chat-avatar">🤖</div>
+    <div class="chat-bubble">
+      <p><em>Consulting your longitudinal health record and pharmacological rules...</em></p>
+    </div>
+  `;
+  container.appendChild(aiLoading);
+  container.scrollTop = container.scrollHeight;
+
+  try {
+    const res = await fetch("/api/v1/portal/ai-query", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        mpi_id: currentPortalMpiId,
+        question: question
+      })
+    });
+    aiLoading.remove();
+    if (!res.ok) {
+      throw new Error("Unable to process query.");
+    }
+    const data = await res.json();
+
+    const aiMsg = document.createElement("div");
+    aiMsg.className = "chat-msg chat-ai";
+    aiMsg.innerHTML = `
+      <div class="chat-avatar">🤖</div>
+      <div class="chat-bubble">
+        <p>${escapeHtml(data.answer)}</p>
+        <small class="text-muted" style="display:block; margin-top:0.5rem; font-size:0.725rem; border-top:1px solid #e2e8f0; padding-top:0.35rem;">
+          ${escapeHtml(data.safety_disclaimer)}
+        </small>
+      </div>
+    `;
+    container.appendChild(aiMsg);
+    container.scrollTop = container.scrollHeight;
+  } catch (err) {
+    if (aiLoading) aiLoading.remove();
+    const errMsg = document.createElement("div");
+    errMsg.className = "chat-msg chat-ai";
+    errMsg.innerHTML = `
+      <div class="chat-avatar">🤖</div>
+      <div class="chat-bubble" style="background:#fef2f2; color:#991b1b;">
+        <p>Sorry, I encountered an issue retrieving the clinical answer. Please try again or speak directly with your nursing/medical team.</p>
+      </div>
+    `;
+    container.appendChild(errMsg);
+    container.scrollTop = container.scrollHeight;
+  }
 }

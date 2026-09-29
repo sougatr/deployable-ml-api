@@ -96,12 +96,15 @@ class ClinicalEncounterService:
         # 1. Store Final Signed Clinical Note
         note_id = uuid.uuid4()
         self._clinical_notes[note_id] = {
+            "note_id": note_id,
             "encounter_id": req.encounter_id,
             "mpi_id": mpi_id,
             "chief_complaint": req.chief_complaint,
             "narrative": req.clinical_narrative,
             "diagnoses": [d.model_dump() for d in req.diagnoses],
             "vitals": [v.model_dump() for v in req.vitals],
+            "prescriptions": [p.model_dump() for p in req.prescriptions],
+            "orders": [o.model_dump() for o in req.orders],
             "doctor_signature": req.doctor_digital_signature,
             "signed_at": datetime.now(timezone.utc)
         }
@@ -230,3 +233,7 @@ class ClinicalEncounterService:
             care_context_id=care_context_id,
             completed_at=now
         )
+
+    def get_patient_clinical_notes(self, mpi_id: uuid.UUID) -> List[Dict[str, Any]]:
+        """Returns all completed clinical notes for the given patient MPI ID."""
+        return [note for note in self._clinical_notes.values() if note.get("mpi_id") == mpi_id]

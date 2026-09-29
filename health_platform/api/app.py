@@ -114,6 +114,22 @@ emergency_service = EmergencyService(
     outbox=outbox_publisher
 )
 
+from health_platform.core.patient_portal.models import (
+    PatientPortalSummary,
+    PatientAIQueryInput,
+    PatientAIQueryResponse
+)
+from health_platform.core.patient_portal.service import PatientPortalService
+
+patient_portal_service = PatientPortalService(
+    identity_service=identity_service,
+    clinical_service=clinical_service,
+    diagnostics_service=diagnostics_service,
+    pharmacy_service=pharmacy_service,
+    ipd_service=ipd_service,
+    emergency_service=emergency_service
+)
+
 import os
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
@@ -556,4 +572,25 @@ def finalize_emergency_disposition(payload: ERDispositionInput):
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Disposition error: {str(e)}")
+
+# =============================================================================
+# 9. PATIENT / CLIENT PORTAL & AI HEALTH COMPANION ENDPOINTS (Pod 9)
+# =============================================================================
+@app.get("/api/v1/portal/patients/{mpi_id}/summary", response_model=PatientPortalSummary)
+def get_patient_portal_summary(mpi_id: uuid.UUID):
+    try:
+        return patient_portal_service.get_patient_portal_summary(mpi_id)
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Patient portal synthesis error: {str(e)}")
+
+@app.post("/api/v1/portal/ai-query", response_model=PatientAIQueryResponse)
+def answer_patient_ai_query(payload: PatientAIQueryInput):
+    try:
+        return patient_portal_service.answer_patient_ai_query(payload)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"AI query processing error: {str(e)}")
 
