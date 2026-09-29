@@ -135,7 +135,7 @@ function switchHospitalTab(target) {
   if (panel) panel.classList.add("active");
 
   // Update Stepper Bar Steps
-  const stepOrder = ["reception", "clinician", "ipd", "emergency", "diagnostics", "pharmacy"];
+  const stepOrder = ["reception", "clinician", "emergency", "ipd", "diagnostics", "pharmacy"];
   const targetIdx = stepOrder.indexOf(target);
   document.querySelectorAll(".stepper-step").forEach(s => {
     const sStep = s.dataset.step;
@@ -2604,6 +2604,10 @@ function initEmergencyModule() {
 
         fetchBedMatrix();
         fetchHealthStatus();
+
+        if (dispType === "ADMIT_TO_ICU" || dispType === "ADMIT_TO_IPD_WARD") {
+          setTimeout(() => switchHospitalTab("ipd"), 600);
+        }
       } catch (err) {
         showToast(err.message, "error");
       }
