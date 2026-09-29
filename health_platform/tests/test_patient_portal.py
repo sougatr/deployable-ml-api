@@ -299,5 +299,81 @@ class TestPatientPortal(unittest.TestCase):
         self.assertIn("Pooja Sharma", ai_resp["answer"])
         self.assertIn("safety_disclaimer", ai_resp)
 
+    def test_04_portal_self_entry_and_auto_seed_ehr(self):
+        """Verifies self-entry typing for diagnoses, labs, meds, and hospital EHR auto-seeding."""
+        app_res = app_identity_service.resolve_or_create_patient(
+            PatientRegistrationRequest(
+                first_name="Anindita",
+                last_name="Ray",
+                dob="1992-06-20",
+                gender="FEMALE",
+                primary_phone="+919876500000",
+                postal_code="700001",
+                identifiers=[]
+            )
+        )
+        mpi_id = app_res.mpi_id
+
+        # 1. Test GET /api/v1/patients/search
+        resp = self.client.get("/api/v1/patients/search?q=Anindita")
+        self.assertEqual(resp.status_code, 200)
+        results = resp.json()
+        self.assertTrue(len(results) >= 1)
+        self.assertTrue(any(p["first_name"] == "Anindita" for p in results))
+
+        # 2. Self-Entry Condition
+        resp = self.client.post(f"/api/v1/portal/patients/{mpi_id}/self-entry/condition", json={
+            "condition_name": "Post-Op Right Knee Meniscus Root Repair",
+            "icd10_code": "M23.30",
+            "severity_level": "Moderate",
+            "notes": "Mild morning stiffness, pain score 2/10 when mobilizing."
+        })
+        self.assertEqual(resp.status_code, 200)
+        item = resp.json()
+        self.assertEqual(item["condition_name"], "Post-Op Right Knee Meniscus Root Repair")
+        self.assertIn("meniscus", item["plain_english_summary"].lower())
+
+        # 3. Self-Entry Lab Report
+        resp = self.client.post(f"/api/v1/portal/patients/{mpi_id}/self-entry/lab", json={
+            "test_name": "Serum C-Reactive Protein (CRP)",
+            "category": "LABORATORY",
+            "measured_value": 3.2,
+            "unit": "mg/L",
+            "reference_interval": "0.0 - 5.0 mg/L",
+            "status": "NORMAL",
+            "impression": "Normal inflammatory marker level indicating good healing."
+        })
+        self.assertEqual(resp.status_code, 200)
+        lab_item = resp.json()
+        self.assertEqual(lab_item["test_name"], "Serum C-Reactive Protein (CRP)")
+        self.assertEqual(lab_item["parameters"][0]["measured_value"], 3.2)
+
+        # 4. Self-Entry Medication
+        resp = self.client.post(f"/api/v1/portal/patients/{mpi_id}/self-entry/medication", json={
+            "drug_name": "Tab Aceclofenac 100mg + Paracetamol 325mg",
+            "dosage": "1 Tab",
+            "frequency": "1-0-1",
+            "duration": "5 Days",
+            "instructions": "Strictly post meals with full glass of water"
+        })
+        self.assertEqual(resp.status_code, 200)
+        med_item = resp.json()
+        self.assertIn("Aceclofenac", med_item["drug_name"])
+        self.assertIn("anti-inflammatory", med_item["purpose_ai"].lower())
+
+        # 5. Auto-Seed EHR
+        resp = self.client.post(f"/api/v1/portal/patients/{mpi_id}/auto-seed-ehr")
+        self.assertEqual(resp.status_code, 200)
+        seed_res = resp.json()
+        self.assertEqual(seed_res["status"], "success")
+
+        # 6. Verify Summary reflects both self-entered and seeded EHR records
+        resp = self.client.get(f"/api/v1/portal/patients/{mpi_id}/summary")
+        self.assertEqual(resp.status_code, 200)
+        summary = resp.json()
+        self.assertTrue(len(summary["disease_profiles"]) >= 1)
+        self.assertTrue(len(summary["lab_and_scan_reports"]) >= 1)
+        self.assertTrue(len(summary["active_prescriptions"]) >= 1)
+
 if __name__ == "__main__":
     unittest.main()

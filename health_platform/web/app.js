@@ -2957,6 +2957,200 @@ function initPatientPortalModule() {
     });
   });
 
+  // Auto-Import from Hospital EHR
+  document.querySelectorAll(".btn-auto-ehr").forEach(btn => {
+    btn.addEventListener("click", async () => {
+      const mpiId = currentPortalMpiId || (currentPatient && currentPatient.mpi_id);
+      if (!mpiId) {
+        showToast("Please select a registered patient first.", "error");
+        return;
+      }
+      btn.disabled = true;
+      btn.textContent = "⏳ Syncing EHR...";
+      try {
+        const resp = await fetch(`/api/v1/portal/patients/${mpiId}/auto-seed-ehr`, {
+          method: "POST"
+        });
+        if (resp.ok) {
+          showToast("⚡ Hospital EHR clinical records imported and synchronized!", "success");
+          await loadPatientPortal(mpiId);
+        } else {
+          const err = await resp.json().catch(() => ({}));
+          showToast(`EHR Sync: ${err.detail || 'Import completed.'}`, "info");
+          await loadPatientPortal(mpiId);
+        }
+      } catch (err) {
+        showToast("Error communicating with Hospital EHR backend.", "error");
+      } finally {
+        btn.disabled = false;
+        btn.textContent = "⚡ Auto-Import from Hospital EHR";
+      }
+    });
+  });
+
+  // Toggle Self-Entry Typing Cards
+  document.querySelectorAll(".btn-toggle-self-entry").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const targetId = btn.dataset.target;
+      const targetCard = document.getElementById(targetId);
+      if (targetCard) {
+        if (targetCard.style.display === "none") {
+          targetCard.style.display = "block";
+          targetCard.scrollIntoView({ behavior: "smooth", block: "nearest" });
+        } else {
+          targetCard.style.display = "none";
+        }
+      }
+    });
+  });
+
+  // Self-Entry 1: Disease Condition
+  const formSelfDisease = document.getElementById("form-self-entry-disease");
+  if (formSelfDisease) {
+    formSelfDisease.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const mpiId = currentPortalMpiId || (currentPatient && currentPatient.mpi_id);
+      if (!mpiId) {
+        showToast("Please select a patient first.", "error");
+        return;
+      }
+      const name = document.getElementById("self-disease-name").value.trim();
+      const icd = document.getElementById("self-disease-icd").value.trim() || "R69";
+      const severity = document.getElementById("self-disease-severity").value;
+      const notes = document.getElementById("self-disease-notes").value.trim();
+
+      const submitBtn = formSelfDisease.querySelector("button[type='submit']");
+      submitBtn.disabled = true;
+      submitBtn.textContent = "⏳ Translating with AI...";
+
+      try {
+        const res = await fetch(`/api/v1/portal/patients/${mpiId}/self-entry/condition`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            condition_name: name,
+            icd10_code: icd,
+            severity_level: severity,
+            notes: notes
+          })
+        });
+        if (res.ok) {
+          showToast("✅ Diagnosis recorded! AI translated into plain English.", "success");
+          formSelfDisease.reset();
+          await loadPatientPortal(mpiId);
+        } else {
+          showToast("Failed to save condition.", "error");
+        }
+      } catch (err) {
+        showToast("Server error saving condition.", "error");
+      } finally {
+        submitBtn.disabled = false;
+        submitBtn.textContent = "➕ Save Diagnosis & Generate AI Plain-English Insights";
+      }
+    });
+  }
+
+  // Self-Entry 2: Lab / Scan
+  const formSelfLab = document.getElementById("form-self-entry-lab");
+  if (formSelfLab) {
+    formSelfLab.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const mpiId = currentPortalMpiId || (currentPatient && currentPatient.mpi_id);
+      if (!mpiId) {
+        showToast("Please select a patient first.", "error");
+        return;
+      }
+      const name = document.getElementById("self-lab-name").value.trim();
+      const cat = document.getElementById("self-lab-category").value;
+      const valStr = document.getElementById("self-lab-val").value;
+      const val = valStr ? parseFloat(valStr) : null;
+      const unit = document.getElementById("self-lab-unit").value.trim();
+      const ref = document.getElementById("self-lab-ref").value.trim();
+      const status = document.getElementById("self-lab-status").value;
+      const impression = document.getElementById("self-lab-impression").value.trim();
+
+      const submitBtn = formSelfLab.querySelector("button[type='submit']");
+      submitBtn.disabled = true;
+      submitBtn.textContent = "⏳ Generating AI Report...";
+
+      try {
+        const res = await fetch(`/api/v1/portal/patients/${mpiId}/self-entry/lab`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            test_name: name,
+            category: cat,
+            measured_value: val,
+            unit: unit,
+            reference_interval: ref,
+            status: status,
+            impression: impression
+          })
+        });
+        if (res.ok) {
+          showToast("✅ Diagnostic investigation recorded with AI interpretation!", "success");
+          formSelfLab.reset();
+          await loadPatientPortal(mpiId);
+        } else {
+          showToast("Failed to save lab report.", "error");
+        }
+      } catch (err) {
+        showToast("Server error saving lab report.", "error");
+      } finally {
+        submitBtn.disabled = false;
+        submitBtn.textContent = "➕ Save Diagnostic Report & Generate AI Translation";
+      }
+    });
+  }
+
+  // Self-Entry 3: Medication
+  const formSelfMed = document.getElementById("form-self-entry-med");
+  if (formSelfMed) {
+    formSelfMed.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const mpiId = currentPortalMpiId || (currentPatient && currentPatient.mpi_id);
+      if (!mpiId) {
+        showToast("Please select a patient first.", "error");
+        return;
+      }
+      const name = document.getElementById("self-med-name").value.trim();
+      const dosage = document.getElementById("self-med-dosage").value.trim() || "1 Tab";
+      const freq = document.getElementById("self-med-freq").value;
+      const dur = document.getElementById("self-med-dur").value.trim() || "5 Days";
+      const inst = document.getElementById("self-med-inst").value.trim();
+
+      const submitBtn = formSelfMed.querySelector("button[type='submit']");
+      submitBtn.disabled = true;
+      submitBtn.textContent = "⏳ Synthesizing Safety Guide...";
+
+      try {
+        const res = await fetch(`/api/v1/portal/patients/${mpiId}/self-entry/medication`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            drug_name: name,
+            dosage: dosage,
+            frequency: freq,
+            duration: dur,
+            instructions: inst
+          })
+        });
+        if (res.ok) {
+          showToast("✅ Prescription recorded! AI safety guidance generated.", "success");
+          formSelfMed.reset();
+          await loadPatientPortal(mpiId);
+        } else {
+          showToast("Failed to save medication.", "error");
+        }
+      } catch (err) {
+        showToast("Server error saving medication.", "error");
+      } finally {
+        submitBtn.disabled = false;
+        submitBtn.textContent = "➕ Save Medication & Generate Safety Guide";
+      }
+    });
+  }
+
   initWearablesModule();
   initClinicalNutritionListeners();
 }
@@ -3080,6 +3274,29 @@ function renderPortalDiseaseProfiles(profiles) {
   if (!container) return;
   container.innerHTML = "";
 
+  if (!profiles || profiles.length === 0) {
+    container.innerHTML = `
+      <div class="card" style="text-align:center; padding:2rem; background:#f8fafc; border:1px dashed #cbd5e1; border-radius:8px;">
+        <div style="font-size:2.2rem; margin-bottom:0.5rem;">🩺</div>
+        <h4 style="margin:0 0 0.5rem 0; color:#334155;">No Clinical Diagnoses on File</h4>
+        <p style="color:#64748b; font-size:0.875rem; max-width:500px; margin:0 auto 1.25rem auto;">
+          You can either import this patient's clinical records directly from the Hospital EHR or type a condition using the self-entry form above.
+        </p>
+        <button class="btn btn-primary btn-sm btn-auto-ehr" style="background:#0f766e; border-color:#0f766e;">
+          ⚡ Auto-Import from Hospital EHR
+        </button>
+      </div>
+    `;
+    const autoBtn = container.querySelector(".btn-auto-ehr");
+    if (autoBtn) {
+      autoBtn.addEventListener("click", () => {
+        const topBtn = document.querySelector(".btn-auto-ehr");
+        if (topBtn) topBtn.click();
+      });
+    }
+    return;
+  }
+
   profiles.forEach(p => {
     const card = document.createElement("div");
     card.className = "card";
@@ -3124,8 +3341,26 @@ function renderPortalLabReports(reports) {
   if (!container) return;
   container.innerHTML = "";
 
-  if (reports.length === 0) {
-    container.innerHTML = `<div class="card" style="text-align:center; padding:2rem; color:#64748b;">No diagnostic laboratory or imaging reports on file for this patient.</div>`;
+  if (!reports || reports.length === 0) {
+    container.innerHTML = `
+      <div class="card" style="text-align:center; padding:2rem; background:#f8fafc; border:1px dashed #cbd5e1; border-radius:8px;">
+        <div style="font-size:2.2rem; margin-bottom:0.5rem;">🧪</div>
+        <h4 style="margin:0 0 0.5rem 0; color:#334155;">No Diagnostic Reports on File</h4>
+        <p style="color:#64748b; font-size:0.875rem; max-width:500px; margin:0 auto 1.25rem auto;">
+          Import lab tests and scans directly from the Hospital LIS / RIS or type in a diagnostic result using the self-entry form above.
+        </p>
+        <button class="btn btn-primary btn-sm btn-auto-ehr" style="background:#0f766e; border-color:#0f766e;">
+          ⚡ Auto-Import from Hospital EHR
+        </button>
+      </div>
+    `;
+    const autoBtn = container.querySelector(".btn-auto-ehr");
+    if (autoBtn) {
+      autoBtn.addEventListener("click", () => {
+        const topBtn = document.querySelector(".btn-auto-ehr");
+        if (topBtn) topBtn.click();
+      });
+    }
     return;
   }
 
@@ -3216,6 +3451,29 @@ function renderPortalMedications(medications) {
   if (!container) return;
   container.innerHTML = "";
 
+  if (!medications || medications.length === 0) {
+    container.innerHTML = `
+      <div class="card" style="text-align:center; padding:2rem; background:#f8fafc; border:1px dashed #cbd5e1; border-radius:8px;">
+        <div style="font-size:2.2rem; margin-bottom:0.5rem;">💊</div>
+        <h4 style="margin:0 0 0.5rem 0; color:#334155;">No Active Prescriptions on File</h4>
+        <p style="color:#64748b; font-size:0.875rem; max-width:500px; margin:0 auto 1.25rem auto;">
+          Import prescriptions directly from the Central Hospital Pharmacy or type in a medication using the self-entry form above.
+        </p>
+        <button class="btn btn-primary btn-sm btn-auto-ehr" style="background:#0f766e; border-color:#0f766e;">
+          ⚡ Auto-Import from Hospital EHR
+        </button>
+      </div>
+    `;
+    const autoBtn = container.querySelector(".btn-auto-ehr");
+    if (autoBtn) {
+      autoBtn.addEventListener("click", () => {
+        const topBtn = document.querySelector(".btn-auto-ehr");
+        if (topBtn) topBtn.click();
+      });
+    }
+    return;
+  }
+
   medications.forEach(m => {
     const card = document.createElement("div");
     card.className = "portal-med-card";
@@ -3247,7 +3505,7 @@ function renderPortalMedications(medications) {
         <div>
           <h4 style="margin:0; font-size:1.15rem; color:#0f766e;">💊 ${escapeHtml(m.drug_name)}</h4>
           <span style="font-size:0.8rem; color:#64748b;">
-            Dosage: <strong>${escapeHtml(m.dosage)}</strong> • Duration: <strong>${escapeHtml(m.duration)}</strong> • Route: ${escapeHtml(m.route)}
+            Dosage: <strong>${escapeHtml(m.dosage)}</strong> • Duration: <strong>${escapeHtml(m.duration)}</strong> • Route: ${escapeHtml(m.route || 'Oral')}
           </span>
         </div>
         <span class="badge ${m.dispensed ? 'badge-success' : 'badge-warning'}">

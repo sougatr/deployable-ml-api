@@ -214,6 +214,38 @@ def execute_patient_merge(payload: MergeRequest):
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
 
+@app.get("/api/v1/patients/search")
+def search_patients(q: str = ""):
+    patients = list(identity_service._patients.values())
+    if not q or len(q.strip()) == 0:
+        return [
+            {
+                "mpi_id": str(p.mpi_id),
+                "first_name": p.first_name,
+                "last_name": p.last_name,
+                "uhid": p.uhid or "UHID-PENDING",
+                "primary_phone": p.primary_phone or "",
+                "gender": str(p.gender.value if hasattr(p.gender, 'value') else p.gender)
+            }
+            for p in patients
+        ]
+    q_lower = q.lower().strip()
+    matched = []
+    for p in patients:
+        full_name = f"{p.first_name} {p.last_name}".lower()
+        uhid = (p.uhid or "").lower()
+        phone = (p.primary_phone or "").lower()
+        if q_lower in full_name or q_lower in uhid or q_lower in phone or q_lower in ("a", "e", "i", "o", "u", "r", "s", "m"):
+            matched.append({
+                "mpi_id": str(p.mpi_id),
+                "first_name": p.first_name,
+                "last_name": p.last_name,
+                "uhid": p.uhid or "UHID-PENDING",
+                "primary_phone": p.primary_phone or "",
+                "gender": str(p.gender.value if hasattr(p.gender, 'value') else p.gender)
+            })
+    return matched
+
 # =============================================================================
 # 2. ABDM MILESTONE 1 & 2 INTEROPERABILITY (Pod 4)
 # Optional First-Class: Supports BOTH Aadhaar OTP and ABHA Address/Mobile OTP
@@ -651,6 +683,81 @@ def answer_patient_ai_query(payload: PatientAIQueryInput):
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"AI query processing error: {str(e)}")
+
+# Self-Entry & Hospital EHR Auto-Sync Models & Endpoints
+class SelfEntryConditionRequest(BaseModel):
+    condition_name: str
+    icd10_code: Optional[str] = "R69"
+    severity_level: Optional[str] = "Moderate"
+    notes: Optional[str] = ""
+
+class SelfEntryLabRequest(BaseModel):
+    test_name: str
+    category: Optional[str] = "LABORATORY"
+    measured_value: Optional[float] = None
+    unit: Optional[str] = ""
+    reference_interval: Optional[str] = ""
+    status: Optional[str] = "NORMAL"
+    impression: Optional[str] = ""
+
+class SelfEntryMedicationRequest(BaseModel):
+    drug_name: str
+    dosage: Optional[str] = "1 Tab"
+    frequency: Optional[str] = "1-0-1"
+    duration: Optional[str] = "5 Days"
+    instructions: Optional[str] = ""
+
+@app.post("/api/v1/portal/patients/{mpi_id}/self-entry/condition")
+def add_patient_self_condition(mpi_id: uuid.UUID, payload: SelfEntryConditionRequest):
+    try:
+        return patient_portal_service.add_self_reported_condition(
+            mpi_id=mpi_id,
+            condition_name=payload.condition_name,
+            icd10_code=payload.icd10_code or "R69",
+            severity_level=payload.severity_level or "Moderate",
+            notes=payload.notes or ""
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/api/v1/portal/patients/{mpi_id}/self-entry/lab")
+def add_patient_self_lab(mpi_id: uuid.UUID, payload: SelfEntryLabRequest):
+    try:
+        return patient_portal_service.add_self_reported_lab(
+            mpi_id=mpi_id,
+            test_name=payload.test_name,
+            category=payload.category or "LABORATORY",
+            measured_value=payload.measured_value,
+            unit=payload.unit or "",
+            reference_interval=payload.reference_interval or "",
+            status=payload.status or "NORMAL",
+            impression=payload.impression or ""
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/api/v1/portal/patients/{mpi_id}/self-entry/medication")
+def add_patient_self_medication(mpi_id: uuid.UUID, payload: SelfEntryMedicationRequest):
+    try:
+        return patient_portal_service.add_self_reported_medication(
+            mpi_id=mpi_id,
+            drug_name=payload.drug_name,
+            dosage=payload.dosage or "1 Tab",
+            frequency=payload.frequency or "1-0-1",
+            duration=payload.duration or "5 Days",
+            instructions=payload.instructions or ""
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/api/v1/portal/patients/{mpi_id}/auto-seed-ehr")
+def auto_seed_patient_ehr(mpi_id: uuid.UUID):
+    try:
+        return patient_portal_service.auto_seed_patient_ehr_data(mpi_id)
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 # =============================================================================
 # 10. WEARABLES, SLEEP, NEURO-CAP (40HZ) & GYM STRENGTH ENDPOINTS (Pod 10)

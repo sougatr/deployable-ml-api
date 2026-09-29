@@ -297,6 +297,11 @@ class PlatformCoreTestSuite(unittest.TestCase):
         t = TestClinicalDocumentParser()
         t.test_parse_inpatient_discharge_summary_metadata_filtering()
 
+    def test_56_portal_self_entry_and_auto_seed_ehr(self):
+        t = TestPatientPortal()
+        t.setUp()
+        t.test_04_portal_self_entry_and_auto_seed_ehr()
+
 if __name__ == "__main__":
     suite = unittest.TestLoader().loadTestsFromTestCase(PlatformCoreTestSuite)
     runner = unittest.TextTestRunner(verbosity=2)
