@@ -31,6 +31,7 @@ from health_platform.tests.test_diagnostics_workflows import TestDiagnosticsWork
 from health_platform.tests.test_pharmacy_workflows import TestPharmacyWorkflows
 from health_platform.tests.test_emergency_workflows import TestEmergencyWorkflows
 from health_platform.tests.test_patient_portal import TestPatientPortal
+from health_platform.tests.test_wearables import TestWearablesAndRecoveryIoT
 
 class PlatformCoreTestSuite(unittest.TestCase):
     # Identity & MPI Tests
@@ -214,8 +215,42 @@ class PlatformCoreTestSuite(unittest.TestCase):
         t.setUp()
         t.test_03_portal_api_endpoints()
 
+    # Wearables, WHOOP, 40Hz Gamma Cap, Sleep & Gym Strength Tests (Pod 10)
+    def test_42_wearable_devices_and_discovery(self):
+        t = TestWearablesAndRecoveryIoT()
+        t.setUpClass()
+        t.test_01_device_connection_and_discovery()
+
+    def test_43_whoop_recovery_and_sleep_architecture(self):
+        t = TestWearablesAndRecoveryIoT()
+        t.setUpClass()
+        t.test_02_whoop_telemetry_and_sleep_architecture()
+
+    def test_44_gamma_40hz_neuromodulation_cap(self):
+        t = TestWearablesAndRecoveryIoT()
+        t.setUpClass()
+        t.test_03_gamma_40hz_neuromodulation_cap()
+
+    def test_45_step_pacing_and_surgical_ceiling_alert(self):
+        t = TestWearablesAndRecoveryIoT()
+        t.setUpClass()
+        t.test_04_step_pacing_and_surgical_ceiling_alert()
+
+    def test_46_adaptive_gym_strength_and_workout_logging(self):
+        t = TestWearablesAndRecoveryIoT()
+        t.setUpClass()
+        t.test_05_adaptive_gym_strength_training_recommendations()
+        t.test_06_gym_workout_logging()
+
+    def test_47_ai_companion_wearables_and_api(self):
+        t = TestWearablesAndRecoveryIoT()
+        t.setUpClass()
+        t.test_07_ai_companion_wearable_queries()
+        t.test_08_api_wearables_endpoints()
+
 if __name__ == "__main__":
     suite = unittest.TestLoader().loadTestsFromTestCase(PlatformCoreTestSuite)
     runner = unittest.TextTestRunner(verbosity=2)
     result = runner.run(suite)
     sys.exit(0 if result.wasSuccessful() else 1)
+

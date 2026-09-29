@@ -1456,8 +1456,11 @@
         <button class="portal-tab-btn" data-ptab="recovery">
           🥗 4. Diet, Exercise & Recovery Roadmap
         </button>
+        <button class="portal-tab-btn" data-ptab="wearables">
+          ⌚ 5. Wearables & Strength Training (WHOOP & 40Hz Cap)
+        </button>
         <button class="portal-tab-btn" data-ptab="assistant">
-          🤖 5. Ask AI Health Assistant
+          🤖 6. Ask AI Health Assistant
         </button>
       </div>
 
@@ -1583,11 +1586,255 @@
         </div>
       </div>
 
-      <!-- INNER TAB 5: ASK AI HEALTH ASSISTANT -->
+      <!-- INNER TAB 5: WEARABLES, SLEEP, 40HZ GAMMA CAP & GYM STRENGTH TRAINING -->
+      <div class="portal-tab-panel" id="ptab-wearables">
+        <div class="portal-section-intro" style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:1rem;">
+          <div>
+            <h3>Connected Wearables, Sleep Architecture & Adaptive Strength Training</h3>
+            <p class="text-muted">Real-time biometrics from WHOOP 4.0, 40Hz Gamma EEG Neuromodulation Cap, Smart Gait Sensor, and Gym Velocity Trackers dynamically calibrated to your post-operative surgical phase.</p>
+          </div>
+          <div style="display:flex; gap:0.5rem; flex-wrap:wrap;">
+            <button class="btn btn-outline btn-sm" id="btn-wearable-step-hike" style="border-color:#f59e0b; color:#d97706;">
+              🚶 Simulate Step Hike (+1,000 steps)
+            </button>
+            <button class="btn btn-outline btn-sm" id="btn-wearable-toggle-recovery" style="border-color:#ef4444; color:#dc2626;">
+              🔴 Toggle Red Recovery (Deload Test)
+            </button>
+            <button class="btn btn-primary btn-sm" id="btn-sync-wearables" style="background:#0d9488; border-color:#0d9488;">
+              🔄 Sync All Wearables
+            </button>
+          </div>
+        </div>
+
+        <!-- Clinical Safety Alerts Container -->
+        <div id="wearable-alerts-container" style="margin-bottom:1.5rem;"></div>
+
+        <!-- Biometrics & Neuromodulation Strip (4 Key Pillars) -->
+        <div class="wearable-metrics-grid">
+          <!-- 1. Post-Op Steps & Gait Ceiling -->
+          <div class="card wearable-stat-card">
+            <div class="card-header" style="padding-bottom:0.25rem;">
+              <span style="font-size:0.8rem; font-weight:700; color:#0f766e; text-transform:uppercase;">
+                🚶 Post-Op Step Ceiling Guard
+              </span>
+              <span class="badge badge-success" id="wearable-step-badge">Safe Volume</span>
+            </div>
+            <div style="display:flex; align-items:baseline; gap:0.5rem; margin-top:0.25rem;">
+              <span style="font-size:2rem; font-weight:800; color:#0f172a;" id="wearable-steps-count">2,150</span>
+              <span style="font-size:0.85rem; color:#64748b;" id="wearable-steps-target">/ 2,500 target (Max 3,000)</span>
+            </div>
+            <!-- Progress Bar -->
+            <div class="step-progress-track" style="margin:0.75rem 0 0.5rem 0;">
+              <div id="wearable-step-bar" class="step-progress-fill" style="width:71.6%; background:#0d9488;"></div>
+            </div>
+            <div style="font-size:0.78rem; color:#475569; display:flex; justify-content:space-between;">
+              <span><strong>Gait Symmetry:</strong> <span id="wearable-gait-sym">45% Op / 55% Sound</span></span>
+              <span><strong>Distance:</strong> <span id="wearable-distance">1.65 km</span></span>
+            </div>
+          </div>
+
+          <!-- 2. WHOOP 4.0 Recovery & Readiness -->
+          <div class="card wearable-stat-card">
+            <div class="card-header" style="padding-bottom:0.25rem;">
+              <span style="font-size:0.8rem; font-weight:700; color:#15803d; text-transform:uppercase;">
+                🟢 WHOOP 4.0 Recovery
+              </span>
+              <span class="badge badge-success" id="wearable-whoop-state">Green (82%)</span>
+            </div>
+            <div style="display:flex; align-items:center; gap:1rem; margin-top:0.35rem;">
+              <div class="recovery-circle-badge" id="wearable-recovery-badge" style="border-color:#16a34a; color:#16a34a;">
+                <span style="font-size:1.6rem; font-weight:800;" id="wearable-recovery-score">82</span>
+                <span style="font-size:0.65rem; font-weight:700;">% REC</span>
+              </div>
+              <div style="font-size:0.8rem; color:#334155; line-height:1.4;">
+                <div><strong>HRV:</strong> <span id="wearable-hrv">68.5 ms</span></div>
+                <div><strong>Resting HR:</strong> <span id="wearable-rhr">54 bpm</span></div>
+                <div><strong>Day Strain:</strong> <span id="wearable-strain">9.4 / 21.0</span></div>
+                <div><strong>Skin Temp Delta:</strong> <span id="wearable-skin-temp">+0.1 °C</span></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 3. Sleep Architecture & Tissue Repair -->
+          <div class="card wearable-stat-card">
+            <div class="card-header" style="padding-bottom:0.25rem;">
+              <span style="font-size:0.8rem; font-weight:700; color:#4338ca; text-transform:uppercase;">
+                😴 Sleep Architecture & Collagen Synthesis
+              </span>
+              <span class="badge badge-primary" id="wearable-sleep-perf">88% Perf</span>
+            </div>
+            <div style="display:flex; align-items:baseline; gap:0.5rem; margin-top:0.25rem;">
+              <span style="font-size:2rem; font-weight:800; color:#0f172a;" id="wearable-sleep-total">7.4 hrs</span>
+              <span style="font-size:0.8rem; color:#64748b;">(Efficiency: 91%)</span>
+            </div>
+            <div style="margin-top:0.5rem; display:grid; grid-template-columns:1fr 1fr; gap:0.4rem; font-size:0.78rem;">
+              <div style="background:#e0e7ff; padding:0.35rem 0.5rem; border-radius:4px; color:#3730a3;">
+                <strong>Slow-Wave Deep:</strong> <span id="wearable-deep-sleep">92 min</span> (HGH synthesis)
+              </div>
+              <div style="background:#f3e8ff; padding:0.35rem 0.5rem; border-radius:4px; color:#6b21a8;">
+                <strong>REM Sleep:</strong> <span id="wearable-rem-sleep">105 min</span> (Neuro-recovery)
+              </div>
+            </div>
+          </div>
+
+          <!-- 4. 40Hz Gamma Cap Neuromodulation -->
+          <div class="card wearable-stat-card">
+            <div class="card-header" style="padding-bottom:0.25rem;">
+              <span style="font-size:0.8rem; font-weight:700; color:#b45309; text-transform:uppercase;">
+                🧠 40Hz Gamma Neuro-Cap
+              </span>
+              <span class="badge badge-warning" id="wearable-gamma-status">Completed (45m)</span>
+            </div>
+            <div style="display:flex; align-items:baseline; gap:0.5rem; margin-top:0.25rem;">
+              <span style="font-size:2rem; font-weight:800; color:#0f172a;" id="wearable-gamma-freq">40.0 Hz</span>
+              <span style="font-size:0.8rem; color:#64748b;">Sensory & tACS Entrainment</span>
+            </div>
+            <div style="font-size:0.78rem; color:#475569; margin-top:0.5rem; line-height:1.4;">
+              <div><strong>Cortical Coherence:</strong> <span id="wearable-gamma-coherence">84% Phase-Locking Value</span></div>
+              <div style="color:#0f766e;"><strong>Pain Reduction:</strong> <span id="wearable-gamma-pain">VAS score dropped 5.0 → 2.5</span></div>
+              <div style="color:#4338ca;"><strong>Deep Sleep Boost:</strong> +35% slow-wave delta facilitation</div>
+            </div>
+            <button class="btn btn-outline btn-sm" id="btn-trigger-gamma-session" style="width:100%; margin-top:0.6rem; border-color:#b45309; color:#b45309; font-size:0.75rem;">
+              🎧 Run 45-min 40Hz Gamma Session
+            </button>
+          </div>
+        </div>
+
+        <!-- Connected Hardware Connectors Bar -->
+        <div class="card" style="margin-top:1.5rem;">
+          <div class="card-header">
+            <h4 style="margin:0; font-size:0.95rem; display:flex; align-items:center; gap:0.5rem;">
+              🔌 Connected Wearable Hardware & Cloud Bridges
+            </h4>
+            <span class="badge badge-info" id="wearable-device-count-badge">4 Hardware Connectors Active</span>
+          </div>
+          <div class="wearable-devices-strip" id="wearable-devices-list">
+            <!-- Dynamically populated hardware connector cards -->
+          </div>
+        </div>
+
+        <!-- Adaptive Gym Strength Training Engine -->
+        <div class="card" style="margin-top:1.5rem; border-top:4px solid #0d9488;">
+          <div class="card-header" style="background:#f0fdfa;">
+            <div>
+              <h4 style="margin:0; color:#0f766e; display:flex; align-items:center; gap:0.5rem;">
+                🏋️ Adaptive Gym Strength Training Prescription
+              </h4>
+              <p style="margin:0.2rem 0 0 0; font-size:0.8rem; color:#0f766e;" id="gym-readiness-banner">
+                🟢 CLEARED FOR PHASE 2 GYM STRENGTH TRAINING (Readiness Score: 85/100 | Target Strain: 8.5 - 12.0)
+              </p>
+            </div>
+            <span class="badge badge-success" id="gym-readiness-pill">Cleared</span>
+          </div>
+
+          <!-- Biomechanics & Physiology Pacing Strip -->
+          <div style="padding:0.9rem; background:#f8fafc; border-bottom:1px solid var(--border); font-size:0.82rem; line-height:1.5;">
+            <div style="margin-bottom:0.4rem;">
+              <strong>WHOOP Recovery Influence:</strong>
+              <span id="gym-whoop-influence" style="color:#16a34a;">Green recovery confirms central nervous system adaptation. Phase 2 hypertrophy approved.</span>
+            </div>
+            <div style="margin-bottom:0.4rem;">
+              <strong>40Hz Gamma Neuromodulation Influence:</strong>
+              <span id="gym-gamma-influence" style="color:#0f766e;">40Hz session stimulates microglial clearing and amplifies nocturnal growth hormone secretion for collagen repair.</span>
+            </div>
+            <div>
+              <strong>Pacing & Step Restriction:</strong>
+              <span id="gym-pacing-influence" style="color:#b45309;">Daily limit: 2,500 steps (Max 3,000 ceiling). Zero impact running or jumping permitted.</span>
+            </div>
+          </div>
+
+          <!-- Prescribed vs Prohibited Gym Movements Grid -->
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:1.25rem; padding:1.25rem;">
+            <!-- Left: Prescribed Gym Movements -->
+            <div>
+              <h5 style="color:#0f766e; margin:0 0 0.75rem 0; display:flex; align-items:center; gap:0.4rem;">
+                ✅ Approved Gym Movements (Strict ROM Angle Limits)
+              </h5>
+              <div class="prescribed-gym-list" id="prescribed-gym-container">
+                <!-- Dynamically rendered -->
+              </div>
+            </div>
+
+            <!-- Right: Contraindicated / Dangerous Gym Movements -->
+            <div>
+              <h5 style="color:#dc2626; margin:0 0 0.75rem 0; display:flex; align-items:center; gap:0.4rem;">
+                🚫 Strictly Contraindicated (Graft & Joint Protection)
+              </h5>
+              <div class="prohibited-gym-list" id="prohibited-gym-container">
+                <!-- Dynamically rendered -->
+              </div>
+            </div>
+          </div>
+
+          <!-- Post-Workout Recovery Protocol -->
+          <div style="padding:0.85rem 1.25rem; background:#eff6ff; border-top:1px solid #bfdbfe; font-size:0.82rem; color:#1e40af;">
+            <strong>Immediate Post-Workout Protocol:</strong>
+            <span id="gym-post-workout-protocol">Apply cryo-cuff for 20 min elevated above heart; consume 25-30g whey/collagen protein with Vitamin C; wear 40Hz Gamma Cap at 19:30 to prime slow-wave sleep.</span>
+          </div>
+        </div>
+
+        <!-- Interactive Gym Strength Workout Logger -->
+        <div class="card" style="margin-top:1.5rem;">
+          <div class="card-header">
+            <h4 style="margin:0; font-size:0.95rem; display:flex; align-items:center; gap:0.5rem;">
+              📝 Log Strength Workout Telemetry & Velocity
+            </h4>
+            <span class="badge badge-primary">Auto-Validates ROM Angles</span>
+          </div>
+          <form id="gym-workout-log-form" style="padding:1.25rem;">
+            <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(180px, 1fr)); gap:1rem;">
+              <div class="form-group" style="margin:0;">
+                <label style="font-size:0.8rem; font-weight:700;">Exercise</label>
+                <select id="log-ex-name" class="form-control" style="font-size:0.85rem;">
+                  <option value="Seated Machine Leg Press">Seated Machine Leg Press (Max 70°)</option>
+                  <option value="Isometric Leg Extension Hold">Isometric Leg Extension (60° VMO Hold)</option>
+                  <option value="Cable Standing Hip Abductions">Cable Standing Hip Abductions</option>
+                  <option value="Seated Cable Lat Pulldowns">Seated Cable Lat Pulldowns</option>
+                  <option value="Dumbbell Incline Chest Press">Dumbbell Incline Chest Press</option>
+                </select>
+              </div>
+              <div class="form-group" style="margin:0;">
+                <label style="font-size:0.8rem; font-weight:700;">Sets</label>
+                <input type="number" id="log-ex-sets" class="form-control" value="3" min="1" max="10">
+              </div>
+              <div class="form-group" style="margin:0;">
+                <label style="font-size:0.8rem; font-weight:700;">Reps / Holds</label>
+                <input type="number" id="log-ex-reps" class="form-control" value="10" min="1" max="50">
+              </div>
+              <div class="form-group" style="margin:0;">
+                <label style="font-size:0.8rem; font-weight:700;">Weight (kg)</label>
+                <input type="number" id="log-ex-weight" class="form-control" value="35.0" step="2.5" min="0">
+              </div>
+              <div class="form-group" style="margin:0;">
+                <label style="font-size:0.8rem; font-weight:700;">RPE (Exertion 1-10)</label>
+                <input type="number" id="log-ex-rpe" class="form-control" value="6" min="1" max="10">
+              </div>
+            </div>
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-top:1rem;">
+              <span style="font-size:0.8rem; color:#64748b;">
+                ⚠️ Safety Rule: Knee flexion restricted to &le; 70°. No deep squats or heavy leg curls allowed.
+              </span>
+              <button type="submit" class="btn btn-primary btn-sm" style="background:#0d9488; border-color:#0d9488;">
+                💾 Record Strength Workout Telemetry
+              </button>
+            </div>
+          </form>
+
+          <!-- Recent Workout History -->
+          <div style="padding:0 1.25rem 1.25rem 1.25rem;">
+            <h5 style="margin:0 0 0.5rem 0; font-size:0.85rem; color:#334155;">Recent Workout Session Telemetry:</h5>
+            <div id="gym-workouts-history-container">
+              <!-- Dynamically populated -->
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- INNER TAB 6: ASK AI HEALTH ASSISTANT -->
       <div class="portal-tab-panel" id="ptab-assistant">
         <div class="portal-section-intro">
-          <h3>AI Health Assistant (Grounded in Your Clinical EHR)</h3>
-          <p class="text-muted">Ask questions about your prescribed medicines, morning stiffness, safe home movements, or diet. Our AI references your verified medical record to give you personalized, safe guidance.</p>
+          <h3>AI Health Assistant (Grounded in Your Clinical EHR & Wearables)</h3>
+          <p class="text-muted">Ask questions about your prescribed medicines, morning stiffness, safe home movements, diet, WHOOP recovery, 40Hz gamma cap, or gym workouts. Our AI references your verified medical record to give you personalized, safe guidance.</p>
         </div>
 
         <div class="card" style="max-width:900px; margin:0 auto;">
@@ -1596,7 +1843,7 @@
               <span style="font-size:1.5rem;">🤖</span>
               <div>
                 <h4 style="margin:0; color:#0f766e;">Personal Health Companion</h4>
-                <span style="font-size:0.75rem; color:#64748b;">Context: Connected to your active longitudinal health record</span>
+                <span style="font-size:0.75rem; color:#64748b;">Context: Connected to your active longitudinal health record & wearables</span>
               </div>
             </div>
             <span class="badge badge-success">Grounded & Verified</span>
@@ -1608,11 +1855,16 @@
               Suggested Questions for your Care:
             </span>
             <div class="portal-quick-chips">
+              <button class="portal-chip-btn" data-q="What is my WHOOP recovery and strain today?">⌚ WHOOP Recovery & HRV</button>
+              <button class="portal-chip-btn" data-q="How does my deep sleep impact my recovery?">😴 Deep Sleep & Tissue Repair</button>
+              <button class="portal-chip-btn" data-q="How does my 40Hz gamma cap help post-op pain and sleep?">🧠 40Hz Gamma Cap Neuromodulation</button>
+              <button class="portal-chip-btn" data-q="What is my safe step ceiling today?">🚶 Daily Step Ceiling & Joint Safety</button>
+              <button class="portal-chip-btn" data-q="Can I do leg press and gym strength training today?">🏋️ Gym Strength & Leg Press Clearance</button>
               <button class="portal-chip-btn" data-q="Can I drink coffee or tea with my morning medicines?">☕ Coffee with morning medicines?</button>
-              <button class="portal-chip-btn" data-q="Why is my knee stiff in the morning and what can I do?">🦵 What can I do for morning knee stiffness?</button>
-              <button class="portal-chip-btn" data-q="What exercises should I strictly avoid this week?">🚫 Which exercises must I avoid?</button>
-              <button class="portal-chip-btn" data-q="What foods will help my cartilage heal faster?">🥗 Best anti-inflammatory foods for cartilage?</button>
-              <button class="portal-chip-btn" data-q="What are the red flag symptoms I should watch out for?">🚨 What warning signs require hospital contact?</button>
+              <button class="portal-chip-btn" data-q="Why is my knee stiff in the morning and what can I do?">🦵 Morning knee stiffness?</button>
+              <button class="portal-chip-btn" data-q="What exercises should I strictly avoid this week?">🚫 Forbidden exercises?</button>
+              <button class="portal-chip-btn" data-q="What foods will help my cartilage heal faster?">🥗 Anti-inflammatory superfoods?</button>
+              <button class="portal-chip-btn" data-q="What are the red flag symptoms I should watch out for?">🚨 Warning signs / Red flags?</button>
             </div>
           </div>
 

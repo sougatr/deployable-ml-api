@@ -2867,6 +2867,8 @@ function initPatientPortalModule() {
       }
     });
   });
+
+  initWearablesModule();
 }
 
 function populatePatientPortalSelect() {
@@ -2919,6 +2921,7 @@ async function loadPatientPortal(mpiId) {
     const data = await res.json();
     currentPortalSummary = data;
     renderPatientPortal(data);
+    loadPatientWearables(mpiId);
   } catch (err) {
     console.error("Error loading patient portal summary:", err);
   }
@@ -3372,3 +3375,394 @@ async function handlePortalAIQuery(question) {
     container.scrollTop = container.scrollHeight;
   }
 }
+
+// =============================================================================
+// 10. WEARABLES, SLEEP, NEURO-CAP (40HZ) & GYM STRENGTH MODULE (Pod 10)
+// =============================================================================
+let currentWearablesDashboard = null;
+let isDeloadRecoveryTest = false;
+let simulatedStepsOverride = null;
+
+function initWearablesModule() {
+  // 1. Sync All Wearables Button
+  const btnSync = document.getElementById("btn-sync-wearables");
+  if (btnSync) {
+    btnSync.addEventListener("click", async () => {
+      if (!currentPortalMpiId) {
+        showToast("Please select a patient first.", "error");
+        return;
+      }
+      simulatedStepsOverride = null;
+      isDeloadRecoveryTest = false;
+      await loadPatientWearables(currentPortalMpiId);
+      showToast("All wearable telemetry synchronized from WHOOP, 40Hz Cap & HealthKit.", "success");
+    });
+  }
+
+  // 2. Simulate Step Hike Button (+1,000 steps to trigger post-op safety ceiling)
+  const btnStepHike = document.getElementById("btn-wearable-step-hike");
+  if (btnStepHike) {
+    btnStepHike.addEventListener("click", async () => {
+      if (!currentPortalMpiId) return;
+      simulatedStepsOverride = (simulatedStepsOverride || 2150) + 1000;
+      await loadPatientWearables(currentPortalMpiId, simulatedStepsOverride, isDeloadRecoveryTest ? 28 : null);
+      if (simulatedStepsOverride > 3000) {
+        showToast("🚨 SURGICAL CEILING ALERT: Step volume exceeded 3,000 steps!", "error");
+      } else {
+        showToast(`Simulated step volume updated to ${simulatedStepsOverride.toLocaleString()} steps.`, "info");
+      }
+    });
+  }
+
+  // 3. Toggle Red Recovery Test (Deload test)
+  const btnToggleRecovery = document.getElementById("btn-wearable-toggle-recovery");
+  if (btnToggleRecovery) {
+    btnToggleRecovery.addEventListener("click", async () => {
+      if (!currentPortalMpiId) return;
+      isDeloadRecoveryTest = !isDeloadRecoveryTest;
+      const recVal = isDeloadRecoveryTest ? 28 : 82;
+      btnToggleRecovery.textContent = isDeloadRecoveryTest ? "🟢 Restore Green Recovery (82%)" : "🔴 Toggle Red Recovery (Deload Test)";
+      btnToggleRecovery.style.borderColor = isDeloadRecoveryTest ? "#16a34a" : "#ef4444";
+      btnToggleRecovery.style.color = isDeloadRecoveryTest ? "#16a34a" : "#dc2626";
+
+      await loadPatientWearables(currentPortalMpiId, simulatedStepsOverride, recVal);
+      if (isDeloadRecoveryTest) {
+        showToast("WHOOP Recovery set to 28% RED: Gym strength training dynamically withheld!", "error");
+      } else {
+        showToast("WHOOP Recovery restored to 82% GREEN: Cleared for Phase 2 gym training.", "success");
+      }
+    });
+  }
+
+  // 4. Trigger 40Hz Gamma Session Button
+  const btnGamma = document.getElementById("btn-trigger-gamma-session");
+  if (btnGamma) {
+    btnGamma.addEventListener("click", async () => {
+      if (!currentPortalMpiId) return;
+      try {
+        btnGamma.disabled = true;
+        btnGamma.textContent = "🎧 Entraining 40Hz Audio-Visual Stimulation...";
+        const res = await fetch("/api/v1/portal/wearables/log-gamma", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            mpi_id: currentPortalMpiId,
+            duration_minutes: 45,
+            protocol: "Post-Op Neuro-Analgesia & Circadian Deep Sleep Alignment"
+          })
+        });
+        if (res.ok) {
+          showToast("45-min 40Hz Gamma Neuromodulation completed! Cortical coherence 84%.", "success");
+          await loadPatientWearables(currentPortalMpiId, simulatedStepsOverride, isDeloadRecoveryTest ? 28 : null);
+        }
+      } catch (err) {
+        showToast("Gamma session connection error.", "error");
+      } finally {
+        btnGamma.disabled = false;
+        btnGamma.textContent = "🎧 Run 45-min 40Hz Gamma Session";
+      }
+    });
+  }
+
+  // 5. Gym Workout Logger Form Submission
+  const formWorkout = document.getElementById("gym-workout-log-form");
+  if (formWorkout) {
+    formWorkout.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      if (!currentPortalMpiId) {
+        showToast("Please select a patient first.", "error");
+        return;
+      }
+      const exName = document.getElementById("log-ex-name").value;
+      const sets = parseInt(document.getElementById("log-ex-sets").value, 10);
+      const reps = parseInt(document.getElementById("log-ex-reps").value, 10);
+      const weight = parseFloat(document.getElementById("log-ex-weight").value);
+      const rpe = parseInt(document.getElementById("log-ex-rpe").value, 10);
+
+      const exercises = [{
+        name: exName,
+        sets: sets,
+        reps: reps,
+        weight_kg: weight,
+        target_rom_degrees: "0° to 70° flexion",
+        actual_rom_degrees: "0° to 65°",
+        rpe: rpe,
+        tempo: "3-1-2-0 (Controlled eccentric)",
+        safety_compliance: true
+      }];
+
+      try {
+        const res = await fetch("/api/v1/portal/wearables/log-workout", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            mpi_id: currentPortalMpiId,
+            workout_name: `Phase 2 Strength - ${exName}`,
+            exercises: exercises,
+            duration_minutes: 35,
+            strain_generated: 8.4
+          })
+        });
+        if (res.ok) {
+          showToast(`Recorded strength telemetry: ${sets}x${reps} @ ${weight}kg (ROM within 70°).`, "success");
+          await loadPatientWearables(currentPortalMpiId, simulatedStepsOverride, isDeloadRecoveryTest ? 28 : null);
+        } else {
+          showToast("Failed to record workout.", "error");
+        }
+      } catch (err) {
+        showToast("Error recording workout telemetry.", "error");
+      }
+    });
+  }
+}
+
+async function loadPatientWearables(mpiId, stepOverride = null, recoveryOverride = null) {
+  if (!mpiId) return;
+
+  try {
+    let res;
+    if (stepOverride !== null || recoveryOverride !== null) {
+      res = await fetch(`/api/v1/portal/patients/${mpiId}/wearables/sync`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          mpi_id: mpiId,
+          step_override: stepOverride,
+          whoop_recovery_override: recoveryOverride
+        })
+      });
+    } else {
+      res = await fetch(`/api/v1/portal/patients/${mpiId}/wearables`);
+    }
+
+    if (!res.ok) return;
+    const data = await res.json();
+    currentWearablesDashboard = data;
+    renderWearablesDashboard(data);
+  } catch (err) {
+    console.error("Error loading wearable dashboard:", err);
+  }
+}
+
+function renderWearablesDashboard(data) {
+  const steps = data.step_telemetry;
+  const whoop = data.whoop_telemetry;
+  const gamma = data.gamma_40hz_telemetry;
+  const rec = data.adaptive_gym_recommendations;
+
+  // 1. Clinical Safety Alerts Container
+  const alertsContainer = document.getElementById("wearable-alerts-container");
+  if (alertsContainer) {
+    if (data.clinical_safety_alerts && data.clinical_safety_alerts.length > 0) {
+      alertsContainer.innerHTML = data.clinical_safety_alerts.map(a => `
+        <div style="background:#fef2f2; border:1.5px solid #f87171; border-radius:8px; padding:0.85rem 1.25rem; margin-bottom:0.75rem; display:flex; align-items:flex-start; gap:0.75rem;">
+          <span style="font-size:1.4rem;">🚨</span>
+          <div>
+            <strong style="color:#991b1b; display:block; font-size:0.9rem;">Orthopedic Clinical Biometric Alert:</strong>
+            <p style="margin:0.25rem 0 0 0; font-size:0.85rem; color:#7f1d1d;">${escapeHtml(a)}</p>
+          </div>
+        </div>
+      `).join("");
+    } else {
+      alertsContainer.innerHTML = "";
+    }
+  }
+
+  // 2. Step Pacing & Ceiling
+  if (steps) {
+    document.getElementById("wearable-steps-count").textContent = steps.daily_steps.toLocaleString();
+    document.getElementById("wearable-steps-target").textContent = `/ ${steps.post_op_step_target.toLocaleString()} target (Max ${steps.post_op_step_ceiling.toLocaleString()})`;
+
+    const bar = document.getElementById("wearable-step-bar");
+    const pct = Math.min(100, Math.round((steps.daily_steps / steps.post_op_step_ceiling) * 100));
+    bar.style.width = `${pct}%`;
+
+    const badge = document.getElementById("wearable-step-badge");
+    if (steps.ceiling_exceeded) {
+      bar.style.background = "#ef4444";
+      badge.textContent = "🚨 Ceiling Exceeded";
+      badge.className = "badge badge-danger";
+    } else if (steps.daily_steps > steps.post_op_step_target) {
+      bar.style.background = "#f59e0b";
+      badge.textContent = "Target Reached (Rest Knee)";
+      badge.className = "badge badge-warning";
+    } else {
+      bar.style.background = "#0d9488";
+      badge.textContent = "Safe Volume";
+      badge.className = "badge badge-success";
+    }
+
+    document.getElementById("wearable-gait-sym").textContent = steps.gait_weight_bearing_symmetry_pct;
+    document.getElementById("wearable-distance").textContent = `${steps.distance_km} km`;
+  }
+
+  // 3. WHOOP Telemetry
+  if (whoop) {
+    document.getElementById("wearable-recovery-score").textContent = whoop.recovery_score;
+    const badgeRec = document.getElementById("wearable-recovery-badge");
+    const statePill = document.getElementById("wearable-whoop-state");
+
+    if (whoop.recovery_state === "GREEN") {
+      badgeRec.style.borderColor = "#16a34a";
+      badgeRec.style.color = "#16a34a";
+      badgeRec.style.background = "#f0fdf4";
+      statePill.textContent = `Green (${whoop.recovery_score}%)`;
+      statePill.className = "badge badge-success";
+    } else if (whoop.recovery_state === "YELLOW") {
+      badgeRec.style.borderColor = "#ca8a04";
+      badgeRec.style.color = "#ca8a04";
+      badgeRec.style.background = "#fefce8";
+      statePill.textContent = `Yellow (${whoop.recovery_score}%)`;
+      statePill.className = "badge badge-warning";
+    } else {
+      badgeRec.style.borderColor = "#dc2626";
+      badgeRec.style.color = "#dc2626";
+      badgeRec.style.background = "#fef2f2";
+      statePill.textContent = `Red (${whoop.recovery_score}%)`;
+      statePill.className = "badge badge-danger";
+    }
+
+    document.getElementById("wearable-hrv").textContent = `${whoop.hrv_ms} ms`;
+    document.getElementById("wearable-rhr").textContent = `${whoop.resting_heart_rate_bpm} bpm`;
+    document.getElementById("wearable-strain").textContent = `${whoop.day_strain} / 21.0`;
+    document.getElementById("wearable-skin-temp").textContent = `${whoop.skin_temp_delta_celsius > 0 ? '+' : ''}${whoop.skin_temp_delta_celsius} °C`;
+
+    // Sleep
+    document.getElementById("wearable-sleep-total").textContent = `${whoop.sleep_hours_total} hrs`;
+    document.getElementById("wearable-sleep-perf").textContent = `${whoop.sleep_performance_pct}% Perf`;
+    document.getElementById("wearable-deep-sleep").textContent = `${whoop.deep_sleep_minutes} min`;
+    document.getElementById("wearable-rem-sleep").textContent = `${whoop.rem_sleep_minutes} min`;
+  }
+
+  // 4. 40Hz Gamma Cap Telemetry
+  if (gamma) {
+    document.getElementById("wearable-gamma-freq").textContent = `${gamma.frequency_hz} Hz`;
+    document.getElementById("wearable-gamma-status").textContent = `${gamma.status} (${gamma.session_duration_minutes}m)`;
+    document.getElementById("wearable-gamma-coherence").textContent = `${gamma.cortical_entrainment_coherence_pct}% Phase-Locking Value`;
+    document.getElementById("wearable-gamma-pain").textContent = gamma.subjective_pain_reduction;
+  }
+
+  // 5. Hardware Devices List
+  const devicesList = document.getElementById("wearable-devices-list");
+  if (devicesList && data.connected_devices) {
+    const iconMap = {
+      "WHOOP_4": "⌚",
+      "GAMMA_40HZ_CAP": "🧠",
+      "SMART_PEDOMETER": "🚶",
+      "GYM_STRENGTH_TRACKER": "🏋️",
+      "APPLE_HEALTH": "🍎",
+      "OURA_RING": "💍"
+    };
+    devicesList.innerHTML = data.connected_devices.map(dev => `
+      <div class="wearable-device-card">
+        <div class="device-icon-box">${iconMap[dev.device_type] || "🔌"}</div>
+        <div style="flex:1;">
+          <div style="font-weight:700; font-size:0.85rem; color:#0f172a;">${escapeHtml(dev.device_name)}</div>
+          <div style="font-size:0.75rem; color:#64748b; display:flex; align-items:center; gap:0.5rem; margin-top:0.2rem;">
+            <span><span class="device-status-dot ${dev.status === 'CONNECTED' ? 'dot-connected' : 'dot-disconnected'}"></span>${dev.status}</span>
+            <span>• Battery: ${dev.battery_level_pct}%</span>
+            <span>• ${dev.firmware_version}</span>
+          </div>
+        </div>
+      </div>
+    `).join("");
+  }
+
+  // 6. Adaptive Gym Recommendations
+  if (rec) {
+    const banner = document.getElementById("gym-readiness-banner");
+    const pill = document.getElementById("gym-readiness-pill");
+
+    if (rec.readiness_status === "CLEARED_FOR_STRENGTH_TRAINING") {
+      banner.textContent = `🟢 CLEARED FOR PHASE 2 GYM STRENGTH TRAINING (Readiness Score: ${rec.training_readiness_score}/100 | Target Strain: ${rec.target_day_strain_range})`;
+      banner.style.color = "#0f766e";
+      pill.textContent = "Cleared";
+      pill.className = "badge badge-success";
+    } else if (rec.readiness_status === "MODIFIED_LOW_INTENSITY") {
+      banner.textContent = `🟡 MODIFIED LOW-INTENSITY GYM WORKOUT ONLY (Readiness Score: ${rec.training_readiness_score}/100 | Target Strain: ${rec.target_day_strain_range})`;
+      banner.style.color = "#b45309";
+      pill.textContent = "Modified Only";
+      pill.className = "badge badge-warning";
+    } else {
+      banner.textContent = `🔴 DELOAD / REST DAY: STRENGTH TRAINING CONTRAINDICATED (Readiness Score: ${rec.training_readiness_score}/100)`;
+      banner.style.color = "#b91c1c";
+      pill.textContent = "Rest & Deload";
+      pill.className = "badge badge-danger";
+    }
+
+    document.getElementById("gym-whoop-influence").textContent = rec.whoop_recovery_influence;
+    document.getElementById("gym-gamma-influence").textContent = rec.gamma_neuro_pacing_influence;
+    document.getElementById("gym-pacing-influence").textContent = rec.cardio_and_step_pacing;
+    document.getElementById("gym-post-workout-protocol").textContent = rec.post_workout_protocol;
+
+    // Prescribed Gym Movements
+    const presContainer = document.getElementById("prescribed-gym-container");
+    if (presContainer && rec.recommended_gym_movements) {
+      presContainer.innerHTML = rec.recommended_gym_movements.map(m => `
+        <div class="gym-prescribed-card">
+          <div class="gym-prescribed-title">
+            <span>${escapeHtml(m.name)}</span>
+            <span class="badge badge-success" style="font-size:0.65rem;">Approved</span>
+          </div>
+          <div style="margin-bottom:0.25rem;">
+            <span class="gym-tag gym-tag-sets">${escapeHtml(m.recommended_sets_and_reps)}</span>
+            <span class="gym-tag gym-tag-rom">${escapeHtml(m.rom_limit)}</span>
+          </div>
+          <div style="font-size:0.75rem; color:#475569; margin-top:0.25rem;">
+            <strong>Target:</strong> ${escapeHtml(m.target_muscle_group)} • <strong>Tempo:</strong> ${escapeHtml(m.tempo)}
+          </div>
+          <div style="font-size:0.75rem; color:#15803d; margin-top:0.25rem;">
+            <em>Rationale: ${escapeHtml(m.biomechanical_rationale)}</em>
+          </div>
+        </div>
+      `).join("");
+    }
+
+    // Prohibited Movements
+    const prohibContainer = document.getElementById("prohibited-gym-container");
+    if (prohibContainer && rec.contraindicated_gym_movements) {
+      prohibContainer.innerHTML = rec.contraindicated_gym_movements.map(p => `
+        <div class="gym-prohibited-card">
+          <div class="gym-prohibited-title">
+            <span>🚫 ${escapeHtml(p.name)}</span>
+            <span class="badge badge-danger" style="font-size:0.65rem;">Forbidden</span>
+          </div>
+          <div style="font-size:0.75rem; color:#991b1b; margin-top:0.25rem;">
+            <strong>Danger Mechanism:</strong> ${escapeHtml(p.danger_risk)}
+          </div>
+          <div style="font-size:0.75rem; color:#1e40af; margin-top:0.35rem; background:#eff6ff; padding:0.25rem 0.5rem; border-radius:3px;">
+            <strong>Safe Alternative:</strong> ${escapeHtml(p.safe_alternative)}
+          </div>
+        </div>
+      `).join("");
+    }
+  }
+
+  // 7. Recent Gym Workouts
+  const workoutsContainer = document.getElementById("gym-workouts-history-container");
+  if (workoutsContainer && data.recent_gym_workouts) {
+    if (data.recent_gym_workouts.length === 0) {
+      workoutsContainer.innerHTML = `<p class="text-muted" style="font-size:0.8rem;">No workouts logged yet. Use the form above to record your session.</p>`;
+    } else {
+      workoutsContainer.innerHTML = data.recent_gym_workouts.map(w => `
+        <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:6px; padding:0.75rem 1rem; margin-bottom:0.5rem;">
+          <div style="display:flex; justify-content:space-between; align-items:center;">
+            <strong style="color:#0f172a; font-size:0.85rem;">${escapeHtml(w.workout_name)}</strong>
+            <span style="font-size:0.75rem; color:#64748b;">${new Date(w.workout_timestamp).toLocaleDateString([], { month:'short', day:'numeric' })} • ${w.duration_minutes} min • Total Volume: ${w.total_volume_kg.toLocaleString()} kg • Strain: ${w.strain_generated}</span>
+          </div>
+          <div style="margin-top:0.4rem; display:flex; flex-wrap:wrap; gap:0.4rem;">
+            ${w.exercises.map(ex => `
+              <span style="background:#ffffff; border:1px solid #cbd5e1; font-size:0.75rem; padding:0.15rem 0.45rem; border-radius:4px;">
+                ${escapeHtml(ex.name)}: ${ex.sets}x${ex.reps} @ ${ex.weight_kg}kg (RPE ${ex.rpe})
+              </span>
+            `).join("")}
+          </div>
+          <div style="font-size:0.75rem; color:#0f766e; margin-top:0.35rem;">
+            💡 <em>${escapeHtml(w.ai_post_workout_feedback)}</em>
+          </div>
+        </div>
+      `).join("");
+    }
+  }
+}
+

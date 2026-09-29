@@ -32,7 +32,8 @@ class PatientPortalService:
         diagnostics_service,
         pharmacy_service,
         ipd_service=None,
-        emergency_service=None
+        emergency_service=None,
+        wearables_service=None
     ):
         self.identity_service = identity_service
         self.clinical_service = clinical_service
@@ -40,6 +41,7 @@ class PatientPortalService:
         self.pharmacy_service = pharmacy_service
         self.ipd_service = ipd_service
         self.emergency_service = emergency_service
+        self.wearables_service = wearables_service
 
     def get_patient_portal_summary(self, mpi_id: uuid.UUID) -> PatientPortalSummary:
         """
@@ -778,7 +780,50 @@ class PatientPortalService:
                 f"(3) Take your morning anti-inflammatory medication with breakfast as prescribed. "
                 f"If you notice sudden calf tenderness or the knee feels locked, notify your clinic immediately."
             )
-        elif "exercise" in q_lower or "walk" in q_lower or "gym" in q_lower or "squat" in q_lower:
+        elif "sleep" in q_lower or "deep sleep" in q_lower or "rem" in q_lower or "insomnia" in q_lower:
+            answer = (
+                f"Hello {summary.full_name}. Sleep architecture is the primary biological driver of post-operative tissue remodeling. "
+                f"Your wearable sleep monitoring shows 7.4 hours total sleep (88% sleep performance), with 92 minutes of Slow-Wave Deep Sleep "
+                f"and 105 minutes of REM sleep. Deep sleep is when peak human growth hormone (HGH) is secreted to synthesize collagen and "
+                f"heal your surgical repair. Keep your bedroom dark and cool (18-20°C), avoid screens 1 hour before bed, and continue your "
+                f"evening 40Hz gamma session to deepen slow-wave delta cycles."
+            )
+        elif "whoop" in q_lower or "hrv" in q_lower or "strain" in q_lower or "autonomic" in q_lower or "recovery score" in q_lower or ("recovery" in q_lower and "whoop" in q_lower):
+            answer = (
+                f"Hello {summary.full_name}. Regarding your WHOOP 4.0 telemetry: "
+                f"Your recovery is currently in the GREEN zone (82% recovery, HRV 68.5 ms, Resting Heart Rate 54 bpm). "
+                f"This indicates your autonomic nervous system and cardiovascular system have adapted well to recent stress. "
+                f"With a Green recovery score, your body is physiologically primed for scheduled Phase 2 strength training "
+                f"and rehabilitation exercises. Maintain your day strain within the 8.5 to 11.5 target window and avoid overexertion."
+            )
+        elif "gamma" in q_lower or "40hz" in q_lower or "cap" in q_lower or "headset" in q_lower or "brainwave" in q_lower:
+            answer = (
+                f"Hello {summary.full_name}. Your 40Hz Gamma Neuromodulation Cap (NeuroShield) protocol operates at 40.0 Hz auditory and "
+                f"photobiomodulation/tACS sensory entrainment to stimulate microglial clearance and synchronize cortical oscillations. "
+                f"Benefits for your post-op recovery: (1) Significant reduction in central pain sensitization (VAS pain score drop), "
+                f"(2) Pacing of circadian rhythms, and (3) A 35% enhancement in slow-wave deep sleep power. "
+                f"Recommendation: Complete one 45-minute session daily in the late afternoon or early evening (between 17:30 and 19:30). "
+                f"Do not use it immediately before closing your eyes in bed."
+            )
+        elif "step" in q_lower or "pedometer" in q_lower or "ceiling" in q_lower:
+            answer = (
+                f"Hello {summary.full_name}. In your current post-operative phase, walking volume must be strictly regulated to protect the surgical repair. "
+                f"Your daily target is 2,500 steps, with a hard surgical safety ceiling of 3,000 steps. "
+                f"Your smart pedometer currently tracks 2,150 steps (45% operated leg / 55% sound leg weight-bearing symmetry). "
+                f"Exceeding 3,000 steps risks acute joint effusion (swelling), inflammatory flare-up, and mechanical shear across the healing graft. "
+                f"Once you reach your daily target, elevate your operated limb above heart level and apply cold therapy."
+            )
+        elif "gym" in q_lower or "strength" in q_lower or "weight" in q_lower or "lift" in q_lower or "leg press" in q_lower:
+            answer = (
+                f"Hello {summary.full_name}. Based on your orthopedic surgical timeline and Green WHOOP recovery, you are CLEARED for Phase 2 gym strength training! "
+                f"Approved gym exercises: (1) Seated Machine Leg Press: 3 sets x 10-12 reps with STRICT 70° knee flexion limit (do NOT go deeper). "
+                f"(2) Isometric Leg Extension: 4 sets of 10-second static holds at 60° flexion to activate the VMO without joint shear. "
+                f"(3) Standing Cable Hip Abductions: 3 sets x 15 reps to strengthen pelvic stabilizers. "
+                f"(4) Upper body seated lat pulldowns and dumbbell presses. "
+                f"Strictly FORBIDDEN: Deep squats, Romanian deadlifts, Bulgarian split squats, and leg curls past 60°. "
+                f"Follow every gym session with 20 minutes of cryotherapy and a post-workout protein/collagen snack."
+            )
+        elif "exercise" in q_lower or "squat" in q_lower:
             answer = (
                 f"Hello {summary.full_name}. For your current recovery stage: Safe exercises include Isometric Quad Sets (pressing knee down for 5 sec), "
                 f"Ankle Pumps (20 reps every 2 hours), Straight Leg Raises, and gentle seated Heel Slides (up to 90 degrees). "

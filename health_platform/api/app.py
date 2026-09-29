@@ -120,6 +120,25 @@ from health_platform.core.patient_portal.models import (
     PatientAIQueryResponse
 )
 from health_platform.core.patient_portal.service import PatientPortalService
+from health_platform.core.wearables.models import (
+    PatientWearableDashboard,
+    DeviceConnection,
+    DeviceType,
+    GymStrengthWorkoutTelemetry,
+    GymExerciseLog,
+    Gamma40HzTelemetry,
+    ConnectDeviceInput,
+    DisconnectDeviceInput,
+    SyncWearablesInput,
+    LogWorkoutInput,
+    LogGammaSessionInput
+)
+from health_platform.core.wearables.service import WearablesService
+
+wearables_service = WearablesService(
+    identity_service=identity_service,
+    clinical_service=clinical_service
+)
 
 patient_portal_service = PatientPortalService(
     identity_service=identity_service,
@@ -127,7 +146,8 @@ patient_portal_service = PatientPortalService(
     diagnostics_service=diagnostics_service,
     pharmacy_service=pharmacy_service,
     ipd_service=ipd_service,
-    emergency_service=emergency_service
+    emergency_service=emergency_service,
+    wearables_service=wearables_service
 )
 
 import os
@@ -593,4 +613,79 @@ def answer_patient_ai_query(payload: PatientAIQueryInput):
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"AI query processing error: {str(e)}")
+
+# =============================================================================
+# 10. WEARABLES, SLEEP, NEURO-CAP (40HZ) & GYM STRENGTH ENDPOINTS (Pod 10)
+# =============================================================================
+@app.get("/api/v1/portal/patients/{mpi_id}/wearables", response_model=PatientWearableDashboard)
+def get_patient_wearables(mpi_id: uuid.UUID):
+    try:
+        return wearables_service.sync_patient_wearables(mpi_id)
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Wearables telemetry error: {str(e)}")
+
+@app.post("/api/v1/portal/patients/{mpi_id}/wearables/sync", response_model=PatientWearableDashboard)
+def sync_patient_wearables(mpi_id: uuid.UUID, payload: Optional[SyncWearablesInput] = None):
+    try:
+        steps_ovr = payload.step_override if payload else None
+        rec_ovr = payload.whoop_recovery_override if payload else None
+        return wearables_service.sync_patient_wearables(
+            mpi_id=mpi_id,
+            step_override=steps_ovr,
+            whoop_recovery_override=rec_ovr
+        )
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Wearables sync error: {str(e)}")
+
+@app.post("/api/v1/portal/wearables/connect", response_model=DeviceConnection)
+def connect_wearable_device(payload: ConnectDeviceInput):
+    try:
+        return wearables_service.connect_device(
+            mpi_id=payload.mpi_id,
+            device_type=payload.device_type,
+            device_name=payload.device_name
+        )
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+@app.post("/api/v1/portal/wearables/disconnect")
+def disconnect_wearable_device(payload: DisconnectDeviceInput):
+    try:
+        success = wearables_service.disconnect_device(payload.mpi_id, payload.device_type)
+        return {"status": "DISCONNECTED" if success else "NOT_FOUND", "device_type": payload.device_type.value}
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+@app.post("/api/v1/portal/wearables/log-workout", response_model=GymStrengthWorkoutTelemetry)
+def log_gym_strength_workout(payload: LogWorkoutInput):
+    try:
+        return wearables_service.log_gym_workout(
+            mpi_id=payload.mpi_id,
+            workout_name=payload.workout_name,
+            exercises=payload.exercises,
+            duration_minutes=payload.duration_minutes,
+            strain_generated=payload.strain_generated
+        )
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Workout logging error: {str(e)}")
+
+@app.post("/api/v1/portal/wearables/log-gamma", response_model=Gamma40HzTelemetry)
+def log_gamma_session(payload: LogGammaSessionInput):
+    try:
+        return wearables_service.log_gamma_session(
+            mpi_id=payload.mpi_id,
+            duration_minutes=payload.duration_minutes,
+            protocol=payload.protocol
+        )
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Gamma session recording error: {str(e)}")
+
 
