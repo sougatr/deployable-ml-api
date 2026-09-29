@@ -331,6 +331,34 @@ async def parse_handwritten_document(
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Document Parsing Failure: {str(e)}")
 
+@app.post("/api/v1/clinical/documents/upload-and-parse")
+async def upload_and_parse_departmental_document(
+    department: str = Form("clinician"),
+    file: Optional[UploadFile] = File(None),
+    raw_text: Optional[str] = Form(None)
+):
+    try:
+        extracted_text = ""
+        filename = file.filename if file and file.filename else f"{department}_sample.jpg"
+        if file and file.filename:
+            content = await file.read()
+            extracted_text = ClinicalDocumentParser.extract_text_from_file(content, filename, department=department)
+        elif raw_text:
+            extracted_text = raw_text
+        else:
+            extracted_text = ClinicalDocumentParser.extract_text_from_file(b"", filename, department=department)
+
+        parsed_data = ClinicalDocumentParser.parse_department_document(department, extracted_text, filename=filename)
+        return {
+            "status": "success",
+            "department": department,
+            "filename": filename,
+            "raw_extracted_text": extracted_text,
+            "parsed_data": parsed_data
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Departmental Document Parsing Failure: {str(e)}")
+
 # =============================================================================
 # 4. FINANCIAL LEDGER & RCM (Pod 3)
 # =============================================================================

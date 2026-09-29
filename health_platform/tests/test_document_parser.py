@@ -127,5 +127,95 @@ class TestClinicalDocumentParser(unittest.TestCase):
         self.assertEqual(parsed["patient_info"]["first_name"], "Anindita")
         self.assertEqual(parsed["patient_info"]["last_name"], "Ray")
 
+    def test_department_document_parser_reception(self):
+        text = (
+            "GOVERNMENT OF INDIA\nAADHAAR CARD\nName: Anindita Ray\n"
+            "DOB: 28/07/1971\nAge: 55 Yrs\nGender: Female\nPhone: +919876543210\n"
+            "Address: Flat 402, Mumbai - 400012\nAadhaar Number: 9812 4567 1234\n"
+            "ABHA ID: anindita.ray@abdm"
+        )
+        parsed = ClinicalDocumentParser.parse_identity_document(text)
+        self.assertEqual(parsed["first_name"], "Anindita")
+        self.assertEqual(parsed["last_name"], "Ray")
+        self.assertEqual(parsed["age"], 55)
+        self.assertEqual(parsed["gender"], "FEMALE")
+        self.assertEqual(parsed["aadhaar"], "9812 4567 1234")
+        self.assertEqual(parsed["abha_address"], "anindita.ray@abdm")
+
+    def test_department_document_parser_ipd(self):
+        text = (
+            "INPATIENT SUMMARY\nPatient: Anindita Ray (55/F)\n"
+            "Attending Surgeon: Dr. Anup Khatri\n"
+            "Procedure: Arthroscopic Meniscus Repair\n"
+            "Ward: Deluxe Room (Ward: DELUXE)\n"
+            "Vitals: BP: 120/80 mmHg, HR: 76 bpm, Temp: 98.4 F, SpO2: 99%, Resp: 16 /min\n"
+            "Nursing Care: Patient stable, post-op cryocuff on.\n"
+            "Doctor Rounds: Good passive ROM, minimal pain."
+        )
+        parsed = ClinicalDocumentParser.parse_ipd_document(text)
+        self.assertEqual(parsed["recommended_ward"], "DELUXE")
+        self.assertIn("Anup Khatri", parsed["admitting_doctor"])
+        self.assertEqual(parsed["vitals"]["systolic"], 120)
+        self.assertEqual(parsed["vitals"]["diastolic"], 80)
+        self.assertEqual(parsed["vitals"]["spo2"], 99)
+        self.assertIn("stable", parsed["nursing_notes"])
+
+    def test_department_document_parser_diagnostics(self):
+        text = (
+            "CENTRAL LAB & PACS\nInvestigation: Complete Blood Count & X-Ray Knee\n"
+            "Parameters:\n- Hemoglobin: 11.4 g/dL (Ref: 12.0 - 15.5) [LOW]\n"
+            "- Total Leukocyte Count: 8200 /uL (Ref: 4000 - 11000) [NORMAL]\n"
+            "Radiology Digital X-Ray Right Knee:\n"
+            "Impression: Intact post-operative right knee meniscus repair."
+        )
+        parsed = ClinicalDocumentParser.parse_diagnostics_document(text)
+        self.assertTrue(len(parsed["parameters"]) >= 2)
+        hb = next(p for p in parsed["parameters"] if "Hemoglobin" in p["name"])
+        self.assertEqual(hb["flag"], "LOW")
+        self.assertIn("meniscus repair", parsed["radiology_impression"])
+
+    def test_department_document_parser_pharmacy(self):
+        text = (
+            "SUPPLIER INVOICE\nSupplier: GlaxoSmithKline Ltd\nInvoice No: INV-2026-904\n"
+            "1. Tab Ezorb Forte | Batch: EZ-8819 | Exp: 08/2027 | Qty: 90 Tabs | MRP: Rs 245.00\n"
+            "2. Tab Pantocid 40 | Batch: PAN-4402 | Exp: 12/2026 | Qty: 30 Tabs | MRP: Rs 55.00"
+        )
+        parsed = ClinicalDocumentParser.parse_pharmacy_document(text)
+        self.assertTrue(len(parsed["items"]) >= 2)
+        ezorb = next(i for i in parsed["items"] if "Ezorb" in i["brand"])
+        self.assertEqual(ezorb["batch_number"], "EZ-8819")
+        self.assertEqual(ezorb["quantity"], 90)
+
+    def test_department_document_parser_emergency(self):
+        text = (
+            "EMS RUN SHEET\nPatient: Anindita Ray\n"
+            "Chief Complaint: Acute severe right knee trauma following slip and fall.\n"
+            "Mechanism: Blunt musculoskeletal injury.\n"
+            "Vitals on Arrival: BP: 138/88 mmHg, Pulse: 92 bpm, Temp: 98.8 F, SpO2: 99%, Resp: 18 /min, Pain Score: 8/10.\n"
+            "GCS Score: 15/15.\n"
+            "Manchester / ESI Triage Recommendation: Yellow (Category 3 - Urgent)."
+        )
+        parsed = ClinicalDocumentParser.parse_emergency_document(text)
+        self.assertIn("fall", parsed["chief_complaint"].lower())
+        self.assertEqual(parsed["recommended_esi"], "LEVEL_3_URGENT")
+        self.assertEqual(parsed["priority"], "YELLOW")
+        self.assertEqual(parsed["vitals"]["pain_score"], 8)
+        self.assertEqual(parsed["vitals"]["gcs"], 15)
+
+    def test_api_department_upload_and_parse_endpoint(self):
+        from fastapi.testclient import TestClient
+        from health_platform.api.app import app
+        client = TestClient(app)
+
+        for dept in ["reception", "diagnostics", "pharmacy", "ipd", "emergency"]:
+            res = client.post("/api/v1/clinical/documents/upload-and-parse", data={"department": dept})
+            self.assertEqual(res.status_code, 200)
+            data = res.json()
+            self.assertEqual(data["status"], "success")
+            self.assertEqual(data["department"], dept)
+            self.assertIn("parsed_data", data)
+            self.assertIn("raw_extracted_text", data)
+
 if __name__ == "__main__":
     unittest.main()
+

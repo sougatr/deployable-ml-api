@@ -279,6 +279,16 @@ class PlatformCoreTestSuite(unittest.TestCase):
         t.setUpClass()
         t.test_09_api_nutrition_endpoints()
 
+    # Departmental Document Upload & AI Ingestion (Step 1 to Step 6)
+    def test_53_department_document_ai_pipeline(self):
+        t = TestClinicalDocumentParser()
+        t.test_department_document_parser_reception()
+        t.test_department_document_parser_ipd()
+        t.test_department_document_parser_diagnostics()
+        t.test_department_document_parser_pharmacy()
+        t.test_department_document_parser_emergency()
+        t.test_api_department_upload_and_parse_endpoint()
+
 if __name__ == "__main__":
     suite = unittest.TestLoader().loadTestsFromTestCase(PlatformCoreTestSuite)
     runner = unittest.TextTestRunner(verbosity=2)
