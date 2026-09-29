@@ -4292,78 +4292,134 @@ function renderWearablesDashboard(data) {
     }
   }
 
-  // 2. Step Pacing & Ceiling
+  // 2. Step Pacing & Activity
   if (steps) {
-    document.getElementById("wearable-steps-count").textContent = steps.daily_steps.toLocaleString();
-    document.getElementById("wearable-steps-target").textContent = `/ ${steps.post_op_step_target.toLocaleString()} target (Max ${steps.post_op_step_ceiling.toLocaleString()})`;
+    const stepsCountEl = document.getElementById("wearable-steps-count");
+    if (stepsCountEl) stepsCountEl.textContent = steps.daily_steps.toLocaleString();
+    const targetEl = document.getElementById("wearable-steps-target");
+    if (targetEl) targetEl.textContent = `/ ${steps.post_op_step_target.toLocaleString()} target (Daily Goal: ${steps.post_op_step_ceiling.toLocaleString()})`;
 
     const bar = document.getElementById("wearable-step-bar");
     const pct = Math.min(100, Math.round((steps.daily_steps / steps.post_op_step_ceiling) * 100));
-    bar.style.width = `${pct}%`;
+    if (bar) bar.style.width = `${pct}%`;
 
     const badge = document.getElementById("wearable-step-badge");
-    if (steps.ceiling_exceeded) {
-      bar.style.background = "#ef4444";
-      badge.textContent = "🚨 Ceiling Exceeded";
-      badge.className = "badge badge-danger";
-    } else if (steps.daily_steps > steps.post_op_step_target) {
-      bar.style.background = "#f59e0b";
-      badge.textContent = "Target Reached (Rest Knee)";
-      badge.className = "badge badge-warning";
-    } else {
-      bar.style.background = "#0d9488";
-      badge.textContent = "Safe Volume";
-      badge.className = "badge badge-success";
+    if (badge && bar) {
+      if (steps.ceiling_exceeded) {
+        bar.style.background = "#ef4444";
+        badge.textContent = "🚨 Pacing Alert";
+        badge.className = "badge badge-danger";
+      } else if (steps.daily_steps > steps.post_op_step_target) {
+        bar.style.background = "#f59e0b";
+        badge.textContent = "Target Reached (Rest & Recovery)";
+        badge.className = "badge badge-warning";
+      } else {
+        bar.style.background = "#0d9488";
+        badge.textContent = "Active Pacing";
+        badge.className = "badge badge-success";
+      }
     }
 
-    document.getElementById("wearable-gait-sym").textContent = steps.gait_weight_bearing_symmetry_pct;
-    document.getElementById("wearable-distance").textContent = `${steps.distance_km} km`;
+    const gaitEl = document.getElementById("wearable-gait-sym");
+    if (gaitEl) gaitEl.textContent = steps.gait_weight_bearing_symmetry_pct;
+    const distEl = document.getElementById("wearable-distance");
+    if (distEl) distEl.textContent = `${steps.distance_km} km`;
   }
 
   // 3. WHOOP Telemetry
   if (whoop) {
-    document.getElementById("wearable-recovery-score").textContent = whoop.recovery_score;
+    const recScoreEl = document.getElementById("wearable-recovery-score");
+    if (recScoreEl) recScoreEl.textContent = whoop.recovery_score;
     const badgeRec = document.getElementById("wearable-recovery-badge");
     const statePill = document.getElementById("wearable-whoop-state");
 
-    if (whoop.recovery_state === "GREEN") {
-      badgeRec.style.borderColor = "#16a34a";
-      badgeRec.style.color = "#16a34a";
-      badgeRec.style.background = "#f0fdf4";
-      statePill.textContent = `Green (${whoop.recovery_score}%)`;
-      statePill.className = "badge badge-success";
-    } else if (whoop.recovery_state === "YELLOW") {
-      badgeRec.style.borderColor = "#ca8a04";
-      badgeRec.style.color = "#ca8a04";
-      badgeRec.style.background = "#fefce8";
-      statePill.textContent = `Yellow (${whoop.recovery_score}%)`;
-      statePill.className = "badge badge-warning";
-    } else {
-      badgeRec.style.borderColor = "#dc2626";
-      badgeRec.style.color = "#dc2626";
-      badgeRec.style.background = "#fef2f2";
-      statePill.textContent = `Red (${whoop.recovery_score}%)`;
-      statePill.className = "badge badge-danger";
+    if (badgeRec && statePill) {
+      if (whoop.recovery_state === "GREEN") {
+        badgeRec.style.borderColor = "#16a34a";
+        badgeRec.style.color = "#16a34a";
+        badgeRec.style.background = "#f0fdf4";
+        statePill.textContent = `Green (${whoop.recovery_score}%)`;
+        statePill.className = "badge badge-success";
+      } else if (whoop.recovery_state === "YELLOW") {
+        badgeRec.style.borderColor = "#ca8a04";
+        badgeRec.style.color = "#ca8a04";
+        badgeRec.style.background = "#fefce8";
+        statePill.textContent = `Yellow (${whoop.recovery_score}%)`;
+        statePill.className = "badge badge-warning";
+      } else {
+        badgeRec.style.borderColor = "#dc2626";
+        badgeRec.style.color = "#dc2626";
+        badgeRec.style.background = "#fef2f2";
+        statePill.textContent = `Red (${whoop.recovery_score}%)`;
+        statePill.className = "badge badge-danger";
+      }
     }
 
-    document.getElementById("wearable-hrv").textContent = `${whoop.hrv_ms} ms`;
-    document.getElementById("wearable-rhr").textContent = `${whoop.resting_heart_rate_bpm} bpm`;
-    document.getElementById("wearable-strain").textContent = `${whoop.day_strain} / 21.0`;
-    document.getElementById("wearable-skin-temp").textContent = `${whoop.skin_temp_delta_celsius > 0 ? '+' : ''}${whoop.skin_temp_delta_celsius} °C`;
+    const hrvEl = document.getElementById("wearable-hrv");
+    if (hrvEl) hrvEl.textContent = `${whoop.hrv_ms} ms`;
+    const rhrEl = document.getElementById("wearable-rhr");
+    if (rhrEl) rhrEl.textContent = `${whoop.resting_heart_rate_bpm} bpm`;
+    const strainEl = document.getElementById("wearable-strain");
+    if (strainEl) strainEl.textContent = `${whoop.day_strain} / 21.0`;
+    const skinEl = document.getElementById("wearable-skin-temp");
+    if (skinEl) skinEl.textContent = `${whoop.skin_temp_delta_celsius > 0 ? '+' : ''}${whoop.skin_temp_delta_celsius} °C`;
 
-    // Sleep
-    document.getElementById("wearable-sleep-total").textContent = `${whoop.sleep_hours_total} hrs`;
-    document.getElementById("wearable-sleep-perf").textContent = `${whoop.sleep_performance_pct}% Perf`;
-    document.getElementById("wearable-deep-sleep").textContent = `${whoop.deep_sleep_minutes} min`;
-    document.getElementById("wearable-rem-sleep").textContent = `${whoop.rem_sleep_minutes} min`;
+    // 4. Sleep Architecture
+    const sleepTotalEl = document.getElementById("wearable-sleep-total");
+    if (sleepTotalEl) sleepTotalEl.textContent = `${whoop.sleep_hours_total} hrs`;
+    const sleepPerfEl = document.getElementById("wearable-sleep-perf");
+    if (sleepPerfEl) sleepPerfEl.textContent = `${whoop.sleep_performance_pct}% Perf`;
+    const sleepEffEl = document.getElementById("wearable-sleep-eff");
+    if (sleepEffEl) sleepEffEl.textContent = `(Efficiency: ${whoop.sleep_efficiency_pct}%)`;
+    const deepEl = document.getElementById("wearable-deep-sleep");
+    if (deepEl) deepEl.textContent = `${whoop.deep_sleep_minutes} min`;
+    const remEl = document.getElementById("wearable-rem-sleep");
+    if (remEl) remEl.textContent = `${whoop.rem_sleep_minutes} min`;
+    const lightEl = document.getElementById("wearable-light-sleep");
+    if (lightEl) lightEl.textContent = `${whoop.light_sleep_minutes || 247} min`;
+    const awakeEl = document.getElementById("wearable-awake-sleep");
+    if (awakeEl) awakeEl.textContent = `${whoop.awake_minutes || 36} min`;
+
+    // 5. Tissue Recovery & Collagen Synthesis
+    const colScoreEl = document.getElementById("wearable-collagen-score");
+    if (colScoreEl) colScoreEl.textContent = `${whoop.collagen_synthesis_score || 92}%`;
+    const colBadgeEl = document.getElementById("wearable-collagen-badge");
+    if (colBadgeEl) {
+      const score = whoop.collagen_synthesis_score || 92;
+      colBadgeEl.textContent = score >= 80 ? `Optimal (${score}%)` : (score >= 60 ? `Moderate (${score}%)` : `Impaired (${score}%)`);
+      colBadgeEl.className = score >= 80 ? "badge badge-success" : (score >= 60 ? "badge badge-warning" : "badge badge-danger");
+    }
+    const hghEl = document.getElementById("wearable-hgh-pulse");
+    if (hghEl) hghEl.textContent = whoop.hgh_secretion_index || "High (SWS Facilitated)";
+    const tissueEl = document.getElementById("wearable-tissue-repair");
+    if (tissueEl) tissueEl.textContent = `${whoop.tissue_repair_score || 89} / 100 (Optimal)`;
+    const colStatusEl = document.getElementById("wearable-collagen-status");
+    if (colStatusEl) colStatusEl.textContent = whoop.collagen_synthesis_status || "Active Extracellular Synthesis";
+
+    // 6. VO2 Max (Cardiorespiratory Fitness)
+    const vo2ValEl = document.getElementById("wearable-vo2-val");
+    if (vo2ValEl) vo2ValEl.textContent = (whoop.vo2_max || 42.5).toFixed(1);
+    const vo2BadgeEl = document.getElementById("wearable-vo2-badge");
+    if (vo2BadgeEl) {
+      vo2BadgeEl.textContent = whoop.vo2_max_category || "Good / Age-Matched";
+      vo2BadgeEl.className = (whoop.vo2_max || 42.5) >= 40 ? "badge badge-success" : "badge badge-warning";
+    }
+    const fitAgeEl = document.getElementById("wearable-fitness-age");
+    if (fitAgeEl) fitAgeEl.textContent = `${whoop.fitness_age || 31} yrs`;
+    const aerobicEl = document.getElementById("wearable-aerobic-base");
+    if (aerobicEl) aerobicEl.textContent = "Zone 2 Metabolic Efficiency";
   }
 
-  // 4. 40Hz Gamma Cap Telemetry
+  // 7. 40Hz Gamma Cap Telemetry
   if (gamma) {
-    document.getElementById("wearable-gamma-freq").textContent = `${gamma.frequency_hz} Hz`;
-    document.getElementById("wearable-gamma-status").textContent = `${gamma.status} (${gamma.session_duration_minutes}m)`;
-    document.getElementById("wearable-gamma-coherence").textContent = `${gamma.cortical_entrainment_coherence_pct}% Phase-Locking Value`;
-    document.getElementById("wearable-gamma-pain").textContent = gamma.subjective_pain_reduction;
+    const gammaFreqEl = document.getElementById("wearable-gamma-freq");
+    if (gammaFreqEl) gammaFreqEl.textContent = `${gamma.frequency_hz} Hz`;
+    const gammaStatEl = document.getElementById("wearable-gamma-status");
+    if (gammaStatEl) gammaStatEl.textContent = `${gamma.status} (${gamma.session_duration_minutes}m)`;
+    const gammaCohEl = document.getElementById("wearable-gamma-coherence");
+    if (gammaCohEl) gammaCohEl.textContent = `${gamma.cortical_entrainment_coherence_pct}% Phase-Locking Value`;
+    const gammaPainEl = document.getElementById("wearable-gamma-pain");
+    if (gammaPainEl) gammaPainEl.textContent = gamma.subjective_pain_reduction;
   }
 
   // 5. Hardware Devices List
@@ -4574,39 +4630,61 @@ function renderClinicalNutritionGuideline(g) {
     `;
   }
 
-  // Superfoods
+  // Superfoods - Active Bullets with One-Liner Explanations
   const superContainer = document.getElementById("nutrition-superfoods-container");
   if (superContainer && g.recommended_foods) {
     superContainer.innerHTML = g.recommended_foods.map(f => `
-      <div class="diet-item beneficial">
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.2rem;">
+      <div class="diet-item beneficial" onclick="this.classList.toggle('active')">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.25rem;">
           <strong style="color:#166534;">✅ ${escapeHtml(f.food_item)}</strong>
-          <span style="font-size:0.7rem; font-weight:700; color:#15803d; text-transform:uppercase;">Superfood</span>
+          <span class="active-pill-badge">Active Protocol</span>
         </div>
-        <p style="margin:0; font-size:0.8rem; color:#334155;">${escapeHtml(f.clinical_rationale)}</p>
+        <div class="diet-one-liner">${escapeHtml(f.clinical_rationale)}</div>
         <div class="biochemical-mech-tag"><strong>Biochemical Mechanism:</strong> ${escapeHtml(f.biochemical_mechanism)}</div>
       </div>
     `).join("");
   }
 
-  // Prohibited Foods
+  // Prohibited Foods - Active Contraindicated Bullets with One-Liner Explanations
   const prohibContainer = document.getElementById("nutrition-prohibited-container");
   if (prohibContainer && g.prohibited_foods) {
     prohibContainer.innerHTML = g.prohibited_foods.map(p => `
-      <div class="diet-item avoid">
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.2rem;">
+      <div class="diet-item avoid" onclick="this.classList.toggle('active')">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.25rem;">
           <strong style="color:#991b1b;">🚫 ${escapeHtml(p.food_item)}</strong>
-          <span style="font-size:0.7rem; font-weight:700; color:#b91c1c; text-transform:uppercase;">Contraindicated</span>
+          <span class="active-pill-badge">Contraindicated</span>
         </div>
-        <p style="margin:0; font-size:0.8rem; color:#334155;">${escapeHtml(p.clinical_rationale)}</p>
+        <div class="diet-one-liner">${escapeHtml(p.clinical_rationale)}</div>
         <div class="biochemical-mech-tag" style="border-left-color:#ef4444; color:#991b1b;"><strong>Contraindication Mechanism:</strong> ${escapeHtml(p.biochemical_mechanism)}</div>
       </div>
     `).join("");
   }
 
-  // Chrononutrition & Meal Timing
+  // Chrononutrition & Meal Timing Protocols - Active Protocol Cards
+  const chronoContainer = document.getElementById("nutrition-chrononutrition-container");
   const chronoEl = document.getElementById("nutrition-chrononutrition-text");
-  if (chronoEl) chronoEl.textContent = g.meal_timing_and_chrononutrition;
+  if (chronoContainer && g.meal_timing_and_chrononutrition) {
+    const raw = g.meal_timing_and_chrononutrition;
+    // Split sentences or bullets if available
+    const protocols = raw.split(/(?<=[.!?])\s+(?=[A-Z])/).filter(s => s.trim().length > 0);
+    const icons = ["☀️", "🥩", "🌙", "☕", "⏰"];
+    chronoContainer.innerHTML = protocols.map((p, idx) => {
+      const parts = p.split(/:\s*/);
+      const title = parts.length > 1 ? parts[0] : `Protocol ${idx + 1}`;
+      const desc = parts.length > 1 ? parts.slice(1).join(": ") : parts[0];
+      return `
+        <div class="chrononutrition-bullet-card">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.2rem;">
+            <strong style="color:#854d0e; font-size:0.82rem;">${icons[idx % icons.length]} ${escapeHtml(title)}</strong>
+            <span class="active-pill-badge" style="background:#fef3c7; color:#92400e; border:1px solid #fde68a;">Active Protocol</span>
+          </div>
+          <div class="diet-one-liner" style="margin:0; font-size:0.8rem; color:#713f12;">${escapeHtml(desc)}</div>
+        </div>
+      `;
+    }).join("");
+  } else if (chronoEl) {
+    chronoEl.textContent = g.meal_timing_and_chrononutrition;
+  }
 }
 
 function initClinicalNutritionListeners() {

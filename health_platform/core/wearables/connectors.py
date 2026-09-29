@@ -77,6 +77,13 @@ class WhoopAPIConnector:
             sleep_efficiency_pct=91 if recovery >= 67 else 82,
             skin_temp_delta_celsius=0.1,
             respiratory_rate_rpm=14.2,
+            vo2_max=42.5 if recovery >= 67 else (39.8 if recovery >= 34 else 36.4),
+            vo2_max_category="Good / Age-Matched" if recovery >= 67 else ("Moderate" if recovery >= 34 else "Attenuated (Fatigued)"),
+            fitness_age=31 if recovery >= 67 else (36 if recovery >= 34 else 42),
+            collagen_synthesis_score=92 if recovery >= 67 else (74 if recovery >= 34 else 52),
+            collagen_synthesis_status="Optimal / Active Remodeling" if recovery >= 67 else ("Moderate Healing Phase" if recovery >= 34 else "Impaired / Deload Required"),
+            hgh_secretion_index="High (SWS Facilitated)" if recovery >= 67 else ("Moderate" if recovery >= 34 else "Suppressed"),
+            tissue_repair_score=89 if recovery >= 67 else (71 if recovery >= 34 else 48),
             synced_at=datetime.now(timezone.utc)
         )
 

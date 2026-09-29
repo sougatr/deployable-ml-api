@@ -58,6 +58,13 @@ class WhoopTelemetry(BaseModel):
     sleep_efficiency_pct: int = Field(default=91, ge=0, le=100)
     skin_temp_delta_celsius: float = Field(default=0.1, description="Deviation from baseline. Useful for early inflammation/infection alert")
     respiratory_rate_rpm: float = Field(default=14.2)
+    vo2_max: float = Field(default=42.5, description="VO2 Max in mL/kg/min (cardiorespiratory fitness)")
+    vo2_max_category: str = Field(default="Good / Age-Matched", description="Cardiorespiratory fitness category")
+    fitness_age: int = Field(default=31, description="Biological cardiovascular fitness age")
+    collagen_synthesis_score: int = Field(default=92, ge=0, le=100, description="Estimated tissue recovery & collagen remodeling index")
+    collagen_synthesis_status: str = Field(default="Optimal / Active Remodeling", description="Current status of collagen matrix synthesis")
+    hgh_secretion_index: str = Field(default="High (SWS Facilitated)", description="Nocturnal HGH secretion surge indicator")
+    tissue_repair_score: int = Field(default=89, ge=0, le=100, description="Microvascular & synovial healing rate")
     synced_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 class Gamma40HzTelemetry(BaseModel):

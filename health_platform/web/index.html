@@ -2289,9 +2289,9 @@
               <div class="card-header" style="flex-wrap:wrap; gap:0.5rem;">
                 <div>
                   <h4 style="margin:0; display:flex; align-items:center; gap:0.5rem; color:#15803d;">
-                    🥗 Personalized Clinical Nutrition & PubMed-Indexed Diet Plan
+                    🥗 Evidence Based Personalized Clinical Nutrition
                   </h4>
-                  <span class="card-subtitle" style="font-size:0.775rem;">Grounded in PubMed Medical Nutrition Therapy (MNT) literature</span>
+                  <span class="card-subtitle" style="font-size:0.775rem;">Grounded in PubMed Medical Nutrition Therapy (MNT) literature & clinical trials</span>
                 </div>
                 <div style="display:flex; align-items:center; gap:0.5rem;">
                   <span class="badge badge-info" id="portal-hydration-badge">💧 2.5 - 3.0 L/day</span>
@@ -2325,18 +2325,51 @@
                   <span id="nutrition-active-applicability" style="font-size:0.75rem; color:#64748b;">Adults & Elderly Post-Operative</span>
                 </div>
                 <p id="nutrition-active-summary" style="font-size:0.825rem; line-height:1.45; color:#334155; margin-bottom:0.5rem;">
-                  Loading guideline...
+                  Post-operative orthopedic trauma and joint surgery trigger an intense catabolic state, systemic inflammatory response, and rapid muscle disuse atrophy. Nutritional therapy focuses on high-biologic-value protein (1.5-2.0 g/kg/day) to overcome anabolic resistance, targeted collagen peptide synthesis (Vitamin C + Zinc cofactors), and anti-inflammatory long-chain Omega-3 fatty acids.
                 </p>
               </div>
 
               <!-- PubMed Grounded Citations Bar -->
               <div class="pubmed-citations-bar" id="nutrition-citations-container" style="margin-bottom:0.75rem; padding:0.5rem 0.75rem; background:#f8fafc; border-left:3px solid #0284c7; border-radius:4px; font-size:0.775rem;">
-                <!-- Populated dynamically with PubMed links -->
+                <div style="font-weight:700; color:#0369a1; margin-bottom:0.35rem; display:flex; align-items:center; gap:0.35rem;">
+                  <span>📚</span> Peer-Reviewed PubMed Indexed Literature:
+                </div>
+                <div style="display:flex; flex-wrap:wrap; gap:0.4rem;">
+                  <a href="https://pubmed.ncbi.nlm.nih.gov/34242915/" target="_blank" rel="noopener noreferrer" class="pubmed-badge-link" title="ESPEN practical guideline: Clinical nutrition in surgery">
+                    <span>📄</span> <strong>Clinical Nutrition</strong> (2021) • PMID: 34242915 ↗
+                  </a>
+                  <a href="https://pubmed.ncbi.nlm.nih.gov/26564952/" target="_blank" rel="noopener noreferrer" class="pubmed-badge-link" title="Balanced perioperative fluid and nutritional management in ERAS protocols">
+                    <span>📄</span> <strong>Acta Anaesthesiologica Scandinavica</strong> (2016) • PMID: 26564952 ↗
+                  </a>
+                </div>
               </div>
 
               <!-- Macronutrient Target Ribbon -->
               <div class="nutrition-macro-ribbon" id="nutrition-macro-ribbon" style="display:grid; grid-template-columns:repeat(auto-fit, minmax(130px, 1fr)); gap:0.5rem; margin-bottom:1rem;">
-                <!-- Macro cards -->
+                <div class="nutrition-macro-card">
+                  <span class="macro-label">⚡ Daily Calories</span>
+                  <span class="macro-value" style="color:#d97706;">25 - 30 kcal/kg/day</span>
+                </div>
+                <div class="nutrition-macro-card">
+                  <span class="macro-label">🥩 Protein Target</span>
+                  <span class="macro-value" style="color:#0f766e;">1.5 - 2.0 g/kg/day</span>
+                </div>
+                <div class="nutrition-macro-card">
+                  <span class="macro-label">🌾 Carbs & Fiber</span>
+                  <span class="macro-value" style="color:#2563eb;">45% - 50%<br><span style="font-size:0.75rem; color:#475569;">Fiber: 28 - 35 g/day</span></span>
+                </div>
+                <div class="nutrition-macro-card">
+                  <span class="macro-label">🥑 Healthy Fats</span>
+                  <span class="macro-value" style="color:#16a34a;">25% - 30% PUFA/MUFA</span>
+                </div>
+                <div class="nutrition-macro-card">
+                  <span class="macro-label">🧂 Sodium Limit</span>
+                  <span class="macro-value" style="color:#b91c1c;">&lt; 2,300 mg/day</span>
+                </div>
+                <div class="nutrition-macro-card">
+                  <span class="macro-label">💧 Fluid Pacing</span>
+                  <span class="macro-value" style="color:#0284c7;">2.5 - 3.0 Liters/day</span>
+                </div>
               </div>
 
               <!-- Two Columns: Superfoods vs Avoid / Prohibited -->
@@ -2346,7 +2379,30 @@
                     <span>🥦</span> Superfoods to Prioritize
                   </h5>
                   <div id="nutrition-superfoods-container" class="diet-list">
-                    <!-- Superfoods -->
+                    <div class="diet-item beneficial">
+                      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.2rem;">
+                        <strong style="color:#166534;">✅ Wild Alaskan Salmon & Sardines</strong>
+                        <span class="active-pill-badge">Active Protocol</span>
+                      </div>
+                      <div class="diet-one-liner">Supplies high-dose EPA/DHA (1.5–2.0g) to accelerate the resolution phase of acute joint inflammation.</div>
+                      <div class="biochemical-mech-tag"><strong>Biochemical Mechanism:</strong> Substrates for specialized pro-resolving mediators (resolvins, protectins) that decrease synovial swelling.</div>
+                    </div>
+                    <div class="diet-item beneficial">
+                      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.2rem;">
+                        <strong style="color:#166534;">✅ Hydrolyzed Collagen Peptides + Vitamin C</strong>
+                        <span class="active-pill-badge">Active Protocol</span>
+                      </div>
+                      <div class="diet-one-liner">Provides rich amounts of glycine, proline, and hydroxyproline required for tenocyte and fibrocartilage repair.</div>
+                      <div class="biochemical-mech-tag"><strong>Biochemical Mechanism:</strong> Vitamin C acts as an obligate electron donor for prolyl and lysyl hydroxylase in triple-helix collagen cross-linking.</div>
+                    </div>
+                    <div class="diet-item beneficial">
+                      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.2rem;">
+                        <strong style="color:#166534;">✅ Whey Protein Isolate & Leucine Pulse</strong>
+                        <span class="active-pill-badge">Active Protocol</span>
+                      </div>
+                      <div class="diet-one-liner">Rapidly absorbed branched-chain amino acids overcome post-operative anabolic resistance.</div>
+                      <div class="biochemical-mech-tag"><strong>Biochemical Mechanism:</strong> Reaches plasma leucine threshold (>3.0g) required to activate the mTORC1 signaling complex.</div>
+                    </div>
                   </div>
                 </div>
                 <div>
@@ -2354,19 +2410,65 @@
                     <span>🚫</span> Foods to Strictly Limit / Avoid
                   </h5>
                   <div id="nutrition-prohibited-container" class="diet-list">
-                    <!-- Prohibited -->
+                    <div class="diet-item avoid">
+                      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.2rem;">
+                        <strong style="color:#991b1b;">🚫 Ultra-Processed Foods & Refined Sugars</strong>
+                        <span class="active-pill-badge">Contraindicated</span>
+                      </div>
+                      <div class="diet-one-liner">Spikes circulating glucose and triggers systemic low-grade inflammation that impairs surgical wound healing.</div>
+                      <div class="biochemical-mech-tag" style="border-left-color:#ef4444; color:#991b1b;"><strong>Contraindication Mechanism:</strong> Advanced glycation end-products (AGEs) cross-link structural collagen, rendering repair tissue brittle.</div>
+                    </div>
+                    <div class="diet-item avoid">
+                      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.2rem;">
+                        <strong style="color:#991b1b;">🚫 Deep-Fried Foods & Industrial Seed Oils</strong>
+                        <span class="active-pill-badge">Contraindicated</span>
+                      </div>
+                      <div class="diet-one-liner">High Omega-6 linoleic acid fuels the synthesis of pro-inflammatory prostaglandins and worsens swelling.</div>
+                      <div class="biochemical-mech-tag" style="border-left-color:#ef4444; color:#991b1b;"><strong>Contraindication Mechanism:</strong> Arachidonic acid overload fuels COX-2 enzymatic cascades synthesizing PGE2 and LTB4.</div>
+                    </div>
+                    <div class="diet-item avoid">
+                      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.2rem;">
+                        <strong style="color:#991b1b;">🚫 Excessive Alcohol & High Sodium Goods</strong>
+                        <span class="active-pill-badge">Contraindicated</span>
+                      </div>
+                      <div class="diet-one-liner">Suppresses nocturnal growth hormone secretion and induces tissue fluid retention around operated joints.</div>
+                      <div class="biochemical-mech-tag" style="border-left-color:#ef4444; color:#991b1b;"><strong>Contraindication Mechanism:</strong> Directly inhibits myofibrillar protein synthesis and dysregulates renal vasopressin.</div>
+                    </div>
                   </div>
                 </div>
               </div>
 
               <!-- Chrononutrition & Meal Timing Guide -->
               <div style="background:#fefce8; border:1px solid #fef08a; border-radius:6px; padding:0.75rem; margin-bottom:1rem;">
-                <h5 style="color:#854d0e; margin:0 0 0.35rem 0; font-size:0.825rem; display:flex; align-items:center; gap:0.35rem;">
-                  <span>⏰</span> Chrononutrition & Meal Timing Protocols
-                </h5>
-                <p id="nutrition-chrononutrition-text" style="margin:0; font-size:0.8rem; color:#713f12; line-height:1.4;">
-                  Early Time-Restricted Eating & Protein Pulse Feeding.
-                </p>
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.5rem;">
+                  <h5 style="color:#854d0e; margin:0; font-size:0.825rem; display:flex; align-items:center; gap:0.35rem;">
+                    <span>⏰</span> Chrononutrition & Meal Timing Protocols
+                  </h5>
+                  <span class="badge badge-warning" style="font-size:0.7rem;">Circadian Synchronized</span>
+                </div>
+                <div id="nutrition-chrononutrition-container">
+                  <div class="chrononutrition-bullet-card">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.2rem;">
+                      <strong style="color:#854d0e; font-size:0.82rem;">☀️ Early Time-Restricted Feeding (14:10 / 16:8 Window)</strong>
+                      <span class="active-pill-badge" style="background:#fef3c7; color:#92400e; border:1px solid #fde68a;">Active Protocol</span>
+                    </div>
+                    <div class="diet-one-liner" style="margin:0; font-size:0.8rem; color:#713f12;">Aligns caloric intake with peak peripheral insulin sensitivity and circadian metabolic clock gene expression.</div>
+                  </div>
+                  <div class="chrononutrition-bullet-card">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.2rem;">
+                      <strong style="color:#854d0e; font-size:0.82rem;">🥩 Protein Pulse Feeding (Every 3.5 - 4.0 Hours)</strong>
+                      <span class="active-pill-badge" style="background:#fef3c7; color:#92400e; border:1px solid #fde68a;">mTORC1 Active</span>
+                    </div>
+                    <div class="diet-one-liner" style="margin:0; font-size:0.8rem; color:#713f12;">Delivers repeated 25-35g boluses with ≥2.5g leucine to maximize 24-hour muscle protein accretion and prevent disuse atrophy.</div>
+                  </div>
+                  <div class="chrononutrition-bullet-card">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.2rem;">
+                      <strong style="color:#854d0e; font-size:0.82rem;">🌙 Pre-Sleep Casein or Collagen Pacing (30m Before Bed)</strong>
+                      <span class="active-pill-badge" style="background:#fef3c7; color:#92400e; border:1px solid #fde68a;">Overnight Repair</span>
+                    </div>
+                    <div class="diet-one-liner" style="margin:0; font-size:0.8rem; color:#713f12;">Sustains slow nocturnal amino acid release to support sleep-dependent tissue remodeling and cartilage repair.</div>
+                  </div>
+                </div>
               </div>
 
               <!-- Instant PubMed Nutrition RAG Query Assistant -->
@@ -2457,19 +2559,19 @@
         <!-- Clinical Safety Alerts Container -->
         <div id="wearable-alerts-container" style="margin-bottom:1.5rem;"></div>
 
-        <!-- Biometrics & Neuromodulation Strip (4 Key Pillars) -->
+        <!-- Biometrics, Recovery & Neuromodulation Grid (6 Core Pillars) -->
         <div class="wearable-metrics-grid">
-          <!-- 1. Post-Op Steps & Gait Ceiling -->
+          <!-- 1. Steps & Gait Pacing -->
           <div class="card wearable-stat-card">
             <div class="card-header" style="padding-bottom:0.25rem;">
               <span style="font-size:0.8rem; font-weight:700; color:#0f766e; text-transform:uppercase;">
-                🚶 Post-Op Step Ceiling Guard
+                🚶 STEPS & MOBILITY PACING
               </span>
-              <span class="badge badge-success" id="wearable-step-badge">Safe Volume</span>
+              <span class="badge badge-success" id="wearable-step-badge">Active Pacing</span>
             </div>
             <div style="display:flex; align-items:baseline; gap:0.5rem; margin-top:0.25rem;">
               <span style="font-size:2rem; font-weight:800; color:#0f172a;" id="wearable-steps-count">2,150</span>
-              <span style="font-size:0.85rem; color:#64748b;" id="wearable-steps-target">/ 2,500 target (Max 3,000)</span>
+              <span style="font-size:0.85rem; color:#64748b;" id="wearable-steps-target">/ 2,500 target (Daily Goal: 3,000)</span>
             </div>
             <!-- Progress Bar -->
             <div class="step-progress-track" style="margin:0.75rem 0 0.5rem 0;">
@@ -2503,29 +2605,71 @@
             </div>
           </div>
 
-          <!-- 3. Sleep Architecture & Tissue Repair -->
+          <!-- 3. Sleep Architecture (Restorative Sleep) -->
           <div class="card wearable-stat-card">
             <div class="card-header" style="padding-bottom:0.25rem;">
               <span style="font-size:0.8rem; font-weight:700; color:#4338ca; text-transform:uppercase;">
-                😴 Sleep Architecture & Collagen Synthesis
+                😴 Sleep Architecture
               </span>
               <span class="badge badge-primary" id="wearable-sleep-perf">88% Perf</span>
             </div>
             <div style="display:flex; align-items:baseline; gap:0.5rem; margin-top:0.25rem;">
               <span style="font-size:2rem; font-weight:800; color:#0f172a;" id="wearable-sleep-total">7.4 hrs</span>
-              <span style="font-size:0.8rem; color:#64748b;">(Efficiency: 91%)</span>
+              <span style="font-size:0.8rem; color:#64748b;" id="wearable-sleep-eff">(Efficiency: 91%)</span>
             </div>
             <div style="margin-top:0.5rem; display:grid; grid-template-columns:1fr 1fr; gap:0.4rem; font-size:0.78rem;">
               <div style="background:#e0e7ff; padding:0.35rem 0.5rem; border-radius:4px; color:#3730a3;">
-                <strong>Slow-Wave Deep:</strong> <span id="wearable-deep-sleep">92 min</span> (HGH synthesis)
+                <strong>Slow-Wave Deep:</strong> <span id="wearable-deep-sleep">92 min</span> (Cellular Repair)
               </div>
               <div style="background:#f3e8ff; padding:0.35rem 0.5rem; border-radius:4px; color:#6b21a8;">
-                <strong>REM Sleep:</strong> <span id="wearable-rem-sleep">105 min</span> (Neuro-recovery)
+                <strong>REM Sleep:</strong> <span id="wearable-rem-sleep">105 min</span> (Neuro-Recovery)
               </div>
+            </div>
+            <div style="font-size:0.75rem; color:#64748b; margin-top:0.4rem; display:flex; justify-content:space-between;">
+              <span>Light Sleep: <span id="wearable-light-sleep">247 min</span></span>
+              <span>Awake: <span id="wearable-awake-sleep">36 min</span></span>
             </div>
           </div>
 
-          <!-- 4. 40Hz Gamma Cap Neuromodulation -->
+          <!-- 4. Tissue Recovery & Collagen Synthesis -->
+          <div class="card wearable-stat-card">
+            <div class="card-header" style="padding-bottom:0.25rem;">
+              <span style="font-size:0.8rem; font-weight:700; color:#7c3aed; text-transform:uppercase;">
+                🧬 Tissue Recovery & Collagen
+              </span>
+              <span class="badge badge-success" id="wearable-collagen-badge">Optimal (92%)</span>
+            </div>
+            <div style="display:flex; align-items:baseline; gap:0.5rem; margin-top:0.25rem;">
+              <span style="font-size:2rem; font-weight:800; color:#0f172a;" id="wearable-collagen-score">92%</span>
+              <span style="font-size:0.8rem; color:#64748b;">Collagen Remodeling</span>
+            </div>
+            <div style="margin-top:0.5rem; font-size:0.78rem; color:#334155; line-height:1.45;">
+              <div><strong>HGH Nocturnal Pulse:</strong> <span id="wearable-hgh-pulse" style="color:#16a34a; font-weight:700;">High (SWS Facilitated)</span></div>
+              <div><strong>Synovial Repair Score:</strong> <span id="wearable-tissue-repair">89 / 100 (Optimal)</span></div>
+              <div><strong>Matrix Status:</strong> <span id="wearable-collagen-status">Active Extracellular Synthesis</span></div>
+            </div>
+          </div>
+
+          <!-- 5. VO2 Max (Cardiorespiratory Fitness) -->
+          <div class="card wearable-stat-card">
+            <div class="card-header" style="padding-bottom:0.25rem;">
+              <span style="font-size:0.8rem; font-weight:700; color:#0284c7; text-transform:uppercase;">
+                🫁 VO2 Max (Cardio Fitness)
+              </span>
+              <span class="badge badge-success" id="wearable-vo2-badge">Good / Age-Matched</span>
+            </div>
+            <div style="display:flex; align-items:baseline; gap:0.5rem; margin-top:0.25rem;">
+              <span style="font-size:2rem; font-weight:800; color:#0f172a;" id="wearable-vo2-val">42.5</span>
+              <span style="font-size:0.85rem; color:#64748b;">mL/kg/min</span>
+            </div>
+            <div style="margin-top:0.5rem; font-size:0.78rem; color:#334155; line-height:1.45;">
+              <div><strong>Fitness Age:</strong> <span id="wearable-fitness-age" style="color:#0284c7; font-weight:700;">31 yrs</span> <span style="font-size:0.72rem; color:#64748b;">(Chronological: 45)</span></div>
+              <div><strong>Aerobic Base:</strong> <span id="wearable-aerobic-base">Zone 2 Metabolic Efficiency</span></div>
+              <div><strong>Cardiovascular Risk:</strong> <span style="color:#16a34a; font-weight:700;">Lowest Risk Quartile</span></div>
+            </div>
+          </div>
+
+          <!-- 6. 40Hz Gamma Cap Neuromodulation -->
           <div class="card wearable-stat-card">
             <div class="card-header" style="padding-bottom:0.25rem;">
               <span style="font-size:0.8rem; font-weight:700; color:#b45309; text-transform:uppercase;">

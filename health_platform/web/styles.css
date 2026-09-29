@@ -2680,20 +2680,77 @@ body {
 
 /* Diet & Exercise Items */
 .diet-item {
-  padding: 0.75rem;
-  border-radius: 6px;
-  margin-bottom: 0.6rem;
+  padding: 0.75rem 0.85rem;
+  border-radius: 8px;
+  margin-bottom: 0.65rem;
   font-size: 0.85rem;
+  border: 1px solid transparent;
+  transition: all 0.2s ease;
+  cursor: pointer;
+}
+
+.diet-item:hover {
+  transform: translateX(2px);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
 }
 
 .diet-item.beneficial {
   background: #f0fdf4;
+  border: 1px solid #bbf7d0;
   border-left: 4px solid #16a34a;
 }
 
 .diet-item.avoid {
   background: #fff1f2;
+  border: 1px solid #fecdd3;
   border-left: 4px solid #e11d48;
+}
+
+.diet-item .active-pill-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-size: 0.68rem;
+  font-weight: 700;
+  padding: 0.15rem 0.45rem;
+  border-radius: 9999px;
+  text-transform: uppercase;
+}
+
+.diet-item.beneficial .active-pill-badge {
+  background: #dcfce7;
+  color: #15803d;
+  border: 1px solid #86efac;
+}
+
+.diet-item.avoid .active-pill-badge {
+  background: #ffe4e6;
+  color: #9f1239;
+  border: 1px solid #fca5a5;
+}
+
+.diet-one-liner {
+  margin: 0.25rem 0 0.35rem 0;
+  font-size: 0.82rem;
+  line-height: 1.45;
+  color: #1e293b;
+  font-weight: 500;
+}
+
+.chrononutrition-bullet-card {
+  padding: 0.6rem 0.8rem;
+  background: #ffffff;
+  border: 1px solid #fef08a;
+  border-left: 4px solid #ca8a04;
+  border-radius: 6px;
+  margin-bottom: 0.5rem;
+  transition: all 0.15s ease;
+  cursor: pointer;
+}
+
+.chrononutrition-bullet-card:hover {
+  transform: translateX(2px);
+  background: #fffbeb;
 }
 
 /* Clinical Nutrition & PubMed Engine Styling */
