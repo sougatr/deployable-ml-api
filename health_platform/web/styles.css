@@ -2289,6 +2289,63 @@ body {
   border-left: 4px solid #e11d48;
 }
 
+/* Clinical Nutrition & PubMed Engine Styling */
+.nutrition-macro-card {
+  background: #ffffff;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 0.5rem 0.65rem;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.03);
+}
+
+.nutrition-macro-card .macro-label {
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: #64748b;
+  margin-bottom: 0.2rem;
+  display: block;
+}
+
+.nutrition-macro-card .macro-value {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #0f172a;
+  line-height: 1.25;
+}
+
+.pubmed-badge-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.2rem 0.45rem;
+  background: #e0f2fe;
+  color: #0369a1;
+  border: 1px solid #bae6fd;
+  border-radius: 4px;
+  text-decoration: none;
+  font-weight: 600;
+  font-size: 0.725rem;
+  transition: all 0.15s ease;
+}
+
+.pubmed-badge-link:hover {
+  background: #0284c7;
+  color: #ffffff;
+  text-decoration: none;
+}
+
+.biochemical-mech-tag {
+  display: block;
+  font-size: 0.725rem;
+  color: #475569;
+  background: rgba(0,0,0,0.03);
+  padding: 0.25rem 0.4rem;
+  border-radius: 4px;
+  margin-top: 0.35rem;
+  border-left: 2px solid #94a3b8;
+}
+
 .exercise-item {
   background: #f8fafc;
   border: 1px solid var(--border);

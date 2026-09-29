@@ -23,6 +23,8 @@ from health_platform.core.patient_portal.models import (
     PatientAIQueryInput,
     PatientAIQueryResponse
 )
+from health_platform.core.nutrition_rag.service import NutritionRAGService
+from health_platform.core.nutrition_rag.models import DietRAGQueryInput
 
 class PatientPortalService:
     def __init__(
@@ -33,7 +35,8 @@ class PatientPortalService:
         pharmacy_service,
         ipd_service=None,
         emergency_service=None,
-        wearables_service=None
+        wearables_service=None,
+        nutrition_rag_service=None
     ):
         self.identity_service = identity_service
         self.clinical_service = clinical_service
@@ -42,6 +45,7 @@ class PatientPortalService:
         self.ipd_service = ipd_service
         self.emergency_service = emergency_service
         self.wearables_service = wearables_service
+        self.nutrition_rag = nutrition_rag_service or NutritionRAGService()
 
     def get_patient_portal_summary(self, mpi_id: uuid.UUID) -> PatientPortalSummary:
         """
@@ -829,11 +833,78 @@ class PatientPortalService:
                 f"Ankle Pumps (20 reps every 2 hours), Straight Leg Raises, and gentle seated Heel Slides (up to 90 degrees). "
                 f"Important: Strictly avoid deep squats past 90°, jumping, running, or lifting heavy weights (> 5 kg) until your surgeon provides formal clearance."
             )
-        elif "diet" in q_lower or "food" in q_lower or "eat" in q_lower or "turmeric" in q_lower:
+        elif any(k in q_lower for k in ["diabet", "sugar", "glucose"]):
+            rag_res = self.nutrition_rag.query_nutrition_rag(DietRAGQueryInput(query=input_data.question, age=summary.age))
+            cit_txt = ", ".join([f"{c.journal} (PMID: {c.pmid})" for c in rag_res.relevant_citations[:2]])
             answer = (
-                f"Hello {summary.full_name}. To accelerate your recovery, prioritize anti-inflammatory foods: Turmeric with black pepper, wild fish or chia seeds (Omega-3s), "
-                f"citrus fruits and berries (Vitamin C for collagen repair), and lean proteins (eggs, paneer, lentils) to preserve muscle mass. "
-                f"Please limit deep-fried foods and excess table salt, which can worsen joint fluid retention and swelling. Aim for 2.5–3.0 liters of water daily."
+                f"Hello {summary.full_name}. According to the ADA Standards of Care & Consensus on Diabetes Nutrition ({cit_txt}): "
+                f"Key dietary targets include: (1) Low glycemic load, carbohydrate consistency (30-45g per meal), and >= 35g dietary fiber daily. "
+                f"(2) Recommended Superfoods: Fenugreek (Methi) soaked in water, Chia/Flaxseeds, Bitter Gourd (Karela), Legumes, and Avocado. "
+                f"(3) Strictly Avoid: Sugar-sweetened beverages, fruit juices, refined white rice/flour, and fried trans-fats. "
+                f"Eat vegetables and protein BEFORE carbohydrates to reduce postprandial glucose spikes by up to 40%."
+            )
+        elif any(k in q_lower for k in ["hypertens", "dash", "blood pressure", "salt", "sodium"]):
+            rag_res = self.nutrition_rag.query_nutrition_rag(DietRAGQueryInput(query=input_data.question, age=summary.age))
+            cit_txt = ", ".join([f"{c.journal} (PMID: {c.pmid})" for c in rag_res.relevant_citations[:2]])
+            answer = (
+                f"Hello {summary.full_name}. Based on the ACC/AHA High Blood Pressure Guidelines and DASH-Sodium Trial ({cit_txt}): "
+                f"Core recommendations: (1) Restrict sodium strictly to < 1,500 - 2,000 mg/day (less than 1 teaspoon of total salt). "
+                f"(2) Increase potassium to 3,500 - 4,700 mg/day (achieving a healthy 4:1 Potassium-to-Sodium ratio). "
+                f"(3) Prioritize Beetroot juice (nitrates for nitric oxide vasodilation), Hibiscus tea, fresh Spinach, and Unsalted pistachios. "
+                f"(4) Strictly eliminate pickles (achaar), papad, cured meats, and licorice."
+            )
+        elif any(k in q_lower for k in ["kidney", "ckd", "renal", "egfr", "creatinine"]):
+            rag_res = self.nutrition_rag.query_nutrition_rag(DietRAGQueryInput(query=input_data.question, age=summary.age))
+            cit_txt = ", ".join([f"{c.journal} (PMID: {c.pmid})" for c in rag_res.relevant_citations[:2]])
+            answer = (
+                f"Hello {summary.full_name}. According to the KDOQI Clinical Practice Guideline for Nutrition in CKD ({cit_txt}): "
+                f"(1) In non-dialysis CKD Stages 3–5, protein is restricted to 0.55 - 0.60 g/kg/day (or 0.6-0.8 g/kg in diabetic nephropathy) to halt glomerular hyperfiltration. "
+                f"(2) Maintain high caloric density (30-35 kcal/kg) to prevent protein-energy wasting (PEW). "
+                f"(3) Restrict phosphorus (< 800-1,000 mg/day, avoiding dark colas and packaged cheese additives) and sodium (< 2,000 mg/day). "
+                f"(4) Safe Superfoods: Egg whites (low phosphorus-to-protein ratio), cauliflower, cabbage, and apples. "
+                f"Strict Warning: Starfruit is strictly lethal in CKD due to neurotoxin caramboxin."
+            )
+        elif any(k in q_lower for k in ["pcod", "pcos", "ovary", "spearmint"]):
+            rag_res = self.nutrition_rag.query_nutrition_rag(DietRAGQueryInput(query=input_data.question, age=summary.age))
+            cit_txt = ", ".join([f"{c.journal} (PMID: {c.pmid})" for c in rag_res.relevant_citations[:2]])
+            answer = (
+                f"Hello {summary.full_name}. Based on the 2023 International Evidence-Based Guideline for PCOS ({cit_txt}): "
+                f"Lifestyle therapy targets hyperinsulinemia and ovarian hyperandrogenism. "
+                f"(1) Anti-androgenic Botanical: Drink 2 cups of organic Spearmint Tea daily (inhibits 5-alpha-reductase, lowering free testosterone). "
+                f"(2) Inositol-Rich Foods: Cantaloupe, beans, and buckwheat provide myo-inositol to restore follicular insulin signaling. "
+                f"(3) Flaxseeds supply lignans to elevate SHBG and clear circulating androgens. "
+                f"(4) Cruciferous vegetables (Broccoli, Kale) provide indole-3-carbinol for estrogen detoxification. Avoid high-glycemic sugar and industrial dairy."
+            )
+        elif any(k in q_lower for k in ["weight", "obese", "obesity", "fat loss", "slimming"]):
+            rag_res = self.nutrition_rag.query_nutrition_rag(DietRAGQueryInput(query=input_data.question, age=summary.age))
+            cit_txt = ", ".join([f"{c.journal} (PMID: {c.pmid})" for c in rag_res.relevant_citations[:2]])
+            answer = (
+                f"Hello {summary.full_name}. Based on the AACE/ACE Clinical Practice Guidelines for Obesity / ABCD ({cit_txt}): "
+                f"(1) Maintain a structured energy deficit of 500 - 750 kcal/day to target 5% to 15% weight reduction. "
+                f"(2) High Protein Satiety Pacing: 1.2 - 1.6 g/kg/day to preserve lean muscle mass and resting metabolic rate. "
+                f"(3) Satiety Superfoods: Boiled cooled potatoes (highest Holt Satiety Index, resistant starch), Greek yogurt, and high volumetric leafy greens. "
+                f"(4) Early Time-Restricted Eating: Eat within a 10-hour daytime window and avoid all liquid sugar and ultra-processed snacks."
+            )
+        elif any(k in q_lower for k in ["elderly", "geriatric", "sarcopenia", "leucine"]):
+            rag_res = self.nutrition_rag.query_nutrition_rag(DietRAGQueryInput(query="geriatric sarcopenia elderly", age=summary.age))
+            cit_txt = ", ".join([f"{c.journal} (PMID: {c.pmid})" for c in rag_res.relevant_citations[:2]])
+            answer = (
+                f"Hello {summary.full_name}. According to the ESPEN Clinical Nutrition in Geriatrics Guideline ({cit_txt}): "
+                f"Older adults exhibit anabolic resistance and need higher protein targets: 1.5 - 2.0 g/kg/day. "
+                f"(1) Leucine Pulse Feeding: Ensure at least 3.0g Leucine per meal (from eggs, fortified Greek yogurt, whey, or fish) to trigger the mTORC1 pathway. "
+                f"(2) Texture & Hydration: Soft-stewed lentils, poached eggs, and 30 mL/kg/day fluid pacing to prevent hypovolemic delirium. "
+                f"(3) Do not adopt restrictive low-calorie diets during recovery as it accelerates muscle wasting."
+            )
+        elif "diet" in q_lower or "food" in q_lower or "eat" in q_lower or "turmeric" in q_lower or "nutrition" in q_lower or "protein" in q_lower:
+            rag_res = self.nutrition_rag.query_nutrition_rag(DietRAGQueryInput(query=input_data.question, age=summary.age))
+            cit_txt = ", ".join([f"{c.journal} (PMID: {c.pmid})" for c in rag_res.relevant_citations[:2]])
+            answer = (
+                f"Hello {summary.full_name}. Grounded in peer-reviewed surgical nutrition guidelines ({cit_txt}): "
+                f"To accelerate tissue repair, prioritize anti-inflammatory superfoods: (1) Turmeric with black pepper (curcumin + piperine) for joint analgesia. "
+                f"(2) Wild fatty fish or chia seeds (1.5-2.0g Omega-3 EPA/DHA) to resolve synovial effusion. "
+                f"(3) Citrus fruits and berries (Vitamin C + Zinc cofactors for collagen cross-linking). "
+                f"(4) Lean proteins (1.5-2.0 g/kg/day) to prevent post-op disuse atrophy. "
+                f"Please limit deep-fried foods and excess table salt (< 2,300 mg/day). Aim for 2.5–3.0 liters of water daily."
             )
         elif "red flag" in q_lower or "emergency" in q_lower or "warning" in q_lower or "fever" in q_lower:
             answer = (

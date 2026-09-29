@@ -1,0 +1,8 @@
+PubMed Database Terms and Conditions Notification
+Recorded on: 2026-09-29T07:48:00+05:30
+
+Notice to User:
+Please check the terms and conditions at:
+- https://pubmed.ncbi.nlm.nih.gov/disclaimer/
+- https://www.ncbi.nlm.nih.gov/home/about/policies/
+Always check the license of individual papers and abstracts retrieved from PubMed/PMC for any copyright or reuse restrictions.

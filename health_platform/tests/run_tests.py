@@ -32,6 +32,7 @@ from health_platform.tests.test_pharmacy_workflows import TestPharmacyWorkflows
 from health_platform.tests.test_emergency_workflows import TestEmergencyWorkflows
 from health_platform.tests.test_patient_portal import TestPatientPortal
 from health_platform.tests.test_wearables import TestWearablesAndRecoveryIoT
+from health_platform.tests.test_nutrition_rag import TestPersonalizedNutritionRAG
 
 class PlatformCoreTestSuite(unittest.TestCase):
     # Identity & MPI Tests
@@ -247,6 +248,36 @@ class PlatformCoreTestSuite(unittest.TestCase):
         t.setUpClass()
         t.test_07_ai_companion_wearable_queries()
         t.test_08_api_wearables_endpoints()
+
+    # Personalized Clinical Nutrition RAG & PubMed Grounding Tests (Pod 11)
+    def test_48_nutrition_rag_guidelines_and_pubmed_pmids(self):
+        t = TestPersonalizedNutritionRAG()
+        t.setUpClass()
+        t.test_01_all_condition_guidelines_and_pubmed_pmids()
+
+    def test_49_nutrition_post_op_orthopedic_and_geriatric(self):
+        t = TestPersonalizedNutritionRAG()
+        t.setUpClass()
+        t.test_02_post_op_orthopedic_case_synthesis()
+        t.test_03_geriatric_age_wise_sarcopenia_pacing()
+
+    def test_50_nutrition_disease_specific_mnt_and_safety_rules(self):
+        t = TestPersonalizedNutritionRAG()
+        t.setUpClass()
+        t.test_04_chronic_kidney_disease_protein_safety_rule()
+        t.test_05_pcod_pcos_anti_androgenic_plan()
+        t.test_06_weight_reduction_satiety_pacing()
+
+    def test_51_nutrition_rag_query_engine_and_chatbot(self):
+        t = TestPersonalizedNutritionRAG()
+        t.setUpClass()
+        t.test_07_nutrition_rag_query_engine()
+        t.test_08_chatbot_ai_companion_nutrition_grounding()
+
+    def test_52_nutrition_api_endpoints(self):
+        t = TestPersonalizedNutritionRAG()
+        t.setUpClass()
+        t.test_09_api_nutrition_endpoints()
 
 if __name__ == "__main__":
     suite = unittest.TestLoader().loadTestsFromTestCase(PlatformCoreTestSuite)

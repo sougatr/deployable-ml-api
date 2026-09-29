@@ -134,11 +134,20 @@ from health_platform.core.wearables.models import (
     LogGammaSessionInput
 )
 from health_platform.core.wearables.service import WearablesService
+from health_platform.core.nutrition_rag.models import (
+    ClinicalDietGuideline,
+    PersonalizedDietPlan,
+    GeneratePersonalizedPlanInput,
+    DietRAGQueryInput,
+    DietRAGQueryResponse
+)
+from health_platform.core.nutrition_rag.service import NutritionRAGService
 
 wearables_service = WearablesService(
     identity_service=identity_service,
     clinical_service=clinical_service
 )
+nutrition_rag_service = NutritionRAGService()
 
 patient_portal_service = PatientPortalService(
     identity_service=identity_service,
@@ -147,7 +156,8 @@ patient_portal_service = PatientPortalService(
     pharmacy_service=pharmacy_service,
     ipd_service=ipd_service,
     emergency_service=emergency_service,
-    wearables_service=wearables_service
+    wearables_service=wearables_service,
+    nutrition_rag_service=nutrition_rag_service
 )
 
 import os
@@ -687,5 +697,39 @@ def log_gamma_session(payload: LogGammaSessionInput):
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Gamma session recording error: {str(e)}")
+
+# =============================================================================
+# 11. PERSONALIZED DIET PLAN & PUBMED NUTRITION RAG ENDPOINTS (Pod 11)
+# =============================================================================
+@app.get("/api/v1/nutrition/guidelines", response_model=List[ClinicalDietGuideline])
+def get_nutrition_guidelines():
+    return nutrition_rag_service.list_all_guidelines()
+
+@app.get("/api/v1/nutrition/guidelines/{condition_key}", response_model=ClinicalDietGuideline)
+def get_nutrition_guideline_by_key(condition_key: str):
+    guide = nutrition_rag_service.get_guideline(condition_key.upper())
+    if not guide:
+        raise HTTPException(status_code=404, detail=f"Guideline for '{condition_key}' not found.")
+    return guide
+
+@app.post("/api/v1/nutrition/personalized-plan", response_model=PersonalizedDietPlan)
+def generate_personalized_nutrition_plan(payload: GeneratePersonalizedPlanInput):
+    try:
+        return nutrition_rag_service.generate_personalized_diet_plan(
+            patient_name=payload.patient_name,
+            age=payload.age,
+            surgical_case=payload.surgical_case,
+            diagnosed_conditions=payload.diagnosed_conditions
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Diet synthesis error: {str(e)}")
+
+@app.post("/api/v1/nutrition/rag-query", response_model=DietRAGQueryResponse)
+def query_nutrition_rag(payload: DietRAGQueryInput):
+    try:
+        return nutrition_rag_service.query_nutrition_rag(payload)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Nutrition RAG query error: {str(e)}")
+
 
 

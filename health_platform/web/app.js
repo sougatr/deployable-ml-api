@@ -2869,6 +2869,7 @@ function initPatientPortalModule() {
   });
 
   initWearablesModule();
+  initClinicalNutritionListeners();
 }
 
 function populatePatientPortalSelect() {
@@ -3220,24 +3221,27 @@ function renderPortalRecovery(recs) {
     });
   }
 
-  // Dietary Guidelines
-  document.getElementById("portal-hydration-badge").textContent = `💧 Hydration: ${recs.hydration_target}`;
-  const dietContainer = document.getElementById("portal-diet-container");
-  if (dietContainer) {
-    dietContainer.innerHTML = "";
-    (recs.dietary_guidelines || []).forEach(d => {
-      const isBeneficial = d.category.includes("Beneficial") || d.category.includes("Superfood");
-      const item = document.createElement("div");
-      item.className = `diet-item ${isBeneficial ? 'beneficial' : 'avoid'}`;
-      item.innerHTML = `
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.2rem;">
-          <strong style="color:${isBeneficial ? '#166534' : '#991b1b'};">${isBeneficial ? '✅' : '🚫'} ${escapeHtml(d.food_item)}</strong>
-          <span style="font-size:0.7rem; font-weight:700; text-transform:uppercase;">${d.category}</span>
-        </div>
-        <p style="margin:0; font-size:0.8rem; color:#334155;">${escapeHtml(d.rationale)}</p>
-      `;
-      dietContainer.appendChild(item);
-    });
+  // Dietary Guidelines & PubMed Clinical Nutrition Engine
+  if (recs.hydration_target) {
+    const hydBadge = document.getElementById("portal-hydration-badge");
+    if (hydBadge) hydBadge.textContent = `💧 Hydration: ${recs.hydration_target}`;
+  }
+
+  // Auto-select contextual condition based on patient diagnosis and load guideline
+  const condSelect = document.getElementById("nutrition-condition-select");
+  if (condSelect) {
+    let matchedCond = "POST_OP_ORTHOPEDIC";
+    const textToScan = (((recs.active_conditions || []).join(" ")) + " " + (recs.prognosis_overview || "")).toLowerCase();
+    if (textToScan.includes("pcod") || textToScan.includes("pcos")) matchedCond = "PCOD_PCOS";
+    else if (textToScan.includes("kidney") || textToScan.includes("ckd") || textToScan.includes("renal")) matchedCond = "KIDNEY_DISEASE_CKD";
+    else if (textToScan.includes("diabet") || textToScan.includes("sugar")) matchedCond = "DIABETES_T2";
+    else if (textToScan.includes("hyperten") || textToScan.includes("bp") || textToScan.includes("blood pressure")) matchedCond = "HYPERTENSION";
+    else if (textToScan.includes("heart") || textToScan.includes("cad") || textToScan.includes("coronary")) matchedCond = "HEART_DISEASE_CAD";
+    else if (textToScan.includes("weight") || textToScan.includes("obes")) matchedCond = "WEIGHT_REDUCTION";
+    else if (textToScan.includes("geriatric") || textToScan.includes("elderly")) matchedCond = "POST_OP_GERIATRIC";
+    
+    condSelect.value = matchedCond;
+    loadClinicalNutritionGuideline(matchedCond);
   }
 
   // Exercise Routine
@@ -3764,5 +3768,191 @@ function renderWearablesDashboard(data) {
       `).join("");
     }
   }
+}
+
+// -------------------------------------------------------------
+// Clinical Nutrition RAG & PubMed Guidelines Engine
+// -------------------------------------------------------------
+async function loadClinicalNutritionGuideline(conditionKey) {
+  try {
+    const res = await fetch(`/api/v1/nutrition/guidelines/${encodeURIComponent(conditionKey)}`);
+    if (!res.ok) throw new Error("Failed to load nutrition guideline");
+    const data = await res.json();
+    renderClinicalNutritionGuideline(data);
+  } catch (err) {
+    console.error("Error loading nutrition guideline:", err);
+  }
+}
+
+function renderClinicalNutritionGuideline(g) {
+  if (!g) return;
+
+  // Active Title & Indication
+  const titleEl = document.getElementById("nutrition-active-title");
+  if (titleEl) titleEl.textContent = g.condition_name;
+
+  const appEl = document.getElementById("nutrition-active-applicability");
+  if (appEl) {
+    const context = g.surgical_case_type ? ` • ${g.surgical_case_type}` : "";
+    appEl.textContent = `${g.age_applicability}${context}`;
+  }
+
+  const summaryEl = document.getElementById("nutrition-active-summary");
+  if (summaryEl) summaryEl.textContent = g.clinical_summary;
+
+  const badgeEl = document.getElementById("nutrition-evidence-level-badge");
+  if (badgeEl && g.pubmed_citations && g.pubmed_citations.length > 0) {
+    badgeEl.textContent = g.pubmed_citations[0].evidence_level || "Level 1A: International Practice Guideline";
+  }
+
+  // Citations Container with direct PubMed links
+  const citContainer = document.getElementById("nutrition-citations-container");
+  if (citContainer && g.pubmed_citations) {
+    citContainer.innerHTML = `
+      <div style="font-weight:700; color:#0369a1; margin-bottom:0.35rem; display:flex; align-items:center; gap:0.35rem;">
+        <span>📚</span> Peer-Reviewed PubMed Indexed Literature:
+      </div>
+      <div style="display:flex; flex-wrap:wrap; gap:0.4rem;">
+        ${g.pubmed_citations.map(c => `
+          <a href="${escapeHtml(c.url)}" target="_blank" rel="noopener noreferrer" class="pubmed-badge-link" title="${escapeHtml(c.title)}">
+            <span>📄</span> <strong>${escapeHtml(c.journal)}</strong> (${c.year}) • PMID: ${escapeHtml(c.pmid)} ↗
+          </a>
+        `).join("")}
+      </div>
+    `;
+  }
+
+  // Macronutrient Targets Ribbon
+  const ribbon = document.getElementById("nutrition-macro-ribbon");
+  if (ribbon && g.macro_targets) {
+    const m = g.macro_targets;
+    ribbon.innerHTML = `
+      <div class="nutrition-macro-card">
+        <span class="macro-label">⚡ Daily Calories</span>
+        <span class="macro-value" style="color:#d97706;">${escapeHtml(m.daily_calories_guideline)}</span>
+      </div>
+      <div class="nutrition-macro-card">
+        <span class="macro-label">🥩 Protein Target</span>
+        <span class="macro-value" style="color:#0f766e;">${escapeHtml(m.protein_g_per_kg)}</span>
+      </div>
+      <div class="nutrition-macro-card">
+        <span class="macro-label">🌾 Carbs & Fiber</span>
+        <span class="macro-value" style="color:#2563eb;">${escapeHtml(m.carbohydrate_pct)}<br><span style="font-size:0.75rem; color:#475569;">Fiber: ${escapeHtml(m.dietary_fiber_g)}</span></span>
+      </div>
+      <div class="nutrition-macro-card">
+        <span class="macro-label">🥑 Healthy Fats</span>
+        <span class="macro-value" style="color:#16a34a;">${escapeHtml(m.fat_pct)}</span>
+      </div>
+      <div class="nutrition-macro-card">
+        <span class="macro-label">🧂 Sodium Limit</span>
+        <span class="macro-value" style="color:#b91c1c;">${escapeHtml(m.sodium_limit_mg)}</span>
+      </div>
+      <div class="nutrition-macro-card">
+        <span class="macro-label">💧 Fluid Pacing</span>
+        <span class="macro-value" style="color:#0284c7;">${escapeHtml(m.fluid_target)}</span>
+      </div>
+    `;
+  }
+
+  // Superfoods
+  const superContainer = document.getElementById("nutrition-superfoods-container");
+  if (superContainer && g.recommended_foods) {
+    superContainer.innerHTML = g.recommended_foods.map(f => `
+      <div class="diet-item beneficial">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.2rem;">
+          <strong style="color:#166534;">✅ ${escapeHtml(f.food_item)}</strong>
+          <span style="font-size:0.7rem; font-weight:700; color:#15803d; text-transform:uppercase;">Superfood</span>
+        </div>
+        <p style="margin:0; font-size:0.8rem; color:#334155;">${escapeHtml(f.clinical_rationale)}</p>
+        <div class="biochemical-mech-tag"><strong>Biochemical Mechanism:</strong> ${escapeHtml(f.biochemical_mechanism)}</div>
+      </div>
+    `).join("");
+  }
+
+  // Prohibited Foods
+  const prohibContainer = document.getElementById("nutrition-prohibited-container");
+  if (prohibContainer && g.prohibited_foods) {
+    prohibContainer.innerHTML = g.prohibited_foods.map(p => `
+      <div class="diet-item avoid">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.2rem;">
+          <strong style="color:#991b1b;">🚫 ${escapeHtml(p.food_item)}</strong>
+          <span style="font-size:0.7rem; font-weight:700; color:#b91c1c; text-transform:uppercase;">Contraindicated</span>
+        </div>
+        <p style="margin:0; font-size:0.8rem; color:#334155;">${escapeHtml(p.clinical_rationale)}</p>
+        <div class="biochemical-mech-tag" style="border-left-color:#ef4444; color:#991b1b;"><strong>Contraindication Mechanism:</strong> ${escapeHtml(p.biochemical_mechanism)}</div>
+      </div>
+    `).join("");
+  }
+
+  // Chrononutrition & Meal Timing
+  const chronoEl = document.getElementById("nutrition-chrononutrition-text");
+  if (chronoEl) chronoEl.textContent = g.meal_timing_and_chrononutrition;
+}
+
+function initClinicalNutritionListeners() {
+  const select = document.getElementById("nutrition-condition-select");
+  if (select) {
+    select.addEventListener("change", (e) => {
+      loadClinicalNutritionGuideline(e.target.value);
+    });
+  }
+
+  const btnAsk = document.getElementById("btn-nutrition-rag-ask");
+  const inputAsk = document.getElementById("nutrition-rag-input");
+  const resultBox = document.getElementById("nutrition-rag-result");
+
+  const handleAsk = async () => {
+    const query = (inputAsk?.value || "").trim();
+    if (!query) {
+      showToast("Please enter a question for the Nutrition RAG engine.", "info");
+      return;
+    }
+    if (btnAsk) {
+      btnAsk.disabled = true;
+      btnAsk.textContent = "Querying PubMed...";
+    }
+    try {
+      const res = await fetch("/api/v1/nutrition/rag-query", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ query })
+      });
+      if (!res.ok) throw new Error("RAG query failed");
+      const data = await res.json();
+      if (resultBox) {
+        resultBox.classList.remove("hidden");
+        let citationsHtml = "";
+        if (data.relevant_citations && data.relevant_citations.length > 0) {
+          citationsHtml = `\n\n📚 Grounded Evidence Citations:\n` + data.relevant_citations.map(c => `• ${c.journal} (${c.year}, PMID: ${c.pmid}): ${c.title}`).join("\n");
+        }
+        resultBox.textContent = data.grounded_answer + citationsHtml;
+      }
+    } catch (err) {
+      if (resultBox) {
+        resultBox.classList.remove("hidden");
+        resultBox.textContent = "Could not fetch RAG response. Please try again.";
+      }
+    } finally {
+      if (btnAsk) {
+        btnAsk.disabled = false;
+        btnAsk.textContent = "Search PubMed";
+      }
+    }
+  };
+
+  if (btnAsk) {
+    btnAsk.addEventListener("click", handleAsk);
+  }
+  if (inputAsk) {
+    inputAsk.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") {
+        e.preventDefault();
+        handleAsk();
+      }
+    });
+  }
+
+  // Initial load
+  loadClinicalNutritionGuideline("POST_OP_ORTHOPEDIC");
 }
 

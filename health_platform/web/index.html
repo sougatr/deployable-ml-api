@@ -1523,17 +1523,104 @@
               </div>
             </div>
 
-            <!-- Personalized Diet -->
-            <div class="card portal-feature-card" style="margin-top:1.5rem;">
-              <div class="card-header">
-                <h4 style="margin:0; display:flex; align-items:center; gap:0.5rem; color:#15803d;">
-                  🥗 Personalized Dietary Guidelines
-                </h4>
-                <span class="badge badge-info" id="portal-hydration-badge">💧 2.5 - 3.0 L/day</span>
+            <!-- Personalized Diet & PubMed Clinical Nutrition Engine -->
+            <div class="card portal-feature-card" style="margin-top:1.5rem;" id="portal-clinical-nutrition-card">
+              <div class="card-header" style="flex-wrap:wrap; gap:0.5rem;">
+                <div>
+                  <h4 style="margin:0; display:flex; align-items:center; gap:0.5rem; color:#15803d;">
+                    🥗 Personalized Clinical Nutrition & PubMed-Indexed Diet Plan
+                  </h4>
+                  <span class="card-subtitle" style="font-size:0.775rem;">Grounded in PubMed Medical Nutrition Therapy (MNT) literature</span>
+                </div>
+                <div style="display:flex; align-items:center; gap:0.5rem;">
+                  <span class="badge badge-info" id="portal-hydration-badge">💧 2.5 - 3.0 L/day</span>
+                </div>
               </div>
-              <p class="text-muted" style="font-size:0.85rem;">Targeted nutrition to accelerate cartilage and tissue synthesis while preventing inflammation:</p>
-              <div class="diet-list" id="portal-diet-container">
-                <!-- Diet recommendations -->
+
+              <!-- Condition & Surgical Case Selector -->
+              <div class="nutrition-selector-bar" style="margin-top:0.75rem; padding:0.75rem; background:#f0fdf4; border:1px solid #bbf7d0; border-radius:8px;">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.4rem; flex-wrap:wrap; gap:0.5rem;">
+                  <label for="nutrition-condition-select" style="font-weight:700; font-size:0.825rem; color:#166534;">
+                    🩺 Select Surgical Case or Chronic Disease Protocol:
+                  </label>
+                  <span class="badge badge-success" id="nutrition-evidence-level-badge" style="font-size:0.7rem;">Level 1A: International Guideline</span>
+                </div>
+                <select id="nutrition-condition-select" class="form-control" style="font-size:0.85rem; padding:0.4rem 0.6rem; border-color:#86efac;">
+                  <option value="POST_OP_ORTHOPEDIC">🦴 Post-Operative Orthopedic, Joint & Cartilage Recovery (Knee / Meniscus / Hip)</option>
+                  <option value="POST_OP_GERIATRIC">👵 Post-Op Geriatric Sarcopenia Prevention (Age ≥ 65, Leucine Pulse)</option>
+                  <option value="DIABETES_T2">🩺 Type 2 Diabetes Mellitus (ADA Low-GI & Carbohydrate Sequencing)</option>
+                  <option value="HYPERTENSION">🫀 Systemic Hypertension (ACC/AHA DASH Sodium-Potassium Ratio)</option>
+                  <option value="HEART_DISEASE_CAD">❤️ Coronary Artery Disease & Heart Health (PREDIMED Mediterranean EVOO)</option>
+                  <option value="KIDNEY_DISEASE_CKD">🫘 Chronic Kidney Disease (KDOQI Renal-Sparing & Starfruit Ban)</option>
+                  <option value="PCOD_PCOS">🌸 PCOD / PCOS Hormonal Balance (Anti-Androgenic Spearmint & Inositol)</option>
+                  <option value="WEIGHT_REDUCTION">⚖️ Weight Reduction & Metabolic Reset (AACE Satiety & Caloric Deficit)</option>
+                </select>
+              </div>
+
+              <!-- Active Indication & Summary -->
+              <div style="margin-top:0.75rem;">
+                <div style="display:flex; justify-content:space-between; align-items:baseline; margin-bottom:0.25rem;">
+                  <strong id="nutrition-active-title" style="color:#0f766e; font-size:0.95rem;">Post-Operative Orthopedic, Joint & Cartilage Recovery</strong>
+                  <span id="nutrition-active-applicability" style="font-size:0.75rem; color:#64748b;">Adults & Elderly Post-Operative</span>
+                </div>
+                <p id="nutrition-active-summary" style="font-size:0.825rem; line-height:1.45; color:#334155; margin-bottom:0.5rem;">
+                  Loading guideline...
+                </p>
+              </div>
+
+              <!-- PubMed Grounded Citations Bar -->
+              <div class="pubmed-citations-bar" id="nutrition-citations-container" style="margin-bottom:0.75rem; padding:0.5rem 0.75rem; background:#f8fafc; border-left:3px solid #0284c7; border-radius:4px; font-size:0.775rem;">
+                <!-- Populated dynamically with PubMed links -->
+              </div>
+
+              <!-- Macronutrient Target Ribbon -->
+              <div class="nutrition-macro-ribbon" id="nutrition-macro-ribbon" style="display:grid; grid-template-columns:repeat(auto-fit, minmax(130px, 1fr)); gap:0.5rem; margin-bottom:1rem;">
+                <!-- Macro cards -->
+              </div>
+
+              <!-- Two Columns: Superfoods vs Avoid / Prohibited -->
+              <div style="display:grid; grid-template-columns:1fr 1fr; gap:0.75rem; margin-bottom:1rem;" class="nutrition-foods-split">
+                <div>
+                  <h5 style="color:#15803d; margin:0 0 0.4rem 0; font-size:0.85rem; display:flex; align-items:center; gap:0.35rem;">
+                    <span>🥦</span> Superfoods to Prioritize
+                  </h5>
+                  <div id="nutrition-superfoods-container" class="diet-list">
+                    <!-- Superfoods -->
+                  </div>
+                </div>
+                <div>
+                  <h5 style="color:#b91c1c; margin:0 0 0.4rem 0; font-size:0.85rem; display:flex; align-items:center; gap:0.35rem;">
+                    <span>🚫</span> Foods to Strictly Limit / Avoid
+                  </h5>
+                  <div id="nutrition-prohibited-container" class="diet-list">
+                    <!-- Prohibited -->
+                  </div>
+                </div>
+              </div>
+
+              <!-- Chrononutrition & Meal Timing Guide -->
+              <div style="background:#fefce8; border:1px solid #fef08a; border-radius:6px; padding:0.75rem; margin-bottom:1rem;">
+                <h5 style="color:#854d0e; margin:0 0 0.35rem 0; font-size:0.825rem; display:flex; align-items:center; gap:0.35rem;">
+                  <span>⏰</span> Chrononutrition & Meal Timing Protocols
+                </h5>
+                <p id="nutrition-chrononutrition-text" style="margin:0; font-size:0.8rem; color:#713f12; line-height:1.4;">
+                  Early Time-Restricted Eating & Protein Pulse Feeding.
+                </p>
+              </div>
+
+              <!-- Instant PubMed Nutrition RAG Query Assistant -->
+              <div style="background:#f1f5f9; border:1px solid #cbd5e1; border-radius:6px; padding:0.75rem;">
+                <h5 style="color:#334155; margin:0 0 0.4rem 0; font-size:0.825rem; display:flex; align-items:center; gap:0.35rem;">
+                  <span>🔬</span> Ask Nutrition RAG (PubMed Knowledge Engine)
+                </h5>
+                <div style="display:flex; gap:0.5rem; margin-bottom:0.5rem;">
+                  <input type="text" id="nutrition-rag-input" class="form-control" placeholder="e.g. Can I eat paneer with CKD? or What teas lower testosterone in PCOS?" style="font-size:0.825rem;">
+                  <button type="button" class="btn btn-primary btn-sm" id="btn-nutrition-rag-ask" style="white-space:nowrap;">
+                    Search PubMed
+                  </button>
+                </div>
+                <div id="nutrition-rag-result" class="hidden" style="background:#ffffff; border:1px solid #94a3b8; border-radius:6px; padding:0.65rem; font-size:0.8rem; line-height:1.45; color:#1e293b; max-height:220px; overflow-y:auto; white-space:pre-wrap;">
+                </div>
               </div>
             </div>
           </div>
