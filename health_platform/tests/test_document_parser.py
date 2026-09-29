@@ -334,6 +334,71 @@ class TestClinicalDocumentParser(unittest.TestCase):
         icd_codes = [d["code_icd10"] for d in parsed["diagnoses"]]
         self.assertIn("C18.9", icd_codes)
 
+    def test_parse_identity_from_discharge_summary_header(self):
+        """Asserts hospital case sheet header extracts Chandrakant Krishna Chavan, not 'of the' or Anindita Ray."""
+        discharge_text = (
+            "Discharge Summary\n"
+            "Name of the Patient\n"
+            "Chandrakant Krishna Chavan\n"
+            "Age\n"
+            "69\n"
+            "Gender\n"
+            "IPD rumber\n"
+            "Admitting Doctor\n"
+            "Male\n"
+            "MHHIK.0000013317\n"
+            "HIKIP6101\n"
+            "Dr.Ramkishan Nag\n"
+            ": Patient Direct Billing\n"
+            "Payer\n"
+            "Headquarters westem\n"
+            "naval command\n"
+            "Date of Registration\n"
+            ": 06/07/2026\n"
+            "Date of Admission\n"
+            ": 06/07/2026 01:19:00\n"
+            "PM\n"
+            "Date of Discharge\n"
+            ":09/07/2026\n"
+            "Date of Treatment\n"
+            ":06/07/2026\n"
+            "Type of Discharge\n"
+            ":DAMA\n"
+            "Department of Medical Oncology\n"
+            "Admitting Diagnosis :Carcinoma colon\n"
+            "with Hepatic mets"
+        )
+        parsed = ClinicalDocumentParser.parse_identity_document(discharge_text)
+        self.assertEqual(parsed["name"], "Chandrakant Krishna Chavan")
+        self.assertNotEqual(parsed["name"], "of the")
+        self.assertEqual(parsed["first_name"], "Chandrakant Krishna")
+        self.assertEqual(parsed["last_name"], "Chavan")
+        self.assertEqual(parsed["age"], 69)
+        self.assertEqual(parsed["gender"], "MALE")
+        self.assertEqual(parsed["abha_address"], "chandrakant.chavan@abdm")
+        self.assertNotEqual(parsed["aadhaar"], "9812 4567 1234")
+
+    def test_parse_arbitrary_identity_document(self):
+        """Asserts generic name and dynamic ABHA/Aadhaar generation for any new patient."""
+        doc = (
+            "Government of India\n"
+            "Name of the Patient: Vikram Malhotra\n"
+            "Age: 42\n"
+            "Gender: Male\n"
+            "Phone: 9820012345\n"
+            "Address: Bandra West, Mumbai - 400050"
+        )
+        parsed = ClinicalDocumentParser.parse_identity_document(doc)
+        self.assertEqual(parsed["name"], "Vikram Malhotra")
+        self.assertEqual(parsed["first_name"], "Vikram")
+        self.assertEqual(parsed["last_name"], "Malhotra")
+        self.assertEqual(parsed["age"], 42)
+        self.assertEqual(parsed["gender"], "MALE")
+        self.assertEqual(parsed["phone"], "9820012345")
+        self.assertEqual(parsed["postal_code"], "400050")
+        self.assertEqual(parsed["abha_address"], "vikram.malhotra@abdm")
+        self.assertNotEqual(parsed["aadhaar"], "9812 4567 1234")
+
 if __name__ == "__main__":
     unittest.main()
 
